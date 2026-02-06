@@ -1,0 +1,156 @@
+{
+  "allow_cases": [
+    {
+      "name": "Non-VIP: small transfer with good conditions",
+      "input": {
+        "action": "TRANSFER",
+        "amount": 500,
+        "country": "US",
+        "is_vip": "FALSE",
+        "kyc_level": 3,
+        "risk_score": 0.3,
+        "device_trust": 0.8
+      }
+    },
+    {
+      "name": "VIP: large transfer with good conditions",
+      "input": {
+        "action": "TRANSFER",
+        "amount": 8000,
+        "country": "EU",
+        "is_vip": "TRUE",
+        "kyc_level": 5,
+        "risk_score": 0.5,
+        "device_trust": 0.9
+      }
+    },
+    {
+      "name": "Small transfer without device trust requirement",
+      "input": {
+        "action": "TRANSFER",
+        "amount": 250,
+        "country": "TR",
+        "is_vip": "FALSE",
+        "kyc_level": 1,
+        "risk_score": 0.4,
+        "device_trust": 0.3
+      }
+    },
+    {
+      "name": "Withdraw with sufficient KYC",
+      "input": {
+        "action": "WITHDRAW",
+        "amount": 1000,
+        "country": "US",
+        "is_vip": "TRUE",
+        "kyc_level": 3,
+        "risk_score": 0.2,
+        "device_trust": 0.8
+      }
+    },
+    {
+      "name": "Small withdraw without KYC requirement",
+      "input": {
+        "action": "WITHDRAW",
+        "amount": 400,
+        "country": "TR",
+        "is_vip": "FALSE",
+        "kyc_level": 0,
+        "risk_score": 0.3,
+        "device_trust": 0.5
+      }
+    },
+    {
+      "name": "Deposit action (no restrictions)",
+      "input": {
+        "action": "DEPOSIT",
+        "amount": 50000,
+        "country": "US",
+        "is_vip": "FALSE",
+        "kyc_level": 0,
+        "risk_score": 0.9,
+        "device_trust": 0.1
+      }
+    }
+  ],
+  "block_cases": [
+    {
+      "name": "Sanctioned country (North Korea)",
+      "input": {
+        "action": "TRANSFER",
+        "amount": 100,
+        "country": "NK",
+        "is_vip": "TRUE",
+        "kyc_level": 5,
+        "risk_score": 0.1,
+        "device_trust": 0.9
+      },
+      "expected_violation": "no_sanctioned_country"
+    },
+    {
+      "name": "Non-VIP: amount over limit",
+      "input": {
+        "action": "TRANSFER",
+        "amount": 1500,
+        "country": "US",
+        "is_vip": "FALSE",
+        "kyc_level": 3,
+        "risk_score": 0.3,
+        "device_trust": 0.8
+      },
+      "expected_violation": "transfer_limit_non_vip"
+    },
+    {
+      "name": "VIP: amount over limit",
+      "input": {
+        "action": "TRANSFER",
+        "amount": 15000,
+        "country": "EU",
+        "is_vip": "TRUE",
+        "kyc_level": 5,
+        "risk_score": 0.3,
+        "device_trust": 0.9
+      },
+      "expected_violation": "transfer_limit_vip"
+    },
+    {
+      "name": "Transfer with high risk score",
+      "input": {
+        "action": "TRANSFER",
+        "amount": 500,
+        "country": "US",
+        "is_vip": "FALSE",
+        "kyc_level": 3,
+        "risk_score": 0.9,
+        "device_trust": 0.8
+      },
+      "expected_violation": "risk_ceiling_for_transfer"
+    },
+    {
+      "name": "Medium transfer with low device trust",
+      "input": {
+        "action": "TRANSFER",
+        "amount": 800,
+        "country": "TR",
+        "is_vip": "FALSE",
+        "kyc_level": 3,
+        "risk_score": 0.3,
+        "device_trust": 0.5
+      },
+      "expected_violation": "device_trust_for_medium_transfer"
+    },
+    {
+      "name": "Large withdraw without sufficient KYC",
+      "input": {
+        "action": "WITHDRAW",
+        "amount": 1000,
+        "country": "US",
+        "is_vip": "TRUE",
+        "kyc_level": 1,
+        "risk_score": 0.2,
+        "device_trust": 0.8
+      },
+      "expected_violation": "kyc_for_large_withdraw"
+    }
+  ]
+}

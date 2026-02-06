@@ -1,0 +1,28 @@
+// =============================================================
+// CSL-Core Example: Hello World
+// Goal: Basic logic to restrict large external transfers.
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+}
+
+DOMAIN HelloWorld {
+
+  VARIABLES {
+    // The amount of money to transfer
+    amount: 0..10000
+
+    // Where the money is going
+    destination: {"INTERNAL", "EXTERNAL"}
+  }
+
+  // -----------------------------------------------------------
+  // Rule: Transfers of 100 or more must stay INTERNAL.
+  //       (Small transfers < 100 are allowed anywhere)
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT limit_large_transfers {
+    WHEN amount >= 100
+    THEN destination MUST BE "INTERNAL"
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "allow_cases": [
+    {
+      "name": "Admin: transfer with approval and within limit",
+      "input": {
+        "user_role": "ADMIN",
+        "tool": "TRANSFER_FUNDS",
+        "amount": 5000,
+        "recipient_domain": "INTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "NO",
+        "approval_token": "YES"
+      }
+    },
+    {
+      "name": "User: query non-sensitive database",
+      "input": {
+        "user_role": "USER",
+        "tool": "QUERY_DB",
+        "amount": 0,
+        "recipient_domain": "INTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "NO",
+        "approval_token": "NO"
+      }
+    },
+    {
+      "name": "Analyst: query transactions table",
+      "input": {
+        "user_role": "ANALYST",
+        "tool": "QUERY_DB",
+        "amount": 0,
+        "recipient_domain": "INTERNAL",
+        "db_table": "TRANSACTIONS",
+        "pii_present": "NO",
+        "approval_token": "NO"
+      }
+    },
+    {
+      "name": "Admin: send internal email with PII",
+      "input": {
+        "user_role": "ADMIN",
+        "tool": "SEND_EMAIL",
+        "amount": 0,
+        "recipient_domain": "INTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "YES",
+        "approval_token": "NO"
+      }
+    },
+    {
+      "name": "User: send external email without PII",
+      "input": {
+        "user_role": "USER",
+        "tool": "SEND_EMAIL",
+        "amount": 0,
+        "recipient_domain": "EXTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "NO",
+        "approval_token": "NO"
+      }
+    }
+  ],
+  "block_cases": [
+    {
+      "name": "User: trying to transfer funds",
+      "input": {
+        "user_role": "USER",
+        "tool": "TRANSFER_FUNDS",
+        "amount": 1000,
+        "recipient_domain": "INTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "NO",
+        "approval_token": "YES"
+      },
+      "expected_violation": "non_admin_no_transfer"
+    },
+    {
+      "name": "Analyst: trying to transfer funds",
+      "input": {
+        "user_role": "ANALYST",
+        "tool": "TRANSFER_FUNDS",
+        "amount": 500,
+        "recipient_domain": "INTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "NO",
+        "approval_token": "YES"
+      },
+      "expected_violation": "non_admin_no_transfer"
+    },
+    {
+      "name": "Admin: transfer without approval token",
+      "input": {
+        "user_role": "ADMIN",
+        "tool": "TRANSFER_FUNDS",
+        "amount": 3000,
+        "recipient_domain": "INTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "NO",
+        "approval_token": "NO"
+      },
+      "expected_violation": "transfer_requires_approval"
+    },
+    {
+      "name": "Admin: transfer over limit",
+      "input": {
+        "user_role": "ADMIN",
+        "tool": "TRANSFER_FUNDS",
+        "amount": 10000,
+        "recipient_domain": "INTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "NO",
+        "approval_token": "YES"
+      },
+      "expected_violation": "admin_transfer_limit"
+    },
+    {
+      "name": "Admin: external email with PII",
+      "input": {
+        "user_role": "ADMIN",
+        "tool": "SEND_EMAIL",
+        "amount": 0,
+        "recipient_domain": "EXTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "YES",
+        "approval_token": "NO"
+      },
+      "expected_violation": "no_external_email_with_pii"
+    },
+    {
+      "name": "User: external email with PII",
+      "input": {
+        "user_role": "USER",
+        "tool": "SEND_EMAIL",
+        "amount": 0,
+        "recipient_domain": "EXTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "YES",
+        "approval_token": "NO"
+      },
+      "expected_violation": "no_external_email_with_pii"
+    },
+    {
+      "name": "Admin: query secrets table",
+      "input": {
+        "user_role": "ADMIN",
+        "tool": "QUERY_DB",
+        "amount": 0,
+        "recipient_domain": "INTERNAL",
+        "db_table": "SECRETS",
+        "pii_present": "NO",
+        "approval_token": "NO"
+      },
+      "expected_violation": "no_secrets_table_queries"
+    },
+    {
+      "name": "User: query secrets table",
+      "input": {
+        "user_role": "USER",
+        "tool": "QUERY_DB",
+        "amount": 0,
+        "recipient_domain": "INTERNAL",
+        "db_table": "SECRETS",
+        "pii_present": "NO",
+        "approval_token": "NO"
+      },
+      "expected_violation": "no_secrets_table_queries"
+    },
+    {
+      "name": "Admin: delete record operation",
+      "input": {
+        "user_role": "ADMIN",
+        "tool": "DELETE_RECORD",
+        "amount": 0,
+        "recipient_domain": "INTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "NO",
+        "approval_token": "YES"
+      },
+      "expected_violation": "no_delete_record_tool"
+    },
+    {
+      "name": "User: delete record operation",
+      "input": {
+        "user_role": "USER",
+        "tool": "DELETE_RECORD",
+        "amount": 0,
+        "recipient_domain": "INTERNAL",
+        "db_table": "CUSTOMERS",
+        "pii_present": "NO",
+        "approval_token": "NO"
+      },
+      "expected_violation": "no_delete_record_tool"
+    }
+  ]
+}

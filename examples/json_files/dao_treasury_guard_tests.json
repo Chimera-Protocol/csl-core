@@ -1,0 +1,184 @@
+{
+  "allow_cases": [
+    {
+      "name": "Low reputation: small internal transfer",
+      "input": {
+        "transfer_amount": 5000,
+        "total_balance": 1000000,
+        "proposal_id": 10,
+        "approval_count": 1,
+        "proposer_reputation": 50,
+        "proposal_age_hours": 1,
+        "destination_type": "INTERNAL",
+        "action": "TRANSFER"
+      }
+    },
+    {
+      "name": "High reputation: large external transfer with approvals",
+      "input": {
+        "transfer_amount": 100000,
+        "total_balance": 2000000,
+        "proposal_id": 100,
+        "approval_count": 5,
+        "proposer_reputation": 800,
+        "proposal_age_hours": 48,
+        "destination_type": "EXTERNAL",
+        "action": "TRANSFER"
+      }
+    },
+    {
+      "name": "High reputation: bridge transfer with max approval",
+      "input": {
+        "transfer_amount": 50000,
+        "total_balance": 1000000,
+        "proposal_id": 200,
+        "approval_count": 7,
+        "proposer_reputation": 900,
+        "proposal_age_hours": 72,
+        "destination_type": "BRIDGE",
+        "action": "TRANSFER"
+      }
+    },
+    {
+      "name": "Emergency action with unanimous approval",
+      "input": {
+        "transfer_amount": 500000,
+        "total_balance": 1000000,
+        "proposal_id": 999,
+        "approval_count": 10,
+        "proposer_reputation": 900,
+        "proposal_age_hours": 1,
+        "destination_type": "EXTERNAL",
+        "action": "EMERGENCY"
+      }
+    }
+  ],
+  "block_cases": [
+    {
+      "name": "Low reputation: trying external transfer",
+      "input": {
+        "transfer_amount": 5000,
+        "total_balance": 1000000,
+        "proposal_id": 1,
+        "approval_count": 5,
+        "proposer_reputation": 50,
+        "proposal_age_hours": 48,
+        "destination_type": "EXTERNAL",
+        "action": "TRANSFER"
+      },
+      "expected_violation": "low_reputation_internal_only"
+    },
+    {
+      "name": "Low reputation: amount over 10K",
+      "input": {
+        "transfer_amount": 15000,
+        "total_balance": 1000000,
+        "proposal_id": 2,
+        "approval_count": 1,
+        "proposer_reputation": 50,
+        "proposal_age_hours": 1,
+        "destination_type": "INTERNAL",
+        "action": "TRANSFER"
+      },
+      "expected_violation": "low_reputation_amount_limit"
+    },
+    {
+      "name": "High reputation external: insufficient approvals",
+      "input": {
+        "transfer_amount": 60000,
+        "total_balance": 1000000,
+        "proposal_id": 3,
+        "approval_count": 3,
+        "proposer_reputation": 800,
+        "proposal_age_hours": 48,
+        "destination_type": "EXTERNAL",
+        "action": "TRANSFER"
+      },
+      "expected_violation": "external_transfer_approval"
+    },
+    {
+      "name": "High reputation external: insufficient timelock",
+      "input": {
+        "transfer_amount": 60000,
+        "total_balance": 1000000,
+        "proposal_id": 4,
+        "approval_count": 5,
+        "proposer_reputation": 800,
+        "proposal_age_hours": 12,
+        "destination_type": "EXTERNAL",
+        "action": "TRANSFER"
+      },
+      "expected_violation": "external_transfer_timelock"
+    },
+    {
+      "name": "Bridge transfer: insufficient approvals",
+      "input": {
+        "transfer_amount": 50000,
+        "total_balance": 1000000,
+        "proposal_id": 5,
+        "approval_count": 5,
+        "proposer_reputation": 900,
+        "proposal_age_hours": 72,
+        "destination_type": "BRIDGE",
+        "action": "TRANSFER"
+      },
+      "expected_violation": "bridge_transfer_max_approval"
+    },
+    {
+      "name": "Bridge transfer: insufficient timelock",
+      "input": {
+        "transfer_amount": 50000,
+        "total_balance": 1000000,
+        "proposal_id": 4,
+        "approval_count": 7,
+        "proposer_reputation": 700,
+        "proposal_age_hours": 1,
+        "destination_type": "BRIDGE",
+        "action": "TRANSFER"
+      },
+      "expected_violation": "bridge_transfer_timelock"
+    },
+    {
+      "name": "Catastrophic transfer: insufficient approvals",
+      "input": {
+        "transfer_amount": 500000,
+        "total_balance": 1000000,
+        "proposal_id": 7,
+        "approval_count": 2,
+        "proposer_reputation": 900,
+        "proposal_age_hours": 48,
+        "destination_type": "EXTERNAL",
+        "action": "TRANSFER"
+      },
+      "expected_violation": "catastrophic_transfer_protection"
+    },
+    {
+      "name": "Emergency action: insufficient approvals",
+      "input": {
+        "transfer_amount": 100000,
+        "total_balance": 1000000,
+        "proposal_id": 8,
+        "approval_count": 5,
+        "proposer_reputation": 900,
+        "proposal_age_hours": 1,
+        "destination_type": "INTERNAL",
+        "action": "EMERGENCY"
+      },
+      "expected_violation": "emergency_action_unanimous"
+    },
+    {
+      "name": "Missing proposal ID",
+      "input": {
+        "transfer_amount": 1000,
+        "total_balance": 1000000,
+        "proposal_id": 0,
+        "approval_count": 1,
+        "proposer_reputation": 500,
+        "proposal_age_hours": 1,
+        "destination_type": "INTERNAL",
+        "action": "TRANSFER"
+      },
+      "expected_violation": "valid_proposal_required"
+    }
+  ]
+}

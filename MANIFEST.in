@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include CONTRIBUTING.md
+recursive-include chimera_core *.py
+exclude tests/*
+exclude examples/*
+exclude quickstart/*

@@ -1,0 +1,73 @@
+// =============================================================
+// CSL-Core Case Study: Banking Transfer Guard (v0.1)
+// Goal: "Deterministic safety for probabilistic systems."
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+  ENABLE_FORMAL_VERIFICATION: FALSE
+  ENABLE_CAUSAL_INFERENCE: FALSE
+  INTEGRATION: "native"
+}
+
+DOMAIN BankingGuard {
+
+  VARIABLES {
+    action: {"TRANSFER", "WITHDRAW", "DEPOSIT"}
+    amount: 0..100000
+    country: {"TR", "US", "EU", "NK"}
+    is_vip: {"TRUE", "FALSE"}
+    kyc_level: 0..5
+    risk_score: 0..1
+    device_trust: 0..1
+  }
+
+  // -----------------------------------------------------------
+  // 1) Hard sanctions: NK must never appear (fail-closed & clear)
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT no_sanctioned_country {
+  WHEN country == country
+  THEN country MUST NOT BE "NK"
+}
+
+  // -----------------------------------------------------------
+  // 2) Non-VIP transfer hard limit
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT transfer_limit_non_vip {
+    WHEN action == "TRANSFER" AND is_vip == "FALSE"
+    THEN amount <= 1000
+  }
+
+  // -----------------------------------------------------------
+  // 3) VIP transfer soft(er) limit
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT transfer_limit_vip {
+    WHEN action == "TRANSFER" AND is_vip == "TRUE"
+    THEN amount <= 10000
+  }
+
+  // -----------------------------------------------------------
+  // 4) Risk ceiling for transfers (blocks high-risk outputs)
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT risk_ceiling_for_transfer {
+    WHEN action == "TRANSFER"
+    THEN risk_score <= 0.8
+  }
+
+  // -----------------------------------------------------------
+  // 5) Device trust requirement for medium+ transfers
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT device_trust_for_medium_transfer {
+    WHEN action == "TRANSFER" AND amount > 300
+    THEN device_trust >= 0.7
+  }
+
+  // -----------------------------------------------------------
+  // 6) KYC for larger withdrawals
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT kyc_for_large_withdraw {
+    WHEN action == "WITHDRAW" AND amount > 500
+    THEN kyc_level >= 2
+  }
+}

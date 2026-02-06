@@ -1,0 +1,90 @@
+[build-system]
+
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "csl-core"
+dynamic = ["version"]
+description = "CSL-Core: Deterministic Safety Layer for Probabilistic AI Systems"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+keywords = ["ai-safety", "formal-verification", "langchain", "policy-engine", "z3"]
+
+authors = [
+    {name = "Aytug Akarlar", email = "akarlaraytu@gmail.com"},
+]
+maintainers = [
+    {name = "Chimera Team", email = "akarlaraytu@gmail.com"},
+]
+
+# BAĞIMLILIKLAR
+dependencies = [
+    "z3-solver>=4.12.0",
+    "rich>=13.0.0",
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+langchain = [
+    "langchain-core>=0.1.0",
+    "pydantic>=2.0.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "ruff",
+    "black",
+    "mypy",
+    "langchain-core>=0.1.0",
+    "pydantic>=2.0.0",
+]
+
+# LİNKLERİNİ GÜNCELLE
+[project.urls]
+Homepage = "https://github.com/akarlaraytu/csl-core"
+Documentation = "https://github.com/akarlaraytu/csl-core/tree/main/docs"
+Repository = "https://github.com/akarlaraytu/csl-core"
+Issues = "https://github.com/akarlaraytu/csl-core/issues"
+
+[project.scripts]
+cslcore = "chimera_core.cli:main"
+
+# --- SETUPTOOLS CONFIGURATION ---
+
+[tool.setuptools.dynamic]
+version = {attr = "chimera_core.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["chimera_core*"]
+exclude = ["tests*", "docs*", "examples*", "quickstart*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.csl", "*.json", "*.md"]
+
+# --- DEV TOOLS ---
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --cov=chimera_core --cov-report=term-missing"
