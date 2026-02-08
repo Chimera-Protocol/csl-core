@@ -14,7 +14,7 @@ from rich import box
 from . import __version__
 from .language.compiler import CSLCompiler, CompilationError
 from .language.parser import parse_csl_file
-from .verification.verifier import LogicVerifier
+from .engines.z3_engine import LogicVerifier
 from .runtime import ChimeraGuard, ChimeraError, RuntimeConfig
 from .audit.visualizer import RuntimeVisualizer
 

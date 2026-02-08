@@ -29,7 +29,7 @@ import z3
 from dataclasses import dataclass
 from typing import List, Dict, Tuple, Any, Optional, Set, Union, Iterable
 
-from ..language.ast import (
+from chimera_core.language.ast import (
     Constitution, VariableDeclaration, Constraint, Expression,
     BinaryOp, UnaryOp, Literal, Variable, MemberAccess, FunctionCall,
     LogicalOperator, ComparisonOperator, ArithmeticOperator,

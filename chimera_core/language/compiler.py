@@ -24,8 +24,8 @@ from .ast import (
 
 # Core Dependencies
 from .validator import CSLValidator, ValidationError
-from ..verification.verifier import LogicVerifier
-from ..verification.suggestion import SuggestionEngine
+from chimera_core.engines.z3_engine import LogicVerifier
+from chimera_core.engines.z3_engine import SuggestionEngine
 
 
 # ============================================================================

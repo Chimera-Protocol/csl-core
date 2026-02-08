@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from chimera_core.language.parser import parse_csl_file
-from chimera_core.verification.verifier import LogicVerifier
+from chimera_core.engines.z3_engine import LogicVerifier
 
 
 def test_verifier_passes_on_agent_tool_guard(agent_tool_guard_policy_path):
