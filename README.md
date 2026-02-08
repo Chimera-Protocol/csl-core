@@ -3,7 +3,7 @@
 > **"Solidity for AI Policies"** — Deterministic safety for probabilistic AI systems
 
 [![PyPI version](https://img.shields.io/pypi/v/csl-core?color=blue)](https://pypi.org/project/csl-core/)
-[![Downloads](https://img.shields.io/pypi/dm/csl-core?color=green&label=downloads)](https://pypi.org/project/csl-core/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/csl-core?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/csl-core)
 [![Python](https://img.shields.io/pypi/pyversions/csl-core.svg)](https://pypi.org/project/csl-core/)
 [![License](https://img.shields.io/pypi/l/csl-core.svg)](LICENSE)
 [![Z3 Verified](https://img.shields.io/badge/Z3-Formally%20Verified-purple.svg)](https://github.com/Z3Prover/z3)
