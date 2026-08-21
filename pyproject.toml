@@ -50,9 +50,10 @@ dev = [
     "mypy",
     "langchain-core>=0.1.0",
     "pydantic>=2.0.0",
+    "mcp[cli]>=1.2.0,<2.0.0",
 ]
 
-mcp = ["mcp[cli]>=1.2.0"]
+mcp = ["mcp[cli]>=1.2.0,<2.0.0"]
 
 # LİNKLERİNİ GÜNCELLE
 [project.urls]
