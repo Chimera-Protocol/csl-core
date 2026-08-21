@@ -544,7 +544,11 @@ class Configuration(ASTNode):
     # Advanced Settings
     enable_causal_inference: bool = False
     optimize_verification_scope: bool = False
-    
+
+    # Policy identity (for audit trails — which policy, which version, produced this decision)
+    policy_id: Optional[str] = None
+    policy_version: Optional[str] = None
+
     def __repr__(self):
         return f"Config(mode={self.enforcement_mode.value}, logic={self.check_logical_consistency}, model={self.enable_formal_verification})"
 
@@ -559,6 +563,7 @@ class Constitution(ASTNode):
     config: Optional[Configuration] = None
     constraints: List[Constraint] = field(default_factory=list)
     causal_graph: Optional[CausalGraph] = None
+    source_hash: Optional[str] = None  # SHA-256 of the raw CSL source, set by the parser
     
     def get_constraint(self, name: str) -> Optional[Constraint]:
         """Get constraint by name"""

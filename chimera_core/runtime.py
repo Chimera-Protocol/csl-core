@@ -44,7 +44,12 @@ class GuardResult:
     allowed: bool
     violations: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+    # Rule names whose WHEN condition matched, in evaluation order — this is NOT
+    # the same as "rules that were violated". A rule can trigger and still be
+    # compliant. Use violated_rule_ids for the block reason / audit trail.
     triggered_rule_ids: List[str] = field(default_factory=list)
+    # Rule names that actually produced a BLOCK-level violation, in evaluation order.
+    violated_rule_ids: List[str] = field(default_factory=list)
     latency_ms: float = 0.0
 
     # Optional metadata (forward-compatible with future packaging/versioning)
@@ -113,6 +118,7 @@ class ChimeraGuard:
         violations: List[str] = []
         warnings: List[str] = []
         triggered: List[str] = []
+        violated: List[str] = []
     
         # Track which constraint actually produced a BLOCK-level violation (most actionable)
         last_blocking_constraint: Optional[str] = None
@@ -132,6 +138,7 @@ class ChimeraGuard:
                 )
                 if blocked:
                     last_blocking_constraint = constraint.name
+                    violated.append(constraint.name)
                 if self._should_hard_stop(constraint, violations):
                     break
                 continue
@@ -145,6 +152,7 @@ class ChimeraGuard:
                 )
                 if blocked:
                     last_blocking_constraint = constraint.name
+                    violated.append(constraint.name)
                 if self._should_hard_stop(constraint, violations):
                     break
                 continue
@@ -171,6 +179,7 @@ class ChimeraGuard:
                 if missing_blocked:
                     action_eval_failed = True
                     last_blocking_constraint = constraint.name
+                    violated.append(constraint.name)
                     is_compliant = False
                 else:
                     is_compliant = self._check_compliance(actual_val, expected_val, constraint.modal_operator)
@@ -186,6 +195,7 @@ class ChimeraGuard:
                 )
                 if blocked:
                     last_blocking_constraint = constraint.name
+                    violated.append(constraint.name)
     
             except Exception as e:
                 action_eval_failed = True
@@ -198,6 +208,7 @@ class ChimeraGuard:
                 )
                 if blocked:
                     last_blocking_constraint = constraint.name
+                    violated.append(constraint.name)
     
             # If action evaluation failed, do NOT emit a second, synthetic "Violation ..." line.
             if action_eval_failed:
@@ -218,6 +229,7 @@ class ChimeraGuard:
             if constraint.enforcement_mode == EnforcementMode.BLOCK:
                 violations.append(msg)
                 last_blocking_constraint = constraint.name
+                violated.append(constraint.name)
                 if (not self.config.collect_all_violations) and (not self.config.dry_run):
                     break
             elif constraint.enforcement_mode == EnforcementMode.WARN:
@@ -235,6 +247,7 @@ class ChimeraGuard:
             violations=violations,
             warnings=warnings,
             triggered_rule_ids=triggered,
+            violated_rule_ids=violated,
             latency_ms=float(latency),
             domain_name=self.domain_name,
             enforcement=("DRY_RUN" if self.config.dry_run else "ACTIVE"),

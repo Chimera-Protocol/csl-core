@@ -37,6 +37,10 @@ The configuration block controls the behavior of the CSL Compiler and Runtime Gu
 | `ENABLE_FORMAL_VERIFICATION` | Bool | `TRUE`, `FALSE` | `FALSE` | (Enterprise) Enable TLA+ engine. |
 | `ENABLE_CAUSAL_INFERENCE` | Bool | `TRUE`, `FALSE` | `FALSE` | (Enterprise) Enable Causal Inference engine. |
 | `INTEGRATION` | String | `"native"`, `"langchain"` | `"native"` | Integration context metadata. |
+| `POLICY_ID` | String | any string | `null` | Stable identity for this policy, independent of the domain name. Stamped onto every `GuardResult` for audit trails. |
+| `POLICY_VERSION` | String | any string | `null` | Version of this policy's rules (e.g. `"1.2.0"`). Bump it whenever the policy semantics change. Stamped onto every `GuardResult`. |
+
+`POLICY_ID` and `POLICY_VERSION` are optional and independent of `policy_hash` (which is always computed automatically from the compiled source). Use `policy_hash` to prove *exactly which bytes* produced a decision; use `POLICY_ID`/`POLICY_VERSION` for a human-readable identity across policy revisions.
 
 ---
 

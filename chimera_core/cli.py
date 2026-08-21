@@ -171,6 +171,8 @@ def _result_to_json(result: Any, *, context: Dict[str, Any], compiled: Any) -> D
         "context": context,
         "violations": [],
         "warnings": [],
+        "triggered_rule_ids": list(getattr(result, "triggered_rule_ids", None) or []),
+        "violated_rule_ids": list(getattr(result, "violated_rule_ids", None) or []),
     }
 
     # violations / warnings: try dict-like, dataclass, or str fallback

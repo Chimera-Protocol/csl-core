@@ -61,6 +61,8 @@ DOMAIN MyGuard {
 }
 ```
 
+`WHEN` conditions support `AND` / `OR` for compound rules, e.g. `WHEN action == "TRANSFER" AND user_tier == "BASIC"` — this is what lets a policy be proportional (block writes without blocking reads) instead of an all-or-nothing gate. Full grammar in [`docs/syntax-spec.md`](docs/syntax-spec.md).
+
 ### 2. Verify & Test (CLI)
 
 ```bash
@@ -414,7 +416,13 @@ We welcome contributions! Start with [`good first issue`](https://github.com/Chi
 
 ## License
 
-**Apache 2.0** (open-core model). The complete language, compiler, Z3 verifier, runtime, CLI, MCP server, and all examples are open-source. See [LICENSE](LICENSE).
+**Apache 2.0**. CSL-Core is intentionally open: the policy language, compiler, Z3 verifier, CLI, MCP server, and all examples are free for any use — commercial, research, or personal. See [LICENSE](LICENSE).
+
+This is a deliberate open-core posture. The policy DSL stays open so engineers, researchers, and the broader community can write, share, and verify policies without friction. The commercial layer (Chimera Runtime — production enforcement engine, multi-tenant dashboard, audit infrastructure) is licensed separately.
+
+**Trademarks** — `Chimera Protocol`, `CSL`, and `AgentScan` are trademarks of Chimera Protocol. Apache 2.0 grants you rights to the code; trademarks are reserved.
+
+For commercial Runtime licensing or partnership inquiries: aytug@chimera-protocol.com
 
 ---
 

@@ -116,12 +116,17 @@ result: GuardResult = guard.verify(context: Dict[str, Any])
 @dataclass
 class GuardResult:
     allowed: bool
-    violations: List[str]          # Constraint names that fired
+    violations: List[str]
     warnings: List[str]
-    triggered_rule_ids: List[str]
+    triggered_rule_ids: List[str]  # Rules whose WHEN condition matched (not necessarily violated)
+    violated_rule_ids: List[str]   # Rules that actually produced a BLOCK violation — use this for audit/block-reason
     latency_ms: float
     domain_name: Optional[str]
-    policy_hash: Optional[str]
+    policy_name: Optional[str]     # Defaults to domain_name
+    policy_id: Optional[str]       # From CONFIG.POLICY_ID, if set
+    policy_version: Optional[str]  # From CONFIG.POLICY_VERSION, if set
+    policy_hash: Optional[str]     # SHA-256 of the compiled policy's source text
+    engine_version: Optional[str]
     enforcement: str               # "ACTIVE" | "DRY_RUN"
 ```
 

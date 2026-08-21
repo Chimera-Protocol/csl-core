@@ -181,8 +181,11 @@ def _format_guard_result(result: GuardResult) -> str:
         for w in result.warnings:
             lines.append(f"- {w}")
 
+    if result.violated_rule_ids:
+        lines.append(f"\n**Violated rules:** `{'`, `'.join(result.violated_rule_ids)}`")
+
     if result.triggered_rule_ids:
-        lines.append(f"\n**Triggered rules:** `{'`, `'.join(result.triggered_rule_ids)}`")
+        lines.append(f"\n**Triggered rules (condition matched, not necessarily violated):** `{'`, `'.join(result.triggered_rule_ids)}`")
 
     lines.append(f"\n**Latency:** {result.latency_ms:.3f}ms")
 

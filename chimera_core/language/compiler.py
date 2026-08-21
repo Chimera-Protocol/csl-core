@@ -127,7 +127,14 @@ class CompiledConstitution:
     constraints: List[CompiledConstraint]
     config: Any = None
     variable_domains: Dict[str, str] = field(default_factory=dict)
-    
+
+    # Audit metadata
+    policy_name: Optional[str] = None
+    policy_hash: Optional[str] = None
+    policy_id: Optional[str] = None
+    policy_version: Optional[str] = None
+    engine_version: Optional[str] = None
+
     def save(self, filepath: str):
         with open(filepath, 'wb') as f: pickle.dump(self, f)
         
@@ -236,11 +243,18 @@ class CSLCompiler:
 
         print("✅ OK")
         
+        from .. import __version__ as engine_version
+
         return CompiledConstitution(
             domain_name=domain_name,
             constraints=compiled_constraints,
             config=constitution.config,
-            variable_domains=var_domains
+            variable_domains=var_domains,
+            policy_name=domain_name,
+            policy_hash=constitution.source_hash,
+            policy_id=constitution.config.policy_id if constitution.config else None,
+            policy_version=constitution.config.policy_version if constitution.config else None,
+            engine_version=engine_version,
         )
 
     def _check_enterprise_features(self, constitution: Constitution):

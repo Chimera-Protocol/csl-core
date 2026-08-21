@@ -7,6 +7,7 @@ V0.1: Regex-based parser (simple but functional)
 V1.0: ANTLR/Lark parser (robust, better error messages)
 """
 
+import hashlib
 import re
 from typing import List, Optional, Tuple, Dict, Any
 from dataclasses import dataclass
@@ -100,11 +101,11 @@ class Tokenizer:
     KEYWORDS = {
         
     # Config Keys
-    'CONFIG', 'ENFORCEMENT_MODE', 'BLOCK', 'WARN', 'LOG', 
+    'CONFIG', 'ENFORCEMENT_MODE', 'BLOCK', 'WARN', 'LOG',
     'CHECK_LOGICAL_CONSISTENCY',  # Z3 (Core)
     'ENABLE_FORMAL_VERIFICATION', # TLA+ (Enterprise)
     'ENABLE_CAUSAL_INFERENCE', 'OPTIMIZE_VERIFICATION_SCOPE',
-    'INTEGRATION',
+    'INTEGRATION', 'POLICY_ID', 'POLICY_VERSION',
     
     # Domain Elements
     'DOMAIN', 'VARIABLES', 'CAUSAL_GRAPH', 'STRUCTURAL_EQUATIONS', 'INVARIANTS', 'LIVENESS', 
@@ -246,7 +247,9 @@ class CSLParser:
         
         try:
             # Parse constitution
-            return self._parse_constitution()
+            constitution = self._parse_constitution()
+            constitution.source_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            return constitution
         except RecursionError:
             # ROBUSTNESS FIX: Catch stack overflow and convert to safe ParseError
             # Fix: Line/Column bilgisini current_token üzerinden alıyoruz.
@@ -430,6 +433,8 @@ class CSLParser:
             check_logical_consistency: true   // Z3 (Core - Default: True)
             enable_formal_verification: false // TLA+ (Enterprise - Default: False)
             enable_causal_inference: false    // Causal (Default: False)
+            policy_id: "payments.transfer-guard"   // Optional — stable identity for audit trails
+            policy_version: "1.2.0"                // Optional — bump on every policy change
         }
         """
         self._expect('KEYWORD', 'CONFIG')
@@ -480,7 +485,16 @@ class CSLParser:
             elif self._match('KEYWORD', 'OPTIMIZE_VERIFICATION_SCOPE'):
                 self._advance(); self._expect('DELIMITER', ':')
                 config.optimize_verification_scope = self._parse_boolean()
-            
+
+            # 7. Policy identity (audit trail)
+            elif self._match('KEYWORD', 'POLICY_ID'):
+                self._advance(); self._expect('DELIMITER', ':')
+                config.policy_id = self._expect('STRING').value.strip('"')
+
+            elif self._match('KEYWORD', 'POLICY_VERSION'):
+                self._advance(); self._expect('DELIMITER', ':')
+                config.policy_version = self._expect('STRING').value.strip('"')
+
             else:
                 # Forward Compatibility
                 self._advance()
