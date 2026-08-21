@@ -8,7 +8,7 @@ Deterministic safety layer for probabilistic models:
 
 from __future__ import annotations
 
-__version__ = "0.4.2"
+__version__ = "0.5.0"
 
 # --- 1. Core Runtime (Lightweight) ---
 from .runtime import ChimeraGuard, ChimeraError, GuardResult, RuntimeConfig
