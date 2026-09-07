@@ -95,7 +95,7 @@ print(result.allowed)  # False
 
 ## Benchmark: Adversarial Attack Resistance
 
-We tested prompt-based safety rules vs CSL-Core enforcement across 4 frontier LLMs with 22 adversarial attacks and 15 legitimate operations:
+We tested prompt-based safety rules vs CSL-Core enforcement across 4 frontier LLMs with 22 adversarial attacks and 15 legitimate operations (run 2026-02-18, model versions as of that date — re-run pending against current models):
 
 | Approach | Attacks Blocked | Bypass Rate | Legit Ops Passed | Latency |
 |----------|----------------|-------------|------------------|---------|
@@ -103,7 +103,9 @@ We tested prompt-based safety rules vs CSL-Core enforcement across 4 frontier LL
 | GPT-4o (prompt rules) | 15/22 (68%) | 32% | 15/15 (100%) | ~620ms |
 | Claude Sonnet 4 (prompt rules) | 19/22 (86%) | 14% | 15/15 (100%) | ~480ms |
 | Gemini 2.0 Flash (prompt rules) | 11/22 (50%) | 50% | 15/15 (100%) | ~410ms |
-| **CSL-Core (deterministic)** | **22/22 (100%)** | **0%** | **15/15 (100%)** | **~0.84ms** |
+| **CSL-Core (deterministic)** | **22/22 (100%)** | **0%** | **15/15 (100%)** | **~0.78ms (median)** |
+
+CSL-Core's own runtime hot path (`ChimeraGuard.verify()`, no compilation) measured in isolation is sub-0.1ms even at 40 compiled rules — see [`paper/PAPER_FACTS.md`](paper/PAPER_FACTS.md#64-runtime-enforcement-latency-e3--newly-measured-this-session-real) for the full methodology and per-size breakdown.
 
 
 **Why 100%?** Enforcement happens outside the model. Prompt injection is irrelevant because there's nothing to inject against. Attack categories: direct instruction override, role-play jailbreaks, encoding tricks, multi-turn escalation, tool-name spoofing, and more.

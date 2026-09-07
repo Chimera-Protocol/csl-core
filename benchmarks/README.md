@@ -14,7 +14,7 @@ Systematic evaluation of frontier LLMs as policy enforcement layers, with CSL-Co
 | Gemini 2.0 Flash | 11/22 (50%) | 15/15 (100%) |
 | CSL-Core | 22/22 (100%) | 15/15 (100%) |
 
-3 universal bypasses defeated all 4 LLMs. CSL-Core blocked all 22 attacks with sub-millisecond latency (~0.84ms avg).
+3 universal bypasses defeated all 4 LLMs. CSL-Core blocked all 22 attacks; latency across those 22 calls has a median of ~0.78ms (mean 4.37ms, skewed by one 78ms outlier — see raw `benchmark_results.json`).
 
 ## Files
 
