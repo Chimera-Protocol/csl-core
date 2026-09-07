@@ -518,24 +518,34 @@ class TLCRunner:
         if parser.time_ms == 0:
             parser.time_ms = elapsed_ms
 
-        # ── Non-zero exit code: treat as error only if there's a parse error ───
-        # TLC exit codes: 0=success, 10=violation, 11=deadlock, 12=liveness,
-        # 150=parse/semantic error. We rely on structured output for violations.
-        if proc.returncode == 150:
-            # Semantic / parse error in generated TLA+
+        # ── Exit code handling — fail closed on anything unexpected ────────
+        # TLC exit codes: 0=success (no violations), 10=safety violation,
+        # 11=deadlock, 12=liveness violation, 150=parse/semantic error,
+        # 151=evaluation error (e.g. an unsupported construct like a real
+        # number literal — "TLC can't handle real numbers." is reported this
+        # way, not as a 150). Previously only 150 was treated as an error and
+        # every other non-(10,11,12) code — including 151 — fell through to
+        # "no violations parsed => success", meaning a spec TLC could not
+        # actually evaluate was silently reported as verified-safe. Fail
+        # closed instead: only exit code 0 (or 10/11/12, handled via
+        # parser.violations below) counts as TLC having actually run to
+        # completion; every other code is an error, with the raw TLC output
+        # attached so the real reason is visible.
+        if proc.returncode not in (0, 10, 11, 12):
             return TLCResult(
                 success=False,
                 error=(
-                    f"TLC reported a semantic error in the generated TLA+ spec. "
-                    f"Exit code: {proc.returncode}"
+                    f"TLC did not complete verification (exit code {proc.returncode}). "
+                    f"This means the spec could NOT be checked — treat as unverified, "
+                    f"not as verified-safe. See tlc_output for TLC's own explanation."
                 ),
                 tlc_output=raw_output,
                 time_ms=elapsed_ms,
                 used_real_tlc=True,
             )
 
-        # If no violations were found and no parse error, mark success
-        if not parser.violations and proc.returncode not in (10, 11, 12):
+        # If no violations were found and TLC reported clean completion, mark success
+        if not parser.violations and proc.returncode == 0:
             parser.success = True
 
         return TLCResult(
@@ -579,6 +589,10 @@ class TLCRunner:
             "-jar", str(jar),
             "-tool",            # structured output format
             "-checkpoint", "0", # no checkpoint files
+            "-continue",        # keep checking after an invariant violation instead of
+                                 # stopping at the first one (TLC's own default). Without
+                                 # this, a policy with N independently-violable invariants
+                                 # reports exactly 1 and TLC never checks the other N-1.
             "-workers", str(self._workers),
             "-config", str(cfg_path.name),
             str(tla_path.name),

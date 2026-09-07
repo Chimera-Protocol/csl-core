@@ -22,7 +22,7 @@ from chimera_core.language.ast import (
     Constitution, Configuration, Domain, VariableDeclaration,
     Constraint, ConstraintType, ConditionClause, ActionClause,
     TemporalOperator, ModalOperator, EnforcementMode,
-    Literal, Variable, BinaryOp, ComparisonOperator,
+    Literal, Variable, BinaryOp, ComparisonOperator, ArithmeticOperator,
 )
 
 
@@ -490,6 +490,71 @@ class TestTLCEndToEnd:
         tla, cfg = spec.write(tmp_path)
         result = self.runner.run(tla, cfg, timeout=30)
         assert result.success is True
+
+    def test_all_violations_reported_not_just_the_first(self, tmp_path):
+        """
+        Regression test for a real bug: TLC stops at the first invariant
+        violation by default. Without -continue on the command line, a
+        policy with 2 independently-violable rules would report only 1
+        violation and never check the second at all. With 2 independent
+        variables each free to range over their own domain, both rules
+        below are violable, and both must show up in result.violations.
+        """
+        decls = [
+            VariableDeclaration(name="role", domain='{"ADMIN", "USER"}'),
+            VariableDeclaration(name="tool", domain='{"READ_DB", "TRANSFER_FUNDS"}'),
+            VariableDeclaration(name="env", domain='{"dev", "production"}'),
+        ]
+        c1 = _make_const(
+            "user_no_transfer",
+            _eq("role", "USER"),
+            "tool", ModalOperator.MUST_NOT_BE, _lit("TRANSFER_FUNDS"),
+        )
+        c2 = _make_always_const("no_prod", "env", ModalOperator.MUST_NOT_BE, _lit("production"))
+        con = _make_constitution("MultiViolationPolicy", decls, [c1, c2])
+        spec = self._build_spec(con)
+        tla, cfg = spec.write(tmp_path)
+        result = self.runner.run(tla, cfg, timeout=30)
+        assert result.success is False
+        inv_names = [v.invariant for v in result.violations]
+        assert any("user_no_transfer" in n for n in inv_names)
+        assert any("no_prod" in n for n in inv_names)
+
+    def test_unsupported_construct_reported_as_failure_not_silent_success(self, tmp_path):
+        """
+        Regression test for a real bug: TLC exits with code 151 (not 150)
+        when it hits a construct it can't evaluate (e.g. a real-number
+        literal, since the generated spec only EXTENDS Integers). The old
+        code only special-cased exit code 150 and otherwise fell back to
+        "no violations parsed => success", so a spec TLC never actually
+        checked was silently reported as verified-safe. It must instead be
+        reported as a failure with a real error message.
+        """
+        decls = [
+            VariableDeclaration(name="amount", domain="0..100"),
+        ]
+        # amount > (amount * 0.1) — a real-number literal TLC's Integers-only
+        # spec cannot evaluate.
+        cond = BinaryOp(
+            left=Variable(name="amount"),
+            operator=ComparisonOperator.GT,
+            right=BinaryOp(
+                left=Variable(name="amount"),
+                operator=ArithmeticOperator.MUL,
+                right=_lit(0.1, "float"),
+            ),
+        )
+        c = _make_const(
+            "needs_real_arithmetic", cond,
+            "amount", ModalOperator.LTE, _lit(100, "int"),
+        )
+        con = _make_constitution("RealNumberPolicy", decls, [c])
+        spec = self._build_spec(con)
+        tla, cfg = spec.write(tmp_path)
+        result = self.runner.run(tla, cfg, timeout=30)
+        assert result.success is False
+        assert result.error  # must explain why, not just silently fail
+        assert not result.violations  # TLC never got far enough to find any
 
 
 # ═════════════════════════════════════════════════════════════════════════════

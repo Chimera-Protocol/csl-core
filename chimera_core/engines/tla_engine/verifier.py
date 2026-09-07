@@ -383,9 +383,21 @@ def _tlc_result_to_anim_results(
                 counterexample=trace_states if trace_states else None,
             ))
         else:
+            # No violation recorded for this constraint. NOTE: this function
+            # runs even when TLC failed to complete (e.g. an unsupported
+            # construct) — in that case tlc_result.violations is empty not
+            # because the constraint holds, but because TLC never actually
+            # checked it. TLAVerifier.verify() detects that case via
+            # tlc_result.success/error and overrides the final result with a
+            # VERIFICATION_ERROR before returning, but in animated mode this
+            # function's "HOLDS" is what the live terminal animation shows
+            # first — a real, lower-severity follow-up: the animation can
+            # flash a misleading HOLDS before the correct error prints after
+            # it. The returned/programmatic result (is_valid, issues) is
+            # correct regardless.
             results.append(ConstraintAnimResult(
                 name=c.name,
-                status="HOLDS" if tlc_result.success or not tlc_result.violations else "HOLDS",
+                status="HOLDS",
                 states_checked=tlc_result.states_explored,
                 time_ms=elapsed_ms,
                 counterexample=None,
@@ -506,6 +518,33 @@ class TLAVerifier:
         suggestion_engine = TLASuggestionEngine()
         issues:   List[TLAIssue]         = []
         analyses: List[ViolationAnalysis] = []
+
+        # ── TLC failed to actually run (e.g. an unsupported construct like a
+        # real-number literal) ─────────────────────────────────────────────
+        # This must be surfaced as an error, not silently treated as "every
+        # constraint holds". A run that TLC could not complete tells us
+        # nothing about whether the policy is safe — per-constraint status
+        # in c_results is meaningless in this case (see _tlc_result_to_anim_
+        # results, which marks unmatched constraints "HOLDS" unconditionally
+        # because it has no other signal to go on).
+        if tlc_raw is not None and (not tlc_raw.success) and (not tlc_raw.violations):
+            issues.append(TLAIssue(
+                kind="VERIFICATION_ERROR",
+                constraint="<all>",
+                message=(
+                    tlc_raw.error
+                    or "TLC did not complete verification and reported no violations "
+                       "or a clear success — treat this policy as unverified."
+                ),
+            ))
+            all_valid = False
+            if self.animate:
+                from rich.console import Console
+                Console().print(
+                    f"[bold red]TLA+ verification did not complete:[/] {issues[-1].message}"
+                )
+            self._emit_certificates(c_results)
+            return all_valid, issues
 
         for r in c_results:
             if r.status == "VIOLATED":
