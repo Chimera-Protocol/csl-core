@@ -15,28 +15,41 @@
 """
 
 import json
+import os
 import time
 import sys
 from datetime import datetime
 
 
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║  API KEYS                                                       ║
+# ║  API KEYS — read from environment, never hardcode real keys here ║
 # ╚══════════════════════════════════════════════════════════════════╝
 
-OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"
-ANTHROPIC_API_KEY = "YOUR_ANTHROPIC_API_KEY"
-GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║  Model Configuration                                            ║
+# ║  Re-run pending (2026-08-21): the four_frontiers benchmark on    ║
+# ║  file was run 2026-02-18 against the models below, which are    ║
+# ║  no longer current. Before re-running, VERIFY each model id      ║
+# ║  against its provider's current model list — do not trust the   ║
+# ║  strings here blindly:                                          ║
+# ║  - Anthropic: current flagship at time of writing is Sonnet 5   ║
+# ║    (model id "claude-sonnet-5" per this session's own runtime    ║
+# ║    info) — updated below.                                        ║
+# ║  - OpenAI / Google: NOT updated here — this script's author     ║
+# ║    cannot verify current exact model id strings for those two   ║
+# ║    providers as of the re-run date; fill in the current         ║
+# ║    flagship + a mid-tier model for each before running.         ║
 # ╚══════════════════════════════════════════════════════════════════╝
 
 MODELS = {
-    "GPT-4.1": {"provider": "openai", "model": "gpt-4.1"},
-    "GPT-4o": {"provider": "openai", "model": "gpt-4o"},
-    "Claude Sonnet 4": {"provider": "anthropic", "model": "claude-sonnet-4-20250514"},
-    "Gemini 2.0 Flash": {"provider": "google", "model": "gemini-2.0-flash"},
+    "GPT-4.1": {"provider": "openai", "model": "gpt-4.1"},  # TODO: verify still current
+    "GPT-4o": {"provider": "openai", "model": "gpt-4o"},  # TODO: verify still current
+    "Claude Sonnet 5": {"provider": "anthropic", "model": "claude-sonnet-5"},
+    "Gemini 2.0 Flash": {"provider": "google", "model": "gemini-2.0-flash"},  # TODO: verify still current
 }
 
 CALL_LOG = []  # Every LLM call gets logged here
@@ -831,15 +844,19 @@ def run():
 
 
 if __name__ == "__main__":
+    # NOTE: this check itself used to be dead code — it compared against
+    # "YOUR_OPENAI_KEY" while the placeholder actually assigned above was
+    # "YOUR_OPENAI_API_KEY", so it never matched and never fired. Now that
+    # keys come from the environment (empty string if unset), check for that.
     missing = []
-    if OPENAI_API_KEY == "YOUR_OPENAI_KEY":
+    if not OPENAI_API_KEY:
         missing.append("OPENAI_API_KEY")
-    if ANTHROPIC_API_KEY == "YOUR_ANTHROPIC_KEY":
+    if not ANTHROPIC_API_KEY:
         missing.append("ANTHROPIC_API_KEY")
-    if GOOGLE_API_KEY == "YOUR_GOOGLE_KEY":
+    if not GOOGLE_API_KEY:
         missing.append("GOOGLE_API_KEY")
     if missing:
-        print("❌ Write API keys before run to code")
+        print("❌ Missing API key(s) — set these environment variables before running:")
         for k in missing:
             print(f"   → {k}")
         sys.exit(1)

@@ -4,6 +4,10 @@ __pycache__/
 *$py.class
 *.so
 
+# Local secrets — never commit real API keys
+.env.benchmark
+*.env.local
+
 # Distribution / packaging
 .Python
 build/
