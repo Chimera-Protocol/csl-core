@@ -143,6 +143,14 @@ def _extract_path_check(params: Dict[str, Any], config: OpenClawConfig) -> str:
       2. Fallback: scan all string values starting with "/" (absolute paths)
 
     Tool-agnostic. Whether this result matters → .csl decides.
+
+    When no path-like field is found at all, this is genuinely ambiguous: it might not be
+    a filesystem operation, or it might be one using a param name this extractor doesn't
+    recognize. config.strict_unrecognized_fields (default True) decides which way that
+    ambiguity resolves: "NO" (not in workspace / treat as unsafe) so a policy gating on
+    path_in_workspace fails closed, at the cost of false positives on legitimate calls
+    with nonstandard param names. Set strict_unrecognized_fields=False to restore the
+    previous fail-open "YES" default.
     """
     # Strategy 1: known key names
     for key, value in params.items():
@@ -154,9 +162,9 @@ def _extract_path_check(params: Dict[str, Any], config: OpenClawConfig) -> str:
         if isinstance(value, str) and value.startswith("/"):
             return "YES" if config.is_path_in_workspace(value) else "NO"
 
-    # No path found → not a filesystem operation (from Python's POV)
-    # The .csl policy can still apply rules based on tool name alone
-    return "YES"
+    # No path found: ambiguous (not a filesystem op, or an unrecognized param name).
+    # Fail closed by default; see docstring.
+    return "NO" if config.strict_unrecognized_fields else "YES"
 
 
 def _extract_domain_check(params: Dict[str, Any], config: OpenClawConfig) -> str:
@@ -167,6 +175,12 @@ def _extract_domain_check(params: Dict[str, Any], config: OpenClawConfig) -> str
       2. Fallback: scan all string values containing "://" or "www."
 
     Tool-agnostic. Whether this result matters → .csl decides.
+
+    Same ambiguity as _extract_path_check when no URL-like field is found: this could be
+    a non-network operation, or a network operation this extractor didn't recognize.
+    config.strict_unrecognized_fields (default True) fails this closed ("NO" / not
+    allowlisted) rather than open, at the cost of false positives on legitimate calls
+    with nonstandard param names.
     """
     # Strategy 1: known key names
     for key, value in params.items():
@@ -178,8 +192,9 @@ def _extract_domain_check(params: Dict[str, Any], config: OpenClawConfig) -> str
         if isinstance(value, str) and ("://" in value or value.startswith("www.")):
             return "YES" if config.is_domain_allowed(value) else "NO"
 
-    # No URL found → not a network operation (from Python's POV)
-    return "YES"
+    # No URL found: ambiguous (not a network op, or an unrecognized param name).
+    # Fail closed by default; see docstring.
+    return "NO" if config.strict_unrecognized_fields else "YES"
 
 
 def _extract_flag(metadata: Dict[str, Any], *keys: str, default: str = "NO") -> str:

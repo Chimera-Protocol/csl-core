@@ -70,6 +70,20 @@ class OpenClawConfig:
     # Log blocked actions to stderr
     log_blocks: bool = True
 
+    # Fail-closed vs fail-open default for the generic extractors in context_mapper.py
+    # (_extract_path_check, _extract_domain_check) when a tool call's params contain no
+    # recognizable path-like or URL-like field. strict=True (default): treat "can't tell"
+    # as "not safe" (path_in_workspace/domain_allowlisted -> "NO"), so an unrecognized
+    # field shape blocks rather than silently passes. strict=False restores the previous
+    # fail-open behavior ("can't tell" -> "YES"), which is more permissive but can let an
+    # integration with nonstandard param names bypass path/domain checks entirely.
+    # Cost of strict=True: an integration whose tool params use field names outside
+    # _PATH_KEYS/_URL_KEYS (and don't match the absolute-path/URL heuristics either) will
+    # get blocked by policies that gate on path_in_workspace/domain_allowlisted, even when
+    # the call was legitimate — false positives, not silent bypasses.
+    # Override: CSL_STRICT_UNRECOGNIZED_FIELDS
+    strict_unrecognized_fields: bool = True
+
     def __post_init__(self):
         """Apply environment variable overrides."""
 
@@ -93,6 +107,11 @@ class OpenClawConfig:
         env_sandbox = os.environ.get("CSL_SANDBOX_ACTIVE", "")
         if env_sandbox:
             self.sandbox_active = env_sandbox.lower() in ("1", "true", "yes")
+
+        # Strict/permissive default for unrecognized path/URL fields
+        env_strict = os.environ.get("CSL_STRICT_UNRECOGNIZED_FIELDS", "")
+        if env_strict:
+            self.strict_unrecognized_fields = env_strict.lower() in ("1", "true", "yes")
 
         # Extra domains from env (comma-separated)
         env_domains = os.environ.get("CSL_DOMAIN_ALLOWLIST", "")
