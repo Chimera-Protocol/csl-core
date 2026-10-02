@@ -22,7 +22,7 @@ Usage:
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict
 import subprocess
 
 try:
@@ -35,7 +35,7 @@ except ImportError:
     print("   Please install it: pip install rich")
     sys.exit(1)
 
-from chimera_core import CSLCompiler, ChimeraGuard, ChimeraError
+from chimera_core import CSLCompiler, ChimeraGuard
 from chimera_core.runtime import RuntimeConfig
 
 console = Console()
@@ -153,7 +153,7 @@ def run_policy_tests(policy_name: str, show_details: bool = False) -> bool:
         guard = load_policy(policy_name)
         console.print("[green]✅ Policy compiled successfully[/green]\n")
     except Exception as e:
-        console.print(f"[red]❌ Failed to compile policy:[/red]")
+        console.print("[red]❌ Failed to compile policy:[/red]")
         console.print(f"[red]{str(e)}[/red]\n")
         return False
     
@@ -172,7 +172,7 @@ def run_policy_tests(policy_name: str, show_details: bool = False) -> bool:
     
     # Results table
     table = Table(
-        title=f"Test Results",
+        title="Test Results",
         box=box.ROUNDED,
         show_header=True,
         header_style="bold cyan",

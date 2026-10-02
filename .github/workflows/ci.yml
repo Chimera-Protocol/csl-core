@@ -64,10 +64,8 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    # Informational only for now: the existing codebase predates this workflow
-    # and has a large backlog of style findings. Tracked as follow-up cleanup
-    # debt rather than blocking merges on unrelated pre-existing files.
-    continue-on-error: true
+    # Blocking: the rule set and the ruff version are pinned in pyproject.toml, and the files frozen
+    # since v0.5.1 are excluded there.
     steps:
       - uses: actions/checkout@v4
 
@@ -82,9 +80,6 @@ jobs:
 
       - name: Ruff check
         run: ruff check .
-
-      - name: Black --check
-        run: black --check .
 
   build:
     name: Build package

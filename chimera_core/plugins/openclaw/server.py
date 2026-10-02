@@ -24,7 +24,6 @@ Protocol (STDIO):
 import argparse
 import json
 import sys
-from typing import Optional
 
 from .guard import OpenClawGuard
 from .config import OpenClawConfig
@@ -113,7 +112,7 @@ def run_http(guard: OpenClawGuard, host: str = "127.0.0.1", port: int = 9100) ->
 
     server = HTTPServer((host, port), Handler)
     print(f"[CSL-Guard] HTTP server listening on {host}:{port}", file=sys.stderr)
-    print(f"[CSL-Guard] POST /evaluate — GET /health", file=sys.stderr)
+    print("[CSL-Guard] POST /evaluate — GET /health", file=sys.stderr)
 
     try:
         server.serve_forever()

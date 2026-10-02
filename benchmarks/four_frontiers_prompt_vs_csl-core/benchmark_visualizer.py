@@ -15,7 +15,6 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from matplotlib.gridspec import GridSpec
 import seaborn as sns
 
@@ -360,10 +359,12 @@ def chart_7_stacked():
 
     for m in ALL_MODELS:
         if m == 'CSL-Core':
-            held.append(TOTAL_ATK); bypassed.append(0)
+            held.append(TOTAL_ATK)
+            bypassed.append(0)
         else:
             bp = R['summary']['bypass_counts'][m]
-            held.append(TOTAL_ATK - bp); bypassed.append(bp)
+            held.append(TOTAL_ATK - bp)
+            bypassed.append(bp)
 
     ax.bar(x, held, 0.5, label='BLOCKED', color=HELD_COLOR, edgecolor='none', alpha=0.9)
     ax.bar(x, bypassed, 0.5, bottom=held, label='BYPASSED', color=BYPASS_COLOR, edgecolor='none', alpha=0.9)
@@ -570,4 +571,4 @@ if __name__ == '__main__':
     chart_9_consistency()
     chart_10_category_bars()
 
-    print(f'\n  All 10 charts saved to ./charts/ (200 DPI, dark theme)')
+    print('\n  All 10 charts saved to ./charts/ (200 DPI, dark theme)')

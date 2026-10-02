@@ -152,8 +152,12 @@ def test_b18_logger_overhead(tmp_path, capsys, monkeypatch):
     ctx = g.map_call("transfer_funds", {"amount": 50}, {})
     plain, logged = [], []
     for _ in range(300):
-        t = time.perf_counter(); g.guard.verify(ctx); plain.append(time.perf_counter() - t)
-        t = time.perf_counter(); g.verify("transfer_funds", {"amount": 50}); logged.append(time.perf_counter() - t)
+        t = time.perf_counter()
+        g.guard.verify(ctx)
+        plain.append(time.perf_counter() - t)
+        t = time.perf_counter()
+        g.verify("transfer_funds", {"amount": 50})
+        logged.append(time.perf_counter() - t)
     overhead_ms = (statistics.median(logged) - statistics.median(plain)) * 1000
     assert overhead_ms < 0.2, overhead_ms
 

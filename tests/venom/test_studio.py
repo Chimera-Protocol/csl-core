@@ -110,7 +110,8 @@ def test_new_policy_bound_to_several_agents(ws):
 
 
 def test_fit_and_replay(ws, capsys):
-    import subprocess, sys
+    import subprocess
+    import sys
     out = subprocess.run([sys.executable, str(HOST_OPS.parent.parent.parent.parent / "scripts/venom_demo_traffic.py"),
                           "--workspace", str(ws.root), "--count", "400", "--seed", "7"], capture_output=True, text=True)
     assert out.returncode == 0 and "calls sent" in out.stdout, out.stdout + out.stderr

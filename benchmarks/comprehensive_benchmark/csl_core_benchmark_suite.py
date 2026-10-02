@@ -22,9 +22,7 @@ import base64
 import traceback
 from datetime import datetime
 from io import BytesIO
-from collections import defaultdict
 from dataclasses import dataclass, field, asdict
-from typing import Any
 
 # ──────────────────────────────────────────────────────────────────────────────
 # IMPORTS & VALIDATION
@@ -35,7 +33,6 @@ try:
     matplotlib.use('Agg')  # Non-interactive backend
     import matplotlib.pyplot as plt
     import matplotlib.patches as mpatches
-    from matplotlib.gridspec import GridSpec
     import numpy as np
     HAS_MATPLOTLIB = True
 except ImportError:
@@ -43,7 +40,7 @@ except ImportError:
     HAS_MATPLOTLIB = False
 
 try:
-    from chimera_core import load_guard, create_guard_from_string, CSLCompiler, GuardResult
+    from chimera_core import create_guard_from_string
     HAS_CSL = True
     verify_policy = None 
 except ImportError as e:
@@ -474,7 +471,7 @@ class BenchmarkEngine:
             for tc in test_cases:
                 try:
                     guard(tc.context)
-                except:
+                except Exception:
                     pass
                 throughput_count += 1
 
@@ -816,7 +813,7 @@ class VisualizationEngine:
         bounds = [-1.5, -0.5, 0.5, 1.5]
         norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N)
 
-        im = ax.imshow(data, cmap=cmap, norm=norm, aspect='auto')
+        ax.imshow(data, cmap=cmap, norm=norm, aspect='auto')
 
         ax.set_xticks(range(max_adv))
         ax.set_xticklabels([f"Adv-{i+1}" for i in range(max_adv)], rotation=45, ha='right', fontsize=9)
@@ -1037,7 +1034,7 @@ class ReportGenerator:
 
     def generate(self, output_path="csl_benchmark_report.html"):
         """Generate the full HTML report."""
-        print(f"\n📄 Generating HTML report...")
+        print("\n📄 Generating HTML report...")
 
         s = self.engine.summary
         timestamp = self.engine.timestamp

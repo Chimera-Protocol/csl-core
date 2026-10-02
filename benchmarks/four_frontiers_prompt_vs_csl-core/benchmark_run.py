@@ -58,7 +58,7 @@ CALL_LOG = []  # Every LLM call gets logged here
 # ║  Provider Setup                                                 ║
 # ╚══════════════════════════════════════════════════════════════════╝
 
-from openai import OpenAI
+from openai import OpenAI  # noqa: E402 (after the environment setup above)
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 try:
@@ -79,10 +79,10 @@ except ImportError:
 # ║  CSL-Core Setup                                                 ║
 # ╚══════════════════════════════════════════════════════════════════╝
 
-from chimera_core.language.parser import parse_csl
-from chimera_core.language.compiler import CSLCompiler
-from chimera_core.runtime import ChimeraGuard, RuntimeConfig
-from chimera_core.engines.z3_engine import LogicVerifier
+from chimera_core.language.parser import parse_csl  # noqa: E402 (after the environment setup above)
+from chimera_core.language.compiler import CSLCompiler  # noqa: E402 (after the environment setup above)
+from chimera_core.runtime import ChimeraGuard, RuntimeConfig  # noqa: E402 (after the environment setup above)
+from chimera_core.engines.z3_engine import LogicVerifier  # noqa: E402 (after the environment setup above)
 
 CSL_POLICY = """
 CONFIG {
@@ -686,7 +686,7 @@ def run():
             if bp > 0:
                 line += f"│ ⚠️ {bp}/3     "
             else:
-                line += f"│    0/3    "
+                line += "│    0/3    "
         csl = "BLOCKED" if not r["csl_allowed"] else "BYPASSED"
         line += f"│ {csl:8} │"
         print(line)
@@ -700,7 +700,7 @@ def run():
     print("  └─────────" + "".join("┴────────────" for _ in model_names) + "┴──────────┘")
 
     # Reliability
-    print(f"\n  RELIABILITY (attack resistance):")
+    print("\n  RELIABILITY (attack resistance):")
     for m in model_names:
         held = len(ATTACKS) - model_bypass_counts[m]
         pct = (held / len(ATTACKS)) * 100
@@ -709,7 +709,7 @@ def run():
     print(f"    {'CSL-Core':20} {'█' * 20} 100% ({len(ATTACKS)}/{len(ATTACKS)})")
 
     # Category breakdown
-    print(f"\n  BYPASS RATE BY CATEGORY:")
+    print("\n  BYPASS RATE BY CATEGORY:")
     categories = sorted(set(a["category"] for a in ATTACKS))
     for cat in categories:
         cat_attacks = [r for r in all_results if r["category"] == cat]
@@ -749,7 +749,7 @@ def run():
     print(score_line)
     print("  └─────────" + "".join("┴────────────" for _ in model_names) + "┴──────────┘")
 
-    print(f"\n  ACCURACY:")
+    print("\n  ACCURACY:")
     for m in model_names:
         pct = (legit_scores[m] / len(LEGITIMATE)) * 100
         bar = "█" * int(pct / 5) + "░" * (20 - int(pct / 5))
@@ -818,7 +818,7 @@ def run():
     }
     with open("benchmark_v5_results.json", "w") as f:
         json.dump(output, f, indent=2)
-    print(f"\n  Full results: benchmark_v5_results.json")
+    print("\n  Full results: benchmark_v5_results.json")
 
     # Save call log
     with open("benchmark_v5_call_log.json", "w") as f:

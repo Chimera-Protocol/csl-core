@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import io
 import time
 
 import pytest
-from rich.console import Console
 
 from chimera_core.venom.render import mapview as M
-from chimera_core.venom.render.theme import THEME
 from chimera_core.venom.render.topo import Sphere, Zoom
 
 from .conftest import HOST_OPS, render, run_cli, scan_fixture

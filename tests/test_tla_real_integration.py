@@ -8,11 +8,8 @@ Tests for real TLC integration:
 
 from __future__ import annotations
 
-import re
 import textwrap
 import pytest
-from pathlib import Path
-from typing import List, Dict, Any
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers to build minimal CSL ASTs without the full parser
@@ -432,7 +429,7 @@ class TestTLCEndToEnd:
     """These tests only run when Java is present and tla2tools.jar can be found/downloaded."""
 
     def setup_method(self):
-        from chimera_core.engines.tla_engine.tlc_runner import TLCRunner, find_jar, ensure_jar
+        from chimera_core.engines.tla_engine.tlc_runner import TLCRunner, ensure_jar
         self.jar = ensure_jar(auto_download=True)
         if self.jar is None:
             pytest.skip("tla2tools.jar not available and could not be downloaded")

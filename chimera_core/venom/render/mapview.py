@@ -28,9 +28,9 @@ from rich.table import Table
 from rich.text import Text
 
 from ..model import Agent, Inventory
-from ..reach import IMPACTS, ReachGraph, build
+from ..reach import ReachGraph, build
 from .topo import AGENT, CHAIN, IMPACT_STYLE, INPUT, Sphere, Then, Topo, ViewCanvas, Zoom
-from .web import Canvas, _branch, _walk
+from .web import Canvas, _walk
 
 RISK_COLOR = {"READ": "#94a3b8", "WRITE": "#fbbf24", "EXTERNAL": "#7dd3fc", "IDENTITY": "#f0abfc",
               "EXEC": "#f87171", "SPEND": "#fb923c", "DESTRUCTIVE": "#f87171", "UNCLASSIFIED": "#e879f9"}

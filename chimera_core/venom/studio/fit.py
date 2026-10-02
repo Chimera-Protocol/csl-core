@@ -13,7 +13,6 @@ import contextlib
 import io
 import json
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from ..analysis.coverage import _covers, suggest, tool_variable

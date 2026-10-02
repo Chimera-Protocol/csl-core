@@ -33,7 +33,6 @@ from chimera_core.language.parser import parse_csl
 from chimera_core.language.compiler import CSLCompiler, CompilationError
 from chimera_core.language.validator import CSLValidator
 from chimera_core.runtime import ChimeraGuard, RuntimeConfig, GuardResult
-from chimera_core.language.ast import TemporalOperator, ModalOperator
 
 # ---------------------------------------------------------------------------
 # Server init
@@ -216,13 +215,13 @@ def _explain_ast(ast) -> str:
                 lines.append(f"- `{v.name}`: `{domain_str}` ({vtype})")
 
     if ast.config:
-        lines.append(f"\n### Configuration")
+        lines.append("\n### Configuration")
         lines.append(f"- Enforcement mode: `{ast.config.enforcement_mode.value}`")
         lines.append(f"- Z3 logical consistency: `{ast.config.check_logical_consistency}`")
         if ast.config.enable_formal_verification:
-            lines.append(f"- TLA+ formal verification: `True`")
+            lines.append("- TLA+ formal verification: `True`")
         if ast.config.enable_causal_inference:
-            lines.append(f"- Causal inference: `True`")
+            lines.append("- Causal inference: `True`")
 
     if ast.constraints:
         lines.append(f"\n### Constraints ({len(ast.constraints)})")
@@ -236,9 +235,9 @@ def _explain_ast(ast) -> str:
             lines.append(f"- Action: `{action_var}` `{modal}` ...")
 
             if temporal == "ALWAYS":
-                lines.append(f"- Behavior: Fires on every input (invariant)")
+                lines.append("- Behavior: Fires on every input (invariant)")
             elif temporal == "WHEN":
-                lines.append(f"- Behavior: Fires conditionally")
+                lines.append("- Behavior: Fires conditionally")
 
     return "\n".join(lines)
 
@@ -637,7 +636,7 @@ def tla_verify(
 
     # State space stats
     if tlc_result:
-        lines.append(f"\n---\n### State Space Exploration\n")
+        lines.append("\n---\n### State Space Exploration\n")
         lines.append(f"- **States explored:** {tlc_result.states_explored:,}")
         lines.append(f"- **Distinct states:** {tlc_result.distinct_states:,}")
         lines.append(f"- **Time:** {tlc_result.time_ms}ms")
@@ -645,7 +644,7 @@ def tla_verify(
         lines.append(f"- **Engine:** {engine}")
 
         if tlc_result.used_real_tlc and tlc_result.tlc_version:
-            lines.append(f"\n### TLC Identity Proof\n")
+            lines.append("\n### TLC Identity Proof\n")
             lines.append(f"- **Version:** `{tlc_result.tlc_version}`")
             if tlc_result.tlc_pid:
                 lines.append(f"- **PID:** `{tlc_result.tlc_pid}`")
@@ -654,7 +653,7 @@ def tla_verify(
 
     # Variable domains
     if spec.domain_info:
-        lines.append(f"\n---\n### Variable Domains\n")
+        lines.append("\n---\n### Variable Domains\n")
         for var in spec.domain_info:
             card = var.get("card", "?")
             lines.append(f"- `{var['name']}`: {var['domain']} (cardinality: {card})")
@@ -704,7 +703,7 @@ def tla_verify(
 
     # Generated TLA+ spec (for transparency)
     if hasattr(spec, "tla_content") and spec.tla_content:
-        lines.append(f"\n---\n### Generated TLA+ Spec\n")
+        lines.append("\n---\n### Generated TLA+ Spec\n")
         lines.append(f"```tla\n{spec.tla_content}\n```\n")
         if hasattr(spec, "cfg_content") and spec.cfg_content:
             lines.append(f"```cfg\n{spec.cfg_content}\n```")
@@ -784,11 +783,11 @@ def universe_info(csl_content: str) -> str:
     lines.append(f"\n**Total state space size:** {total_states:,} states")
 
     if total_states > 1_000_000:
-        lines.append(f"\u26a0\ufe0f Large state space \u2014 TLC may need significant time or predicate abstraction")
+        lines.append("\u26a0\ufe0f Large state space \u2014 TLC may need significant time or predicate abstraction")
     elif total_states > 100_000:
-        lines.append(f"\u26a1 Medium state space \u2014 TLC should handle in <60s")
+        lines.append("\u26a1 Medium state space \u2014 TLC should handle in <60s")
     else:
-        lines.append(f"\u2705 Small state space \u2014 TLC will be fast")
+        lines.append("\u2705 Small state space \u2014 TLC will be fast")
 
     # --- Constraints ---
     lines.append(f"\n---\n### Constraints ({len(ast.constraints)})\n")
@@ -833,11 +832,11 @@ def universe_info(csl_content: str) -> str:
     if unconstrained:
         lines.append(f"- \u26a0\ufe0f **Unconstrained** (not in any rule): {', '.join(f'`{v}`' for v in sorted(unconstrained))}")
     else:
-        lines.append(f"- \u2705 All variables participate in at least one constraint")
+        lines.append("- \u2705 All variables participate in at least one constraint")
 
     # --- State space breakdown ---
     if var_cards:
-        lines.append(f"\n---\n### State Space Breakdown\n")
+        lines.append("\n---\n### State Space Breakdown\n")
         sorted_vars = sorted(var_cards.items(), key=lambda x: x[1], reverse=True)
         for vname, card in sorted_vars:
             bar_len = min(int(math.log2(card + 1) * 3), 40)

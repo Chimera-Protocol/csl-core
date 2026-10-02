@@ -252,7 +252,6 @@ def cmd_formal(args: argparse.Namespace) -> int:
     """
     from .engines.tla_engine import TLAVerifier
     from .engines.tla_engine.tlc_runner import java_available, find_jar
-    from rich.rule import Rule
     from rich.text import Text
 
     policy = args.policy

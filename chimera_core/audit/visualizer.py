@@ -5,7 +5,7 @@ Terminal dashboard for runtime decisions.
 Deterministic, compact, and forward-compatible.
 """
 
-from typing import Dict, Any, List, Iterable, Tuple, Optional
+from typing import Dict, Any, List, Tuple
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel

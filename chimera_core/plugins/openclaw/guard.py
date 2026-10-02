@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from chimera_core.language.compiler import CSLCompiler, CompiledConstitution
+from chimera_core.language.compiler import CSLCompiler
 from chimera_core.runtime import ChimeraError
 
 from ..base import ChimeraPlugin
@@ -98,7 +98,7 @@ class OpenClawGuard(ChimeraPlugin):
         super().__init__(
             constitution=constitution,
             enable_dashboard=enable_dashboard,
-            title=f"CSL-Guard::OpenClaw",
+            title="CSL-Guard::OpenClaw",
             context_mapper=None,  # We override normalize_input directly
         )
 

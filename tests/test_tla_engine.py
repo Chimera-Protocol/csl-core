@@ -21,8 +21,6 @@ from chimera_core.engines.tla_engine.verifier import (
     _parse_domain,
     _cardinality_label,
     _eval,
-    _check_action,
-    _build_invariant,
     _build_state_space,
     TLAVerifier,
     TLAIssue,

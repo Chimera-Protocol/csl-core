@@ -24,9 +24,7 @@ try:
     from rich.console import Console
     from rich.table import Table
     from rich.panel import Panel
-    from rich.text import Text
     from rich import box
-    from rich.status import Status
 except ImportError:
     print("❌ Error: 'rich' library is required. Install: pip install rich")
     sys.exit(1)
@@ -40,10 +38,10 @@ except ImportError:
     sys.exit(1)
 
 # Chimera Core Imports
-from chimera_core.language.parser import parse_csl_file
-from chimera_core.language.compiler import CSLCompiler
-from chimera_core.runtime import ChimeraGuard, ChimeraError
-from chimera_core.plugins.langchain import guard_tools
+from chimera_core.language.parser import parse_csl_file  # noqa: E402 (after the dependency checks above)
+from chimera_core.language.compiler import CSLCompiler  # noqa: E402 (after the dependency checks above)
+from chimera_core.runtime import ChimeraGuard, ChimeraError  # noqa: E402 (after the dependency checks above)
+from chimera_core.plugins.langchain import guard_tools  # noqa: E402 (after the dependency checks above)
 
 # Initialize Console
 console = Console()
