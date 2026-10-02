@@ -14,8 +14,11 @@ from .screen import _n
 
 
 def to_json(inv: Inventory) -> Dict[str, Any]:
+    from ..reach import build, summary
+
     data = inv.to_dict()
     data["coverage"]["ratio"] = inv.coverage.ratio
+    data["reach"] = summary(build(inv))
     return redact.deep(data)
 
 
@@ -86,6 +89,23 @@ def to_markdown(inv: Inventory) -> str:
     out.append("")
     if inv.rules_not_evaluated:
         out += ["Rules not evaluated:"] + [f"- {k}: {v}" for k, v in sorted(inv.rules_not_evaluated.items())] + [""]
+
+    from ..reach import build, describe
+
+    g = build(inv)
+    out += ["## Reach", ""]
+    if not g.chains:
+        out.append("No agent can pass control on to another agent here: no reach chain.")
+    else:
+        top = g.top
+        out.append("Strongest reach chain (" + top.confidence + f", {top.hops} steps): "
+                   + " → ".join(f"**{_esc(g.nodes[n].label)}**" for n in top.nodes))
+        out.append("")
+        out += [f"{i}. {_esc(line)}" for i, line in enumerate(describe(g, top), 1)]
+        more = len(g.chains) - 1
+        if more:
+            out += ["", f"{more} more reach chain{'s' if more != 1 else ''} on this host."]
+    out.append("")
 
     out += ["## Vocabulary drift", ""]
     if not inv.drift:

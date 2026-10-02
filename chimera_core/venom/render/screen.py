@@ -270,6 +270,37 @@ def findings_block(inv: Inventory, width: int, limit: int = 5, report_hint: Opti
     return Group(*lines)
 
 
+def reach_block(inv: Inventory) -> Optional[Group]:
+    """The strongest reach chain, step by step, and how many more there are (the open core shows one)."""
+    from ..reach import build
+
+    g = build(inv)
+    if not g.chains:
+        return None
+    top = g.top
+    head = _section("REACH")
+    for i, n in enumerate(top.nodes):
+        if i:
+            head.append("  →  ", style="muted")
+        node = g.nodes[n]
+        head.append(node.label, style="bold #f0abfc" if node.kind != "impact" else "high")
+    lines = [labeled(head)]
+    for e in top.edges:
+        step = Text(" " * LABEL_WIDTH)
+        step.append("· ", style="#a21caf")
+        step.append(e.evidence, style="muted")
+        lines.append(labeled(step))
+    more = len(g.chains) - 1
+    tail = Text(" " * LABEL_WIDTH)
+    tail.append(f"{top.confidence} · {top.hops} steps", style="muted")
+    if more:
+        tail.append(f" · {more} more reach chain{'s' if more != 1 else ''} on this host", style="muted")
+    tail.append(" · see it spread: ", style="muted")
+    tail.append("cslcore venom map", style="brand")
+    lines.append(labeled(tail))
+    return Group(*lines)
+
+
 def next_step(inv: Inventory) -> Text:
     t = _section("NEXT")
     active = [p for p in inv.policies if p.status == "active"]
@@ -327,7 +358,11 @@ def scan_screen(inv: Inventory, version: str, width: int, compact: bool = False,
                  style="text" if any(counts.values()) else "ok")
         parts.append(labeled(t))
     elif show_findings:
-        parts += [findings_block(inv, width, report_hint=report_hint), Text(), labeled(next_step(inv))]
+        parts += [findings_block(inv, width, report_hint=report_hint), Text()]
+        reach = reach_block(inv)
+        if reach is not None:
+            parts += [reach, Text()]
+        parts.append(labeled(next_step(inv)))
         if report_hint:
             t = _section("REPORT")
             t.append(report_hint, style="text")
