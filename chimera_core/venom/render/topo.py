@@ -51,7 +51,7 @@ class Sphere:
         self.R = min(H, W) * 0.46
 
     def __call__(self, x: float, y: float) -> Tuple[float, float, float]:
-        lon = (x / self.W) * 2 * math.pi + self.angle
+        lon = (x / self.W - 0.5) * 2 * math.pi + self.angle  # the map's centre faces the viewer at angle 0
         lat = (y / self.H - 0.5) * math.pi * 0.85
         cx, cy, cz = math.cos(lat) * math.sin(lon), math.sin(lat), math.cos(lat) * math.cos(lon)
         cy, cz = cy * math.cos(self.tilt) - cz * math.sin(self.tilt), cy * math.sin(self.tilt) + cz * math.cos(self.tilt)
