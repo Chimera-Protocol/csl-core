@@ -50,7 +50,7 @@ def test_reveal_paces_layers_and_finishes(tmp_path):
     while not r.finished(t):
         r.frame(t)
         t += 0.04
-        assert t < 8
+        assert t < 11  # discovery, then the reach map spreads
     text = render(r.frame(t), width=100)
     assert "6 agents" in text and "membership-bot" in text and "discovered" in text
 

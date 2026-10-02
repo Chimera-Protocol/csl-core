@@ -22,6 +22,7 @@ from rich.text import Text
 
 from ..model import Inventory
 from .theme import SEV_GLYPH, STATE_GLYPH, THEME
+from .topo import Topo
 from .web import AgentMark, Web
 
 LAYERS = [("code", "reading source code"), ("config", "reading assistant and MCP configs"),
@@ -33,6 +34,8 @@ AGENT_DROP_S = 0.07
 RISK_SHORT = {"EXTERNAL": "EXT", "DESTRUCTIVE": "DESTR", "IDENTITY": "IDENT", "UNCLASSIFIED": "UNCL"}
 RISK_RANK = {c: i for i, c in enumerate(["READ", "WRITE", "EXTERNAL", "IDENTITY", "UNCLASSIFIED", "EXEC", "SPEND", "DESTRUCTIVE"])}
 WEB_MIN_WIDTH = 92  # below this the web would crowd the lists; the lists alone are shown
+MAP_W, MAP_H = 54, 15  # the reach map gets more room than the discovery web
+RETRACT_S, DROP_S = 0.45, 0.35  # the web draws back, then one drop travels to the origin
 
 
 def _hex(style_name: str, fallback: str = "#94a3b8") -> str:
@@ -88,6 +91,8 @@ class Reveal:
         self.inv: Optional[Inventory] = None
         self.lock = threading.Lock()
         self.web: Optional[Web] = None
+        self.topo: Optional[Topo] = None
+        self._topo_built = False
         self.final = False  # the last frame, which stays on screen
 
     # the scanner's event callback (called from the scan thread)
@@ -184,7 +189,39 @@ class Reveal:
             return 0.0
         return 0.1 + 0.62 * (1 - math.exp(-(now - start) / 1.3))
 
+    def _map(self) -> Optional[Topo]:
+        """The reach map, once the scan result is in (None when no agent can reach another)."""
+        if not self._topo_built and self.inv is not None and self._all_shown():
+            from ..reach import build
+            self._topo_built = True
+            g = build(self.inv)
+            if any(g.nodes[e.src].kind == "agent" and g.nodes[e.dst].kind == "agent" for e in g.edges) or g.chains:
+                self.topo = Topo(g, w=MAP_W, h=MAP_H, seed=self.version)
+        return self.topo
+
+    def _map_at(self) -> Optional[float]:
+        """When the web gives way to the reach map (after the closing wave)."""
+        landed = self._landed_at()
+        return landed + 0.6 if landed is not None and self._map() is not None else None
+
+    def _chain_t(self, now: float) -> Optional[float]:
+        """Seconds since the drop landed on the origin and the spread began."""
+        at = self._map_at()
+        if at is None:
+            return None
+        return 99.0 if self.skipped else now - (at + RETRACT_S + DROP_S)
+
     def _web(self, now: float) -> Text:
+        at = self._map_at()
+        if at is not None and (self.skipped or now >= at):
+            if not self.skipped and now < at + RETRACT_S:  # the web draws back into its core
+                g = 1 - ease((now - at) / RETRACT_S)
+                return self.web.render(now - self.t0, {l: g for l, _ in LAYERS}, {}, [], flash=None)
+            if not self.skipped and now < at + RETRACT_S + DROP_S:  # one drop travels to where it begins
+                return self.topo.render(now - self.t0, spread_t=None, drop=(now - at - RETRACT_S) / DROP_S)
+            st = self._chain_t(now)
+            return self.topo.render(now - self.t0, spread_t=st if st is not None and st >= 0 else None,
+                                    complete=self.skipped)
         if self.web is None:
             self.web = Web([l for l, _ in LAYERS], w=40, h=13, seed=self.version)
         growth, lit = {}, {}
@@ -242,11 +279,17 @@ class Reveal:
         rows = Table.grid(expand=True)
         wide = self.console.width >= 76
         if self.console.width >= WEB_MIN_WIDTH:
-            right = Group(self._layer_rows(now), Text(""), self._agents(now, 7))
-            rows.add_column(width=41, no_wrap=True)
+            canvas = self._web(now)
+            at = self._map_at()
+            mapping = at is not None and (self.skipped or now >= at + RETRACT_S)
+            if mapping:
+                right = Group(*self.topo.legend(self._chain_t(now), complete=self.skipped))
+            else:
+                right = Group(self._layer_rows(now), Text(""), self._agents(now, 7))
+            rows.add_column(width=(MAP_W + 1) if mapping else 41, no_wrap=True)
             rows.add_column(ratio=1)
-            rows.add_row(self._web(now), right)
-            body = Group(self._status(now), Text(""), rows, Text(""), self._counters(now))
+            rows.add_row(canvas, right)
+            body = Group(self._status(now), Text(""), rows, Text(""), *self._chain_caption(now), self._counters(now))
         elif wide:
             rows.add_column(ratio=3)
             rows.add_column(ratio=2)
@@ -261,6 +304,28 @@ class Reveal:
         return Panel(body, title=title, title_align="left", subtitle=sub, subtitle_align="right",
                      box=box.ROUNDED, border_style="brand.dim", padding=(0, 1), width=min(self.console.width, 100))
 
+    def _chain_caption(self, now: float) -> List[Text]:
+        """The strongest chain typed out under the map, and how many more there are."""
+        ct = self._chain_t(now)
+        topo = self.topo
+        if ct is None or topo is None or self.console.width < WEB_MIN_WIDTH:
+            return []
+        g = topo.g
+        if topo.chain is None:
+            return [Text.assemble(("REACH  ", "label"), ("no agent can pass control to another on this host", "ok")), Text("")]
+        if ct < 0:
+            return [Text(""), Text("")]
+        route = "  →  ".join(g.nodes[n].label for n in topo.chain.nodes)
+        k = 1.0 if self.skipped else min(1.0, ct / max(0.5, topo.reached.get(topo.chain.nodes[-1], topo.spread_total)))
+        line = Text.assemble(("REACH CHAIN  ", "label"), (route[: int(len(route) * k)], "bold #f0abfc"))
+        more = len(g.chains) - 1
+        tail = Text("")
+        if k >= 1:
+            tail = Text.assemble(("             ", ""), (f"{topo.chain.confidence} · {topo.chain.hops} steps", "muted"),
+                                 (f" · {more} more reach chain{'s' if more != 1 else ''} on this host" if more > 0 else "", "muted"),
+                                 (" · details: cslcore venom report", "muted"))
+        return [line, tail, Text("")]
+
     def finished(self, now: float) -> bool:
         if not self.done or self.inv is None:
             return False
@@ -269,7 +334,13 @@ class Reveal:
         if not all(l in self.shown_at for l in self.events):
             return False
         landed = self._landed_at()
-        return landed is not None and now >= landed + 1.3
+        if landed is None:
+            return False
+        at = self._map_at()
+        if at is None:
+            return now >= landed + 1.3
+        spread = self.topo.chain_duration() if self.topo else 0
+        return now >= at + RETRACT_S + DROP_S + spread + 1.3
 
 
 def enabled(console: Console, args) -> bool:
