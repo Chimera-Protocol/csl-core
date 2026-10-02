@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.1]
+
+### Fixed
+- Studio, TLA+: a policy the TLC model checker cannot handle (for example decimal numbers: "TLC
+  can't handle real numbers") is checked with the built-in model checker instead of ending as "not
+  verified"; the screen says which engine ran and why.
+- Studio, TLA+: no more stalls while the result is prepared. The blocked-state grid runs within a
+  time budget, samples large state spaces at random, and pauses to let the screen draw.
+- Studio, TLA+: the waiting screen shows the elapsed time, and a note once a large state space takes
+  longer than a few seconds.
+
+### Changed
+- `cslcore venom`: the discovery web stays on screen when the scan finishes, above the report.
+- README rewritten around the 0.6 flow: quick start with `cslcore setup`, recordings of each step,
+  the policy language, integrations and commands.
+
 ## [0.6.0] - Venom
 
 CSL-Core goes from passive to active: it finds the agents on a host, shows what they can reach,
