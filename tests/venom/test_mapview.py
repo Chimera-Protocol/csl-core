@@ -57,7 +57,8 @@ def test_cameras():
     x, y, d = flat(50, 30)  # untilted, the centre of the map faces the viewer
     assert abs(x - 50) < 1e-6 and abs(y - 30) < 1e-6 and d > 0.99
     s = Sphere(0.0, 100, 60)
-    assert s(50, 30)[1] > 30  # the default tilt shows the globe slightly from above
+    x, y, d = s(50, 30)  # the default tilt shows the globe slightly from above: the centre rises
+    assert y < 30 and d > 0
     assert abs(s.R - 60 * 0.46) < 1e-6
 
 
