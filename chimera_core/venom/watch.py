@@ -660,7 +660,7 @@ def tuning_pane(model: WatchModel, limit: int = 5, wide: bool = True, panel: Opt
     t.add_column("rules by would-block", no_wrap=True, overflow="ellipsis", ratio=3)
     t.add_column("", no_wrap=True, overflow="ellipsis", ratio=2)
     if wide:
-        t.add_column("Tab: tune a rule (exempt, or edit in the studio)" if panel is not None else "",
+        t.add_column("Tab: tune a rule" if panel is not None else "",
                      no_wrap=True, overflow="ellipsis", ratio=3, header_style="brand.dim")
     ranked = panel.rules() if panel is not None else ranked_rules(model)
     first = 0
