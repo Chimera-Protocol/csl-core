@@ -60,18 +60,27 @@ class Canvas:
             self.dot(cx + math.cos(a) * r, cy + math.sin(a) * r, style, prio)
 
     def render(self) -> Text:
+        """One Text, with neighbouring cells of the same style merged into one run: far fewer
+        style changes for the terminal to draw, which keeps fast animations smooth."""
         out = Text()
+        run, run_style = [], None
         for y in range(self.h):
             for x in range(self.w):
                 g = self.glyph.get((x, y))
                 if g:
-                    out.append(g[0], style=g[1])
+                    ch, st = g
                 elif self.bits[y][x]:
-                    out.append(chr(BRAILLE + self.bits[y][x]), style=self.style[y][x][1])
+                    ch, st = chr(BRAILLE + self.bits[y][x]), self.style[y][x][1]
                 else:
-                    out.append(" ")
-            if y < self.h - 1:
-                out.append("\n")
+                    ch, st = " ", ""
+                if st != run_style and run:
+                    out.append("".join(run), style=run_style or "")
+                    run = []
+                run_style = st
+                run.append(ch)
+            run.append("\n" if y < self.h - 1 else "")
+        if run:
+            out.append("".join(run), style=run_style or "")
         return out
 
 

@@ -732,6 +732,9 @@ def footer_text(model: WatchModel, inv: Optional[Inventory]) -> Text:
     return t
 
 
+MAP_FRAME_S = 1 / 15  # the live map draws about 15 times a second
+
+
 def map_pane(panel: "ControlPanel", model: WatchModel, inv: Inventory, cols: int, rows: int) -> Text:
     """The reach map with live decisions flowing on it (see Topo._pulses)."""
     from .reach import build
@@ -881,26 +884,34 @@ def run_watch(args) -> int:
     try:
         while running:
             with Keys() as keys, Live(console=console, screen=True, auto_refresh=False) as live:
-                next_frame = 0.0
+                next_frame = next_poll = 0.0
+                modes = _modes(ws)
                 while True:
-                    key = keys.read(0.05)
+                    key = keys.read(0.03 if panel.map_on else 0.05)
                     if key is not None:
                         if not panel.handle(key):
                             running = False
                             break
-                        next_frame = 0.0
+                        next_frame = next_poll = 0.0
                     if panel.editor_request or panel.studio_request:
                         break
-                    if time.monotonic() >= next_frame:
+                    # the live map is an animation: it draws about 15 times a second and reads new
+                    # decisions every 0.2 s so they arrive spread out; the tables keep their pace
+                    animated = panel.map_on and panel.view == "live"
+                    tick = time.monotonic()
+                    if tick >= next_poll:
                         tail.poll(model)
-                        if time.monotonic() - last_states > 15:
+                        modes = _modes(ws)
+                        if tick - last_states > 15:
                             inv = _inventory(ws)
                             panel.inv = inv
                             states = _states(inv, probe)
-                            last_states = time.monotonic()
+                            last_states = tick
+                        next_poll = tick + (0.2 if animated else refresh)
+                    if tick >= next_frame:
                         now = datetime.now(timezone.utc)
-                        live.update(render(model, inv, states, _modes(ws), now, started, console.width, console.height, panel), refresh=True)
-                        next_frame = time.monotonic() + refresh
+                        live.update(render(model, inv, states, modes, now, started, console.width, console.height, panel), refresh=True)
+                        next_frame = tick + (MAP_FRAME_S if animated else refresh)
             if panel.studio_request:
                 path, agent = panel.studio_request
                 panel.studio_request = None
