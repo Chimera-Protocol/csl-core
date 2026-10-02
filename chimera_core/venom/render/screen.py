@@ -276,7 +276,7 @@ def reach_block(inv: Inventory) -> Optional[Group]:
 
     g = build(inv)
     if not g.chains:
-        return None
+        return _direct_block(g)
     top = g.top
     head = _section("REACH")
     for i, n in enumerate(top.nodes):
@@ -299,6 +299,30 @@ def reach_block(inv: Inventory) -> Optional[Group]:
     tail.append("cslcore venom map", style="brand")
     lines.append(labeled(tail))
     return Group(*lines)
+
+
+def _direct_block(g) -> Optional[Group]:
+    """No chain across agents: say so, and show the most serious exposure a single agent has."""
+    from ..reach import direct, strongest_direct
+
+    d = strongest_direct(g)
+    if d is None:
+        return None
+    src, agent, impact = d
+    head = _section("REACH")
+    head.append("no chain across agents", style="ok")
+    head.append(" · direct: ", style="muted")
+    for i, n in enumerate((src, agent, impact)):
+        if i:
+            head.append("  →  ", style="muted")
+        head.append(g.nodes[n].label, style="high" if g.nodes[n].kind == "impact" else "bold #f0abfc")
+    count = len({a for _s, a, _i in direct(g)})
+    tail = Text(" " * LABEL_WIDTH)
+    tail.append(f"{count} agent{'s' if count != 1 else ''} take untrusted input and act on it without a rule",
+                style="muted")
+    tail.append(" · see it: ", style="muted")
+    tail.append("cslcore venom map", style="brand")
+    return Group(labeled(head), labeled(tail))
 
 
 def next_step(inv: Inventory) -> Text:

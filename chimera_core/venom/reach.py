@@ -51,6 +51,7 @@ class Node:
     label: str
     detail: str = ""
     weight: int = 1  # impact severity, or how much flows through an agent
+    active: bool = False  # an agent that is running now
 
 
 @dataclass
@@ -194,7 +195,7 @@ def build(inv: Inventory) -> ReachGraph:
     g = ReachGraph()
     agents = [a for a in inv.agents if a.exempt is None or a.exempt.status != "approved"]
     for a in agents:
-        g.nodes[a.id] = Node(a.id, "agent", a.display_name, a.kind)
+        g.nodes[a.id] = Node(a.id, "agent", a.display_name, a.kind, active=a.state == "running")
         for nid, label, ev in _inputs(a):
             g.nodes.setdefault(nid, Node(nid, "input", label))
             g.edges.append(Edge(nid, a.id, "reaches", ev))
@@ -275,10 +276,19 @@ def describe(g: ReachGraph, chain: Chain) -> List[str]:
     return lines
 
 
+def strongest_direct(g: ReachGraph) -> Optional[Tuple[str, str, str]]:
+    """The most serious single-agent exposure (input -> agent -> impact), for hosts without chains."""
+    items = direct(g)
+    # the worst impact first, then an agent that is running now, then a stable order
+    return min(items, key=lambda d: (-g.nodes[d[2]].weight, not g.nodes[d[1]].active, g.nodes[d[1]].label), default=None) if items else None
+
+
 def summary(g: ReachGraph) -> Dict[str, object]:
     """What the open core reports: how many chains, and the strongest one in full."""
     top = g.top
+    d = direct(g)
     return {
+        "direct": len(d),
         "chains": len(g.chains),
         "agents_in_chains": len({n for c in g.chains for n in c.nodes if g.nodes[n].kind == "agent"}),
         "top": None if top is None else {

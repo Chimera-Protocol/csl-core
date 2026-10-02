@@ -312,7 +312,11 @@ class Reveal:
             return []
         g = topo.g
         if topo.chain is None:
-            return [Text.assemble(("REACH  ", "label"), ("no agent can pass control to another on this host", "ok")), Text("")]
+            from ..reach import direct
+            n = len({a for _s, a, _i in direct(g)})
+            note = (f"no chain across agents · {n} agent{'s' if n != 1 else ''} act on untrusted input without a rule"
+                    if n else "no chain across agents, and no agent acts on untrusted input without a rule")
+            return [Text.assemble(("REACH  ", "label"), (note, "ok" if not n else "warn")), Text("")]
         if ct < 0:
             return [Text(""), Text("")]
         route = "  →  ".join(g.nodes[n].label for n in topo.chain.nodes)

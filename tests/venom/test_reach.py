@@ -78,3 +78,26 @@ def test_approved_exemptions_and_quiet_hosts():
 def test_summary_is_what_the_open_core_shows(inv):
     s = R.summary(R.build(inv))
     assert s["chains"] == 9 and s["top"]["nodes"][-1] == "root on the host" and len(s["top"]["hops"]) == 3
+
+
+def test_without_chains_the_direct_exposure_is_named():
+    """A developer machine: several assistants as one user, each reads the web and runs commands.
+    Nothing escalates (no chain), but the direct exposure is real and is shown."""
+    from chimera_core.venom.render.screen import reach_block
+
+    from .conftest import render
+
+    def assistant(name, running):
+        return Agent(f"assistant:{name}", name, "assistant", state="running" if running else "configured",
+                     process_user="dev" if running else None, project=f"/home/dev/{name}",
+                     tools=[Tool("WebFetch", "builtin", risk_class="EXTERNAL", coverage="unguarded"),
+                            Tool("Bash", "builtin", risk_class="EXEC", coverage="unguarded")])
+
+    inv = Inventory(agents=[assistant("zeta", False), assistant("alpha", True), assistant("beta", False)])
+    g = R.build(inv)
+    assert g.chains == [] and len(R.direct(g)) == 3
+    src, agent, impact = R.strongest_direct(g)
+    assert g.nodes[agent].label == "alpha" and impact == "impact:exec"  # the running one
+    text = render(reach_block(inv), width=120)
+    assert "no chain across agents" in text and "alpha" in text and "3 agents take untrusted input" in text
+    assert R.summary(g)["direct"] == 3
