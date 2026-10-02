@@ -256,7 +256,8 @@ def test_b6_since_window(tmp_path):
 def test_b7_example_policies_parse():
     from chimera_core.venom.layers.governance import read_policy
 
-    files = sorted((REPO / "examples").glob("*.csl")) + sorted((REPO / "examples" / "community").glob("*.csl"))
+    files = [f for f in sorted((REPO / "examples").glob("*.csl")) + sorted((REPO / "examples" / "community").glob("*.csl"))
+             if f.is_file()]  # a local .csl/ workspace folder is not a policy
     assert len(files) == 20
     for f in files:
         ref = read_policy(str(f), f.read_text(), "found")

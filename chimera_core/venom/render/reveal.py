@@ -88,6 +88,7 @@ class Reveal:
         self.inv: Optional[Inventory] = None
         self.lock = threading.Lock()
         self.web: Optional[Web] = None
+        self.final = False  # the last frame, which stays on screen
 
     # the scanner's event callback (called from the scan thread)
     def event(self, layer: str, status: str, detail: str) -> None:
@@ -256,7 +257,7 @@ class Reveal:
                          self._agents(now, 5), Text(""), self._counters(now))
         title = Text.assemble((" CSL-Core Venom ", "brand"), (self.version + " ", "muted"),
                               ("· discovering " if not self._all_shown() else "· discovered ", "muted"))
-        sub = Text(" any key skips ", style="muted") if not self.skipped else None
+        sub = Text(" any key skips ", style="muted") if not (self.skipped or self.final) else None
         return Panel(body, title=title, title_align="left", subtitle=sub, subtitle_align="right",
                      box=box.ROUNDED, border_style="brand.dim", padding=(0, 1), width=min(self.console.width, 100))
 
@@ -303,7 +304,8 @@ def run(console: Console, version: str, scan: Callable[[Callable], object]):
         if sys.stdin.isatty():
             from .keys import Keys
             keys = Keys().__enter__()
-        with Live(reveal.frame(time.monotonic()), console=console, refresh_per_second=24, transient=True) as live:
+        # the finished web stays on screen above the report (it is the summary of what was found)
+        with Live(reveal.frame(time.monotonic()), console=console, refresh_per_second=24, transient=False) as live:
             while True:
                 if keys is not None and keys.read(0.04) is not None:
                     reveal.skipped = True
@@ -312,8 +314,13 @@ def run(console: Console, version: str, scan: Callable[[Callable], object]):
                 if reveal.done and reveal.inv is None and "result" in box_:
                     reveal.inv = getattr(box_["result"], "inventory", None)
                 now = time.monotonic()
+                if "error" in box_:
+                    live.update(Text(""))  # nothing half-drawn stays behind an error
+                    break
                 live.update(reveal.frame(now))
-                if "error" in box_ or reveal.finished(now):
+                if reveal.finished(now):
+                    reveal.final = True
+                    live.update(reveal.frame(now), refresh=True)
                     break
     finally:
         if keys is not None:

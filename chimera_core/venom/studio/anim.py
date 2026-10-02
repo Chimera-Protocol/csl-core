@@ -262,8 +262,12 @@ def explorer(run: TLARun, k: float, w: int = 28, h: int = 7) -> Text:
 
 def tla_pending(t: float, engine_note: str = "") -> Group:
     label = Text.assemble(("EXPLORE ", "label"), (SPIN[int(t * 14) % len(SPIN)] + " model checking", "brand"),
-                          ("   " + engine_note if engine_note else "", "muted"))
-    return Group(label, Text(""), radar(t))
+                          (f"   {t:4.1f}s", "head"), ("   " + engine_note if engine_note else "", "muted"))
+    parts = [label, Text(""), radar(t)]
+    if t > 3:
+        parts += [Text(""), Text("a large state space takes longer; you can keep editing, the result arrives here",
+                                 style="muted")]
+    return Group(*parts)
 
 
 BLOCKED = "#e879f9"

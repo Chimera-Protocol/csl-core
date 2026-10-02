@@ -83,6 +83,7 @@ class TLARun:
     strict: bool = False  # ENABLE_FORMAL_VERIFICATION: TRUE, the compiler then needs every rule to hold
     checked: int = 0  # grid states pushed through the guard
     blocked: int = 0  # of those, blocked by at least one rule
+    grid_cut: bool = False  # the grid stopped at its time budget (a sample, not every state)
 
     @property
     def total_states(self) -> int:
@@ -217,9 +218,12 @@ def run_tla(text: str, use_real_tlc: bool = True, timeout: int = 60, max_states:
             if real:
                 results, raw = v._run_tlc(spec, constraints, "TLC")
                 if raw is not None and not raw.success and not raw.violations:
-                    return TLARun(False, "TLC", note, var_info, _space(var_info),
-                                  error=raw.error or "TLC did not complete; the policy is unverified",
-                                  elapsed_ms=int((time.perf_counter() - t0) * 1000))
+                    # TLC could not check this spec (for example decimals: "TLC can't handle real
+                    # numbers"); the built-in checker does, and the screen says why it was used
+                    reason = _tlc_reason(getattr(raw, "tlc_output", "") or "") or "TLC did not complete"
+                    real = False
+                    note = f"built-in model checker ({reason})"
+                    results = v._run_mock(ast, constraints, "MOCK")
             else:
                 results = v._run_mock(ast, constraints, "MOCK")
     except Exception as e:
@@ -241,6 +245,8 @@ def run_tla(text: str, use_real_tlc: bool = True, timeout: int = 60, max_states:
 
 
 GRID_LIMIT = 20000
+GRID_FULL = 4000
+GRID_BUDGET_S = 0.5  # the grid never holds the screen up for longer than this
 STRICT = re.compile(r"ENABLE_FORMAL_VERIFICATION\s*:\s*TRUE")
 
 
@@ -288,13 +294,19 @@ def guard_view(text: str, ast, run: TLARun) -> None:
     total = 1
     for a in axes:
         total *= len(a)
-    if total <= GRID_LIMIT:
+    if total <= GRID_FULL:  # small enough to check every state within the budget
         states = itertools.product(*axes)
-    else:
+    else:  # a fixed-seed random sample, so stopping at the budget does not bias it
         rng = random.Random(7)
         states = (tuple(rng.choice(a) for a in axes) for _ in range(GRID_LIMIT))
     run.guard = {c.name: RuleGuard(c.name) for c in run.constraints}
-    for combo in states:
+    deadline = time.perf_counter() + GRID_BUDGET_S
+    for i, combo in enumerate(states):
+        if i % 128 == 0:
+            time.sleep(0.0005)  # a real pause: sleep(0) hands the lock straight back to this thread
+            if time.perf_counter() > deadline:
+                run.grid_cut = True
+                break
         r = guard.verify(dict(zip(names, combo)))
         run.checked += 1
         if r.allowed:
@@ -305,6 +317,18 @@ def guard_view(text: str, ast, run: TLARun) -> None:
             g.blocked += 1
             if g.example is None:
                 g.example = dict(zip(names, combo))
+
+
+def _tlc_reason(output: str) -> Optional[str]:
+    """TLC's own one-line reason from its tool-mode output (the message body of an error block)."""
+    lines = output.splitlines()
+    for i, line in enumerate(lines):
+        m = re.match(r"@!@!@STARTMSG (\d+):1 @!@!@", line)
+        if m:
+            body = [l.strip() for l in lines[i + 1:i + 4] if l.strip() and not l.startswith("@!@!@")]
+            if body:
+                return body[0].rstrip(".")[:80]
+    return None
 
 
 def card_of(vi: Dict[str, str]) -> Optional[int]:
