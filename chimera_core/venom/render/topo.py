@@ -32,6 +32,52 @@ IMPACT_STYLE = {
 Point = Tuple[float, float]
 
 
+class Zoom:
+    """Camera: scale the map around a focus point (dive in / out)."""
+
+    def __init__(self, fx: float, fy: float, scale: float, W: float, H: float) -> None:
+        self.fx, self.fy, self.scale, self.W, self.H = fx, fy, scale, W, H
+
+    def __call__(self, x: float, y: float) -> Tuple[float, float, float]:
+        return self.W / 2 + (x - self.fx) * self.scale, self.H / 2 + (y - self.fy) * self.scale, 1.0
+
+
+class Sphere:
+    """Camera: the map wrapped onto a slowly turning sphere (orthographic projection). Depth < 0 is
+    the far side, drawn dim behind the near side."""
+
+    def __init__(self, angle: float, W: float, H: float, tilt: float = 0.35) -> None:
+        self.angle, self.W, self.H, self.tilt = angle, W, H, tilt
+        self.R = min(H, W) * 0.46
+
+    def __call__(self, x: float, y: float) -> Tuple[float, float, float]:
+        lon = (x / self.W) * 2 * math.pi + self.angle
+        lat = (y / self.H - 0.5) * math.pi * 0.85
+        cx, cy, cz = math.cos(lat) * math.sin(lon), math.sin(lat), math.cos(lat) * math.cos(lon)
+        cy, cz = cy * math.cos(self.tilt) - cz * math.sin(self.tilt), cy * math.sin(self.tilt) + cz * math.cos(self.tilt)
+        return self.W / 2 + cx * self.R, self.H / 2 + cy * self.R, cz  # braille dots are square
+
+
+class ViewCanvas(Canvas):
+    """A canvas that sends every point through a camera; the far side of a sphere stays dim."""
+
+    def __init__(self, w: int, h: int, view) -> None:
+        super().__init__(w, h)
+        self.view = view
+
+    def dot(self, x: float, y: float, style: str, prio: int = 0) -> None:
+        X, Y, depth = self.view(x, y)
+        if depth < 0:
+            super().dot(X, Y, "#1e293b" if prio < 3 else "#334155", -1)
+        else:
+            super().dot(X, Y, style, prio)
+
+    def put(self, x: float, y: float, ch: str, style: str) -> None:
+        X, Y, depth = self.view(x, y)
+        if depth >= -0.15:
+            super().put(X, Y, ch, style if depth >= 0.15 else "#475569")
+
+
 @dataclass
 class Placed:
     id: str
@@ -133,7 +179,8 @@ class Topo:
             k = slot + i
             band = 1 + k // 2
             up = k % 2 == 0
-            y = mid + (-1 if up else 1) * (6 + band * 7.5) + (rng.random() - 0.5) * 3
+            gap = max(6.0, self.H * 0.13)  # spread over the canvas, whatever its height
+            y = mid + (-1 if up else 1) * (gap + (band - 1) * gap * 1.1 + 2) + (rng.random() - 0.5) * 3
             self.placed[node.id] = Placed(node.id, node.kind, node.label, x, min(self.H - 2, max(2, y)))
 
     def _relax(self, rounds: int = 30) -> None:
@@ -211,10 +258,25 @@ class Topo:
         return spread_t is not None and nid in self.reached and spread_t >= self.reached[nid]
 
     def render(self, t: float, spread_t: Optional[float] = None, complete: bool = False,
-               drop: Optional[float] = None) -> Text:
+               drop: Optional[float] = None, view=None, selected: Optional[str] = None) -> Text:
         """spread_t: seconds since the drop landed on the origin (None: not yet);
-        drop: 0..1 while the drop travels from the centre to the origin."""
-        c = Canvas(self.w, self.h)
+        drop: 0..1 while the drop travels from the centre to the origin;
+        view: a camera (Zoom, Sphere); selected: a node to ring."""
+        c = ViewCanvas(self.w, self.h, view) if view is not None else Canvas(self.w, self.h)
+        if isinstance(view, Sphere):  # a globe behind the map: meridians, parallels and the rim
+            for k in range(0, 360, 30):
+                for j in range(0, 90):
+                    X, Y, d = view(k / 360 * self.W, j / 90 * self.H)
+                    if d >= 0:
+                        Canvas.dot(c, X, Y, "#134e4a", -1)
+            for j in range(1, 6):
+                for k in range(0, 160):
+                    X, Y, d = view(k / 160 * self.W, j / 6 * self.H)
+                    if d >= 0:
+                        Canvas.dot(c, X, Y, "#134e4a", -1)
+            for k in range(0, 240):
+                a = k / 240 * 2 * math.pi
+                Canvas.dot(c, self.W / 2 + math.cos(a) * view.R, self.H / 2 + math.sin(a) * view.R, "#0f766e", -1)
         st = 99.0 if complete else spread_t
         for x, y in self.dust:
             c.dot(x, y, "#1e293b", -1)
@@ -313,6 +375,9 @@ class Topo:
                 c.put(p.x, p.y, "●", f"bold {CHAIN}" if on_art and (pulse or age < 0.4) else (f"bold {AGENT}" if age < 0.4 else AGENT))
                 if p.number is not None:
                     c.put(p.x + 2.2, p.y, str(p.number) if p.number < 10 else "+", "bold #e2e8f0" if on_art else "#94a3b8")
+        if selected in self.placed:
+            p = self.placed[selected]
+            c.ring(p.x, p.y, 3.2 + 0.4 * math.sin(t * 6), "bold #fde047", 8)
         if self.origin and self.origin in self.placed and st < 0.5 and not complete:  # the drop lands
             o = self.placed[self.origin]
             c.ring(o.x, o.y, 1 + st * 10, "bold #fdf4ff", 7)

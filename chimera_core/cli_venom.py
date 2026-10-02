@@ -91,6 +91,11 @@ def register(sub) -> None:
     rp.add_argument("--rescan", action="store_true", help="scan again instead of reading the latest snapshot")
     _shared(rp)
     rp.set_defaults(func=_lazy("chimera_core.venom.commands.cmd_report"))
+    mv = vs.add_parser("map", help="the reach map, full screen: select, dive into an agent, 3D sphere")
+    mv.add_argument("--rescan", action="store_true", help="scan again instead of reading the latest snapshot")
+    mv.add_argument("--once", action="store_true", help="print one frame and exit (for scripts and CI)")
+    _shared(mv)
+    mv.set_defaults(func=_lazy("chimera_core.venom.commands.cmd_map_view"))
 
     po = sub.add_parser("policy", help="Policy workbench: list, show, new, edit, extend, fix, verify, diff, activate")
     po.add_argument("action", choices=["list", "show", "new", "edit", "extend", "fix", "verify", "diff", "activate", "bind", "unbind"])

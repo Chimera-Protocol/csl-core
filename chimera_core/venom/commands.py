@@ -131,6 +131,15 @@ def _load_inventory(args, console) -> Inventory:
     return Inventory.from_dict(data)
 
 
+def cmd_map_view(args) -> int:
+    """`cslcore venom map`: the reach map, full screen and interactive."""
+    from .render import mapview
+
+    console = console_for(args)
+    inv = _load_inventory(args, console)
+    return mapview.run(console, inv, seed=VENOM_VERSION, once=bool(getattr(args, "once", False)))
+
+
 def cmd_report(args) -> int:
     console = console_for(args)
     inv = _load_inventory(args, console)
