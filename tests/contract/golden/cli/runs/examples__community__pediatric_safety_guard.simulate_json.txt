@@ -1,0 +1,60 @@
+exit_code: 0
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: PediatricSafetyGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 0, "drug_type": "sample", "patient_age": 0}, 
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 10000, "drug_type": "other", "patient_age": 
+120}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 0, "drug_type": "sample", "patient_age": -1}, 
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 0, "drug_type": "sample", "patient_age": 120}, 
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 0, "drug_type": "sample", "patient_age": 121}, 
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 0, "drug_type": "sample", "patient_age": 60}, 
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 0, "drug_type": "sample", "patient_age": 11}, 
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 10000, "drug_type": "other", "patient_age": 11},
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 0, "drug_type": "sample", "patient_age": 12}, 
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 10000, "drug_type": "other", "patient_age": 12},
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 0, "drug_type": "sample", "patient_age": 13}, 
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "PediatricSafetyGuard", "policy_hash": 
+"00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"dosage_mg": 10000, "drug_type": "other", "patient_age": 13},
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}

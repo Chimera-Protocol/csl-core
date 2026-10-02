@@ -1,0 +1,149 @@
+// =============================================================
+// Community Policy: MCP Tool Trust Guard
+// Goal: Govern MCP tool execution for AI agents using trust,
+// risk, scope, approval, and data-handling controls.
+//
+// Covered requirements:
+// 1) BLOCK if tool_registered is FALSE.
+// 2) BLOCK if server_trusted is FALSE and tool_risk_level is HIGH/CRITICAL.
+// 3) BLOCK if requires_write_access is TRUE and session_mode is READ_ONLY.
+// 4) BLOCK if resource_in_scope is FALSE.
+// 5) BLOCK if is_destructive is TRUE and human_approved is FALSE.
+// 6) BLOCK if requires_secret_access is TRUE and human_approved is FALSE.
+// 7) BLOCK if tool_risk_level is CRITICAL and human_approved is FALSE.
+// 8) BLOCK if requires_network is TRUE and destination_trusted is FALSE and
+//    human_approved is FALSE.
+// 9) BLOCK if data_sensitivity is CONFIDENTIAL/RESTRICTED and
+//    destination_trusted is FALSE.
+// 10) BLOCK if contains_pii is TRUE and destination_trusted is FALSE.
+// 11) BLOCK if contains_secrets is TRUE and destination_trusted is FALSE.
+// 12) BLOCK if contains_secrets is TRUE and requires_network is TRUE and
+//    human_approved is FALSE.
+// 13) BLOCK if operation_size > 100 and human_approved is FALSE.
+// 14) BLOCK if operation_size > 1000 unless session_mode is ELEVATED and
+//    human_approved is TRUE.
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN MCPToolTrustGuard {
+  VARIABLES {
+    server_trusted: BOOLEAN
+    tool_registered: BOOLEAN
+    tool_risk_level: {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
+    session_mode: {"READ_ONLY", "SANDBOXED_WRITE", "ELEVATED"}
+    human_approved: BOOLEAN
+    resource_in_scope: BOOLEAN
+    destination_trusted: BOOLEAN
+    data_sensitivity: {"PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"}
+    contains_pii: BOOLEAN
+    contains_secrets: BOOLEAN
+    is_destructive: BOOLEAN
+    requires_network: BOOLEAN
+    requires_write_access: BOOLEAN
+    requires_secret_access: BOOLEAN
+    operation_size: 0..1000000
+  }
+
+  // -----------------------------------------------------------
+  // Registration and trust gates
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT tool_must_be_registered {
+    WHEN TRUE
+    THEN tool_registered MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT high_risk_requires_trusted_server {
+    WHEN tool_risk_level == "HIGH"
+    THEN server_trusted MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT critical_risk_requires_trusted_server {
+    WHEN tool_risk_level == "CRITICAL"
+    THEN server_trusted MUST BE TRUE
+  }
+
+  // -----------------------------------------------------------
+  // Session and scope boundaries
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT read_only_blocks_writes {
+    WHEN requires_write_access == TRUE
+    THEN session_mode MUST NOT BE "READ_ONLY"
+  }
+
+  STATE_CONSTRAINT resource_must_be_in_scope {
+    WHEN TRUE
+    THEN resource_in_scope MUST BE TRUE
+  }
+
+  // -----------------------------------------------------------
+  // Human approval requirements
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT destructive_ops_require_human_approval {
+    WHEN is_destructive == TRUE
+    THEN human_approved MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT secret_access_requires_human_approval {
+    WHEN requires_secret_access == TRUE
+    THEN human_approved MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT critical_risk_requires_human_approval {
+    WHEN tool_risk_level == "CRITICAL"
+    THEN human_approved MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT untrusted_network_requires_human_approval {
+    WHEN requires_network == TRUE
+    THEN destination_trusted == TRUE OR human_approved == TRUE
+  }
+
+  // -----------------------------------------------------------
+  // Destination and data protection
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT confidential_data_requires_trusted_destination {
+    WHEN data_sensitivity == "CONFIDENTIAL"
+    THEN destination_trusted MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT restricted_data_requires_trusted_destination {
+    WHEN data_sensitivity == "RESTRICTED"
+    THEN destination_trusted MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT pii_requires_trusted_destination {
+    WHEN contains_pii == TRUE
+    THEN destination_trusted MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT secrets_require_trusted_destination {
+    WHEN contains_secrets == TRUE
+    THEN destination_trusted MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT networked_secret_ops_require_human_approval {
+    WHEN contains_secrets == TRUE AND requires_network == TRUE
+    THEN human_approved MUST BE TRUE
+  }
+
+  // -----------------------------------------------------------
+  // Scale-based escalation
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT large_operations_require_human_approval {
+    WHEN operation_size > 100
+    THEN human_approved MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT very_large_operations_require_elevated_session {
+    WHEN operation_size > 1000
+    THEN session_mode MUST BE "ELEVATED"
+  }
+}
+
+// Quick checks from repo root:
+// cslcore verify examples/community/mcp_tool_trust_guard.csl
+// cslcore simulate examples/community/mcp_tool_trust_guard.csl --input '{"server_trusted":true,"tool_registered":true,"tool_risk_level":"LOW","session_mode":"SANDBOXED_WRITE","human_approved":true,"resource_in_scope":true,"destination_trusted":true,"data_sensitivity":"INTERNAL","contains_pii":false,"contains_secrets":false,"is_destructive":false,"requires_network":false,"requires_write_access":true,"requires_secret_access":false,"operation_size":10}'

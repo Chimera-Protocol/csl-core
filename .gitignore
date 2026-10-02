@@ -72,5 +72,8 @@ dmypy.json
 # Logs and Debugging
 *.log
 z3_trace.log
-*.prof.claude/
+*.prof
 .claire/
+
+# Venom workspace state (cslcore setup / venom)
+.csl/

@@ -1,0 +1,343 @@
+// =============================================================
+// CSL-Core: OpenClaw Deterministic Gatekeeper v1.0
+// RFC #26348 Reference Implementation
+//
+// Architecture: Pure blocking pattern (monotonic)
+// Every constraint → THEN tool MUST NOT BE "X"
+// Zero cross-variable conflicts by design
+//
+// Tool names: 1:1 match with OpenClaw's before_tool_call event
+// No mapping layer needed — plugin reads toolName directly
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+  ENABLE_FORMAL_VERIFICATION: FALSE
+  ENABLE_CAUSAL_INFERENCE: FALSE
+  INTEGRATION: "native"
+}
+
+DOMAIN OpenClawGuard {
+
+  VARIABLES {
+    // Direct from before_tool_call event — no mapping needed
+    tool: {"bash", "exec", "read", "write", "edit", "glob",
+           "apply_patch", "navigate", "screenshot", "click",
+           "type", "evaluate", "fetch", "request", "download",
+           "sendMessage", "gmail_send", "gmail_delete",
+           "secrets_write", "node_exec", "cron",
+           "skill_install", "camera_preview"}
+
+    // Derived from Gateway pairing status + senderId
+    sender_role: {"OWNER", "PAIRED", "UNPAIRED", "UNKNOWN"}
+
+    // From api.config or environment variable
+    deployment_mode: {"DESKTOP", "SERVER", "EMBEDDED", "UNATTENDED"}
+
+    // Derived from tool params (email recipient count, file list length)
+    target_count: 0..500
+
+    // Derived from file path args vs workspace root
+    path_in_workspace: {"YES", "NO"}
+
+    // Derived from URL args vs domain allowlist
+    domain_allowlisted: {"YES", "NO"}
+
+    // Derived from ClawHub skill metadata
+    skill_verified: {"YES", "NO"}
+
+    // Always "NO" at before_tool_call — WE are the approval gate
+    approval_granted: {"YES", "NO"}
+
+    // From api.config tools.exec.sandbox
+    sandbox_active: {"YES", "NO"}
+
+    // Derived from PII regex scan of tool params
+    pii_present: {"YES", "NO"}
+  }
+
+  // ===========================================================
+  // SECTION 1: DEPLOYMENT MODE HARD BLOCKS
+  // Physical safety — embedded devices must not run arbitrary code
+  // Even OWNER cannot override these on embedded/unattended
+  // ===========================================================
+
+  STATE_CONSTRAINT embedded_no_bash {
+    WHEN deployment_mode == "EMBEDDED"
+    THEN tool MUST NOT BE "bash"
+  }
+
+  STATE_CONSTRAINT embedded_no_exec {
+    WHEN deployment_mode == "EMBEDDED"
+    THEN tool MUST NOT BE "exec"
+  }
+
+  STATE_CONSTRAINT unattended_no_bash {
+    WHEN deployment_mode == "UNATTENDED"
+    THEN tool MUST NOT BE "bash"
+  }
+
+  STATE_CONSTRAINT unattended_no_exec {
+    WHEN deployment_mode == "UNATTENDED"
+    THEN tool MUST NOT BE "exec"
+  }
+
+  STATE_CONSTRAINT embedded_no_cron {
+    WHEN deployment_mode == "EMBEDDED"
+    THEN tool MUST NOT BE "cron"
+  }
+
+  STATE_CONSTRAINT unattended_no_secrets_write {
+    WHEN deployment_mode == "UNATTENDED"
+    THEN tool MUST NOT BE "secrets_write"
+  }
+
+  STATE_CONSTRAINT unattended_no_skill_install {
+    WHEN deployment_mode == "UNATTENDED"
+    THEN tool MUST NOT BE "skill_install"
+  }
+
+  // ===========================================================
+  // SECTION 2: SENDER TRUST — UNTRUSTED HARD BLOCKS
+  // UNKNOWN and UNPAIRED senders: read-only tools only
+  // Prevents prompt injection from hijacking destructive tools
+  // ===========================================================
+
+  STATE_CONSTRAINT untrusted_no_bash {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "bash"
+  }
+
+  STATE_CONSTRAINT untrusted_no_exec {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "exec"
+  }
+
+  STATE_CONSTRAINT untrusted_no_write {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "write"
+  }
+
+  STATE_CONSTRAINT untrusted_no_edit {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "edit"
+  }
+
+  STATE_CONSTRAINT untrusted_no_apply_patch {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "apply_patch"
+  }
+
+  STATE_CONSTRAINT untrusted_no_gmail_send {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "gmail_send"
+  }
+
+  STATE_CONSTRAINT untrusted_no_gmail_delete {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "gmail_delete"
+  }
+
+  STATE_CONSTRAINT untrusted_no_sendMessage {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "sendMessage"
+  }
+
+  STATE_CONSTRAINT untrusted_no_secrets_write {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "secrets_write"
+  }
+
+  STATE_CONSTRAINT untrusted_no_node_exec {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "node_exec"
+  }
+
+  STATE_CONSTRAINT untrusted_no_cron {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "cron"
+  }
+
+  STATE_CONSTRAINT untrusted_no_skill_install {
+    WHEN sender_role == "UNKNOWN" OR sender_role == "UNPAIRED"
+    THEN tool MUST NOT BE "skill_install"
+  }
+
+  STATE_CONSTRAINT untrusted_no_navigate_unknown_domain {
+    WHEN (sender_role == "UNKNOWN" OR sender_role == "UNPAIRED") AND domain_allowlisted == "NO"
+    THEN tool MUST NOT BE "navigate"
+  }
+
+  STATE_CONSTRAINT untrusted_no_click_unknown_domain {
+    WHEN (sender_role == "UNKNOWN" OR sender_role == "UNPAIRED") AND domain_allowlisted == "NO"
+    THEN tool MUST NOT BE "click"
+  }
+
+  // ===========================================================
+  // SECTION 3: META INBOX INCIDENT PREVENTION
+  // Summer Yue's agent ignored "confirm before acting" and
+  // speedran deletion of 200+ emails. These rules make that
+  // impossible regardless of what the LLM decides to do.
+  // ===========================================================
+
+  // Mass delete (>10 items): only OWNER allowed (blocks PAIRED)
+  STATE_CONSTRAINT mass_delete_paired_blocked {
+    WHEN target_count > 10 AND sender_role == "PAIRED"
+    THEN tool MUST NOT BE "gmail_delete"
+  }
+
+  // Bulk delete (>50): desktop deployment only
+  STATE_CONSTRAINT bulk_delete_embedded_blocked {
+    WHEN target_count > 50 AND deployment_mode == "EMBEDDED"
+    THEN tool MUST NOT BE "gmail_delete"
+  }
+
+  STATE_CONSTRAINT bulk_delete_unattended_blocked {
+    WHEN target_count > 50 AND deployment_mode == "UNATTENDED"
+    THEN tool MUST NOT BE "gmail_delete"
+  }
+
+  STATE_CONSTRAINT bulk_delete_server_blocked {
+    WHEN target_count > 50 AND deployment_mode == "SERVER"
+    THEN tool MUST NOT BE "gmail_delete"
+  }
+
+  // Bulk delete (>50): requires explicit approval even for OWNER
+  STATE_CONSTRAINT bulk_delete_no_approval {
+    WHEN target_count > 50 AND approval_granted == "NO"
+    THEN tool MUST NOT BE "gmail_delete"
+  }
+
+  // Mass email send (>20 recipients): requires approval
+  STATE_CONSTRAINT mass_send_no_approval {
+    WHEN target_count > 20 AND approval_granted == "NO"
+    THEN tool MUST NOT BE "gmail_send"
+  }
+
+  // ===========================================================
+  // SECTION 4: FILESYSTEM PATH SAFETY
+  // Workspace boundary enforcement — prevents rm -rf /
+  // ===========================================================
+
+  // Writes outside workspace: require approval
+  STATE_CONSTRAINT write_outside_no_approval {
+    WHEN path_in_workspace == "NO" AND approval_granted == "NO"
+    THEN tool MUST NOT BE "write"
+  }
+
+  // Edits outside workspace: require approval
+  STATE_CONSTRAINT edit_outside_no_approval {
+    WHEN path_in_workspace == "NO" AND approval_granted == "NO"
+    THEN tool MUST NOT BE "edit"
+  }
+
+  // apply_patch outside workspace: require approval
+  STATE_CONSTRAINT patch_outside_no_approval {
+    WHEN path_in_workspace == "NO" AND approval_granted == "NO"
+    THEN tool MUST NOT BE "apply_patch"
+  }
+
+  // ===========================================================
+  // SECTION 5: BROWSER & NETWORK SAFETY
+  // Prevents data exfiltration to unknown domains
+  // ===========================================================
+
+  // Non-allowlisted domains: require approval for navigation
+  STATE_CONSTRAINT navigate_unknown_no_approval {
+    WHEN domain_allowlisted == "NO" AND approval_granted == "NO"
+    THEN tool MUST NOT BE "navigate"
+  }
+
+  // Non-allowlisted domains: require approval for clicking
+  STATE_CONSTRAINT click_unknown_no_approval {
+    WHEN domain_allowlisted == "NO" AND approval_granted == "NO"
+    THEN tool MUST NOT BE "click"
+  }
+
+  // Non-allowlisted fetch: require approval
+  STATE_CONSTRAINT fetch_unknown_no_approval {
+    WHEN domain_allowlisted == "NO" AND approval_granted == "NO"
+    THEN tool MUST NOT BE "fetch"
+  }
+
+  // Non-allowlisted download: require approval
+  STATE_CONSTRAINT download_unknown_no_approval {
+    WHEN domain_allowlisted == "NO" AND approval_granted == "NO"
+    THEN tool MUST NOT BE "download"
+  }
+
+  // ===========================================================
+  // SECTION 6: SECRETS & CREDENTIALS
+  // Only OWNER + explicit approval can write secrets
+  // ===========================================================
+
+  // Secrets write: block PAIRED senders
+  STATE_CONSTRAINT secrets_write_paired_blocked {
+    WHEN sender_role == "PAIRED"
+    THEN tool MUST NOT BE "secrets_write"
+  }
+
+  // Secrets write: always requires approval
+  STATE_CONSTRAINT secrets_write_no_approval {
+    WHEN approval_granted == "NO"
+    THEN tool MUST NOT BE "secrets_write"
+  }
+
+  // ===========================================================
+  // SECTION 7: SUPPLY CHAIN PROTECTION
+  // Cisco found ClawHavoc campaign: 341 malicious skills
+  // on ClawHub doing data exfiltration (Jan 2026)
+  // ===========================================================
+
+  // Only verified skills can be installed
+  STATE_CONSTRAINT unverified_skill_blocked {
+    WHEN skill_verified == "NO"
+    THEN tool MUST NOT BE "skill_install"
+  }
+
+  // OWNER only — PAIRED cannot install skills
+  STATE_CONSTRAINT skill_install_paired_blocked {
+    WHEN sender_role == "PAIRED"
+    THEN tool MUST NOT BE "skill_install"
+  }
+
+  // ===========================================================
+  // SECTION 8: PII DATA PROTECTION
+  // Prevent personal data leaking to external destinations
+  // ===========================================================
+
+  // PII to non-allowlisted browser destinations: hard block
+  STATE_CONSTRAINT pii_navigate_unknown_blocked {
+    WHEN pii_present == "YES" AND domain_allowlisted == "NO"
+    THEN tool MUST NOT BE "navigate"
+  }
+
+  // PII in fetch to unknown domain: hard block
+  STATE_CONSTRAINT pii_fetch_unknown_blocked {
+    WHEN pii_present == "YES" AND domain_allowlisted == "NO"
+    THEN tool MUST NOT BE "fetch"
+  }
+
+  // PII in email: requires approval
+  STATE_CONSTRAINT pii_gmail_no_approval {
+    WHEN pii_present == "YES" AND approval_granted == "NO"
+    THEN tool MUST NOT BE "gmail_send"
+  }
+
+  // PII in messaging: requires approval
+  STATE_CONSTRAINT pii_sendMessage_no_approval {
+    WHEN pii_present == "YES" AND approval_granted == "NO"
+    THEN tool MUST NOT BE "sendMessage"
+  }
+
+  // ===========================================================
+  // SECTION 9: REMOTE NODE EXECUTION
+  // Nodes execute on paired devices — always require sandbox
+  // ===========================================================
+
+  STATE_CONSTRAINT node_exec_no_sandbox {
+    WHEN sandbox_active == "NO"
+    THEN tool MUST NOT BE "node_exec"
+  }
+}

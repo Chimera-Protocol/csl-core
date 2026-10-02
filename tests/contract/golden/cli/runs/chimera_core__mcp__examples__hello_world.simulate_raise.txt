@@ -1,0 +1,12 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: HelloWorld
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK

@@ -1,0 +1,640 @@
+{
+ "chimera_core__mcp__examples__age_verification": {
+  "constraints": [
+   "no_mature_for_minors",
+   "no_alcohol_for_minors",
+   "alcohol_requires_verification"
+  ],
+  "domain_name": "AgeGate",
+  "policy_hash": "8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "category": "{\"GENERAL\", \"TEEN\", \"MATURE\", \"ALCOHOL\"}",
+   "parent_verified": "{\"YES\", \"NO\"}",
+   "user_age": "0..120"
+  }
+ },
+ "chimera_core__mcp__examples__agent_tool_guard": {
+  "constraints": [
+   "non_admin_no_transfer",
+   "transfer_requires_approval",
+   "admin_transfer_limit",
+   "no_external_email_with_pii",
+   "no_secrets_table_queries",
+   "no_delete_record_tool"
+  ],
+  "domain_name": "AgentToolGuard",
+  "policy_hash": "52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "amount": "0..100000",
+   "approval_token": "{\"YES\", \"NO\"}",
+   "db_table": "{\"CUSTOMERS\", \"TRANSACTIONS\", \"SECRETS\"}",
+   "pii_present": "{\"YES\", \"NO\"}",
+   "recipient_domain": "{\"INTERNAL\", \"EXTERNAL\"}",
+   "tool": "{\"SEND_EMAIL\", \"TRANSFER_FUNDS\", \"QUERY_DB\", \"DELETE_RECORD\"}",
+   "user_role": "{\"ADMIN\", \"USER\", \"ANALYST\"}"
+  }
+ },
+ "chimera_core__mcp__examples__banking_guard": {
+  "constraints": [
+   "no_sanctioned_country",
+   "transfer_limit_non_vip",
+   "transfer_limit_vip",
+   "risk_ceiling_for_transfer",
+   "device_trust_for_medium_transfer",
+   "kyc_for_large_withdraw"
+  ],
+  "domain_name": "BankingGuard",
+  "policy_hash": "3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "action": "{\"TRANSFER\", \"WITHDRAW\", \"DEPOSIT\"}",
+   "amount": "0..100000",
+   "country": "{\"TR\", \"US\", \"EU\", \"NK\"}",
+   "device_trust": "0..1",
+   "is_vip": "{\"TRUE\", \"FALSE\"}",
+   "kyc_level": "0..5",
+   "risk_score": "0..1"
+  }
+ },
+ "chimera_core__mcp__examples__dao_treasury_guard": {
+  "constraints": [
+   "low_reputation_destination",
+   "low_reputation_amount_limit",
+   "external_transfer_approval",
+   "bridge_transfer_max_approval",
+   "bridge_always_requires_timelock",
+   "catastrophic_transfer_protection",
+   "large_transfer_timelock",
+   "emergency_action_unanimous",
+   "valid_proposal"
+  ],
+  "domain_name": "DAOTreasury",
+  "policy_hash": "2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "action": "{\"TRANSFER\", \"GRANT\", \"INVESTMENT\", \"EMERGENCY\"}",
+   "approval_count": "0..100",
+   "destination_type": "{\"INTERNAL\", \"EXTERNAL\", \"BRIDGE\", \"MULTISIG\"}",
+   "proposal_age_hours": "0..720",
+   "proposal_id": "0..100000",
+   "proposer_reputation": "0..1000",
+   "total_balance": "0..100000000",
+   "transfer_amount": "0..10000000"
+  }
+ },
+ "chimera_core__mcp__examples__hello_world": {
+  "constraints": [
+   "limit_large_transfers"
+  ],
+  "domain_name": "HelloWorld",
+  "policy_hash": "52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "amount": "0..10000",
+   "destination": "{\"INTERNAL\", \"EXTERNAL\"}"
+  }
+ },
+ "chimera_core__mcp__examples__tla_demo": {
+  "constraints": [
+   "no_destructive_ops",
+   "no_production_access",
+   "bounded_risk"
+  ],
+  "domain_name": "AIAgentSafetyDemo",
+  "policy_hash": "9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "agent_tier": "{\"STANDARD\", \"PREMIUM\"}",
+   "approved": "BOOLEAN",
+   "environment": "{\"dev\", \"staging\"}",
+   "risk_score": "0..5",
+   "task_type": "{\"READ\", \"WRITE\", \"ANALYZE\"}"
+  }
+ },
+ "chimera_core__mcp__examples__tla_demo_violation": {
+  "error": "CompilationError",
+  "message": "TLA⁺ formal verification failed: 2 property violation(s) found."
+ },
+ "contract__probes__modal": {
+  "constraints": [
+   "always_no_delete",
+   "pay_needs_admin",
+   "not_approved_small",
+   "write_large_not_low",
+   "scaled_limit",
+   "region_may"
+  ],
+  "domain_name": "ModalProbe",
+  "policy_hash": "2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "amount": "0..10000",
+   "approved": "{\"YES\", \"NO\"}",
+   "cap": "0..1000",
+   "level": "{\"LOW\", \"HIGH\"}",
+   "region": "{\"EU\", \"US\"}",
+   "reviewer": "{\"YES\", \"NO\"}",
+   "role": "{\"ADMIN\", \"USER\"}",
+   "tool": "{\"READ\", \"WRITE\", \"DELETE\", \"PAY\"}"
+  }
+ },
+ "contract__probes__operators": {
+  "constraints": [
+   "when_lte",
+   "when_lt",
+   "when_gte",
+   "when_gt",
+   "when_eq_neq",
+   "when_or",
+   "when_arith"
+  ],
+  "domain_name": "OperatorProbe",
+  "policy_hash": "f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "a": "0..100",
+   "b": "0..100",
+   "c": "0..100",
+   "d": "0..100",
+   "flag": "{\"YES\", \"NO\"}",
+   "mode": "{\"ONE\", \"TWO\", \"THREE\"}",
+   "t1": "{\"YES\", \"NO\"}",
+   "t2": "{\"ONE\", \"TWO\", \"THREE\"}",
+   "t3": "0..100",
+   "t4": "0..100",
+   "t5": "0..100",
+   "t6": "0..100",
+   "t7": "0..100"
+  }
+ },
+ "examples__agent_tool_guard": {
+  "constraints": [
+   "non_admin_no_transfer",
+   "transfer_requires_approval",
+   "admin_transfer_limit",
+   "no_external_email_with_pii",
+   "no_secrets_table_queries",
+   "no_delete_record_tool"
+  ],
+  "domain_name": "AgentToolGuard",
+  "policy_hash": "52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "amount": "0..100000",
+   "approval_token": "{\"YES\", \"NO\"}",
+   "db_table": "{\"CUSTOMERS\", \"TRANSACTIONS\", \"SECRETS\"}",
+   "pii_present": "{\"YES\", \"NO\"}",
+   "recipient_domain": "{\"INTERNAL\", \"EXTERNAL\"}",
+   "tool": "{\"SEND_EMAIL\", \"TRANSFER_FUNDS\", \"QUERY_DB\", \"DELETE_RECORD\"}",
+   "user_role": "{\"ADMIN\", \"USER\", \"ANALYST\"}"
+  }
+ },
+ "examples__chimera_banking_case_study": {
+  "constraints": [
+   "no_sanctioned_country",
+   "transfer_limit_non_vip",
+   "transfer_limit_vip",
+   "risk_ceiling_for_transfer",
+   "device_trust_for_medium_transfer",
+   "kyc_for_large_withdraw"
+  ],
+  "domain_name": "BankingGuard",
+  "policy_hash": "3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "action": "{\"TRANSFER\", \"WITHDRAW\", \"DEPOSIT\"}",
+   "amount": "0..100000",
+   "country": "{\"TR\", \"US\", \"EU\", \"NK\"}",
+   "device_trust": "0..1",
+   "is_vip": "{\"TRUE\", \"FALSE\"}",
+   "kyc_level": "0..5",
+   "risk_score": "0..1"
+  }
+ },
+ "examples__community__api_budget_manager": {
+  "constraints": [
+   "free_daily_limit",
+   "pro_monthly_limit"
+  ],
+  "domain_name": "ApiBudgetManager",
+  "policy_hash": "929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "daily_spend": "0.0..100000.0",
+   "monthly_cumulative": "0.0..1000000.0",
+   "user_tier": "{\"ENTERPRISE\", \"PRO\", \"FREE\"}"
+  }
+ },
+ "examples__community__construction_site_safety_guard": {
+  "constraints": [
+   "ppe_required_for_all_tasks",
+   "supervisor_required_for_high_risk",
+   "fall_protection_for_heights",
+   "height_worker_certification",
+   "energy_isolation_for_electrical",
+   "energy_worker_certification",
+   "protective_system_for_excavation",
+   "excavation_supervisor_approval",
+   "lift_plan_for_lifting",
+   "lifting_worker_certification",
+   "lifting_supervisor_approval"
+  ],
+  "domain_name": "ConstructionSiteSafetyGuard",
+  "policy_hash": "df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "energy_isolated": "BOOLEAN",
+   "fall_protection_ready": "BOOLEAN",
+   "hazard_level": "0..5",
+   "lift_plan_approved": "BOOLEAN",
+   "ppe_confirmed": "BOOLEAN",
+   "protective_system_ready": "BOOLEAN",
+   "supervisor_approved": "BOOLEAN",
+   "task_type": "{\"GENERAL\", \"HEIGHT\", \"ELECTRICAL\", \"EXCAVATION\", \"LIFTING\"}",
+   "worker_certified": "BOOLEAN"
+  }
+ },
+ "examples__community__defi_slippage_guard": {
+  "constraints": [
+   "enforce_user_slippage",
+   "enforce_hard_cap",
+   "require_verified_pool"
+  ],
+  "domain_name": "DeFiSlippageGuard",
+  "policy_hash": "cc0432ac071d79d53714b71c35866b061af4e7f270ecf854e5fadc6c29a6f2ad",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "is_verified_pool": "BOOLEAN",
+   "price_impact": "0.0..100.0",
+   "slippage_tolerance": "0.0..100.0"
+  }
+ },
+ "examples__community__defi_trading_guard": {
+  "constraints": [
+   "enforce_user_slippage",
+   "enforce_hard_cap",
+   "require_verified_pool"
+  ],
+  "domain_name": "DeFiTradingGuard",
+  "policy_hash": "5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "is_verified_pool": "BOOLEAN",
+   "price_impact": "0.0..100.0",
+   "slippage_tolerance": "0.0..100.0"
+  }
+ },
+ "examples__community__devops_deploy_guard": {
+  "constraints": [
+   "prevent_friday_late_deploys"
+  ],
+  "domain_name": "DevOpsGuard",
+  "policy_hash": "137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "current_hour": "0..23",
+   "day_of_week": "{\"MONDAY\", \"TUESDAY\", \"WEDNESDAY\", \"THURSDAY\", \"FRIDAY\", \"SATURDAY\", \"SUNDAY\"}",
+   "target_env": "{\"STAGING\", \"PROD\", \"DEV\"}"
+  }
+ },
+ "examples__community__ecommerce_margin_guard": {
+  "constraints": [
+   "enforce_minimum_margin"
+  ],
+  "domain_name": "EcommerceMarginGuard",
+  "policy_hash": "8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "min_margin_percent": "0.0..1.0",
+   "suggested_price": "0.0..1000000.0",
+   "unit_cost": "0.0..1000000.0"
+  }
+ },
+ "examples__community__game_npc_logic": {
+  "constraints": [
+   "no_friendly_fire",
+   "honor_ceasefire"
+  ],
+  "domain_name": "GameNpcROE",
+  "policy_hash": "1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "has_peace_treaty": "{\"TRUE\", \"FALSE\"}",
+   "my_faction": "String",
+   "target_faction": "String"
+  }
+ },
+ "examples__community__game_npc_resource": {
+  "constraints": [
+   "require_mana_for_spellcasting",
+   "require_mana_for_ultimate",
+   "require_positive_shot_count",
+   "require_ammo_for_shooting",
+   "require_knife_for_throwing",
+   "allow_reload_anytime",
+   "allow_meditate_anytime"
+  ],
+  "domain_name": "GameNpcResourceGuard",
+  "policy_hash": "da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "action": "{\"CAST_SPELL\", \"CAST_ULTIMATE\", \"SHOOT\", \"RELOAD\", \"THROW_KNIFE\", \"MEDITATE\"}",
+   "ammo_count": "0..30",
+   "knife_count": "0..2",
+   "mana_points": "0..100",
+   "shots_requested": "0..30"
+  }
+ },
+ "examples__community__ip_whitelist_guard": {
+  "constraints": [
+   "block_sensitive_external"
+  ],
+  "domain_name": "IpWhitelistGuard",
+  "policy_hash": "7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "data_sensitivity": "{\"HIGH\", \"MEDIUM\", \"LOW\"}",
+   "destination_ip": "String",
+   "is_internal_ip": "BOOLEAN"
+  }
+ },
+ "examples__community__mcp_tool_trust_guard": {
+  "constraints": [
+   "tool_must_be_registered",
+   "high_risk_requires_trusted_server",
+   "critical_risk_requires_trusted_server",
+   "read_only_blocks_writes",
+   "resource_must_be_in_scope",
+   "destructive_ops_require_human_approval",
+   "secret_access_requires_human_approval",
+   "critical_risk_requires_human_approval",
+   "untrusted_network_requires_human_approval",
+   "confidential_data_requires_trusted_destination",
+   "restricted_data_requires_trusted_destination",
+   "pii_requires_trusted_destination",
+   "secrets_require_trusted_destination",
+   "networked_secret_ops_require_human_approval",
+   "large_operations_require_human_approval",
+   "very_large_operations_require_elevated_session"
+  ],
+  "domain_name": "MCPToolTrustGuard",
+  "policy_hash": "5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "contains_pii": "BOOLEAN",
+   "contains_secrets": "BOOLEAN",
+   "data_sensitivity": "{\"PUBLIC\", \"INTERNAL\", \"CONFIDENTIAL\", \"RESTRICTED\"}",
+   "destination_trusted": "BOOLEAN",
+   "human_approved": "BOOLEAN",
+   "is_destructive": "BOOLEAN",
+   "operation_size": "0..1000000",
+   "requires_network": "BOOLEAN",
+   "requires_secret_access": "BOOLEAN",
+   "requires_write_access": "BOOLEAN",
+   "resource_in_scope": "BOOLEAN",
+   "server_trusted": "BOOLEAN",
+   "session_mode": "{\"READ_ONLY\", \"SANDBOXED_WRITE\", \"ELEVATED\"}",
+   "tool_registered": "BOOLEAN",
+   "tool_risk_level": "{\"LOW\", \"MEDIUM\", \"HIGH\", \"CRITICAL\"}"
+  }
+ },
+ "examples__community__pediatric_safety_guard": {
+  "constraints": [
+   "pediatric_antibiotic_a_max_dose"
+  ],
+  "domain_name": "PediatricSafetyGuard",
+  "policy_hash": "00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "dosage_mg": "0..10000",
+   "drug_type": "String",
+   "patient_age": "0..120"
+  }
+ },
+ "examples__community__pii_guard": {
+  "constraints": [
+   "no_pii_in_output",
+   "minimum_confidence"
+  ],
+  "domain_name": "PiiOutputGuard",
+  "policy_hash": "f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "confidence_score": "0.0..1.0",
+   "output_text": "String",
+   "pii_detected": "BOOLEAN"
+  }
+ },
+ "examples__community__supply_chain_provenance_guard": {
+  "constraints": [
+   "purchase_requires_supplier_verification",
+   "receive_requires_traceability",
+   "ship_requires_compliance_documents",
+   "country_must_be_allowed"
+  ],
+  "domain_name": "SupplyChainProvenanceGuard",
+  "policy_hash": "018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "action": "{\"PURCHASE\", \"RECEIVE\", \"SHIP\"}",
+   "batch_traceable": "BOOLEAN",
+   "compliance_docs_present": "BOOLEAN",
+   "country_allowed": "BOOLEAN",
+   "supplier_verified": "BOOLEAN"
+  }
+ },
+ "examples__community__web3_bridge_transaction_limit": {
+  "constraints": [
+   "block_exploited_bridge_history",
+   "cap_unaudited_bridge_amount",
+   "large_bridge_transfer_requires_cosign",
+   "hot_key_bridge_transfer_limit",
+   "unsigned_daily_bridge_volume_limit",
+   "escalate_large_bridge_transfer",
+   "escalate_partially_audited_bridge"
+  ],
+  "domain_name": "Web3BridgeTransactionLimitGuard",
+  "policy_hash": "1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "agent_signing_key": "{\"HOT\", \"WARM\", \"MULTISIG\"}",
+   "amount_usd": "0.0..10000000.0",
+   "asset_symbol": "String",
+   "bridge_action": "{\"EXECUTE\", \"BLOCK\"}",
+   "bridge_audit_status": "{\"AUDITED\", \"PARTIALLY_AUDITED\", \"UNAUDITED\", \"EXPLOITED_HISTORY\"}",
+   "bridge_protocol": "{\"LAYERZERO\", \"WORMHOLE\", \"ACROSS\", \"STARGATE\", \"OTHER\"}",
+   "daily_bridge_volume_usd": "0.0..10000000.0",
+   "destination_chain": "String",
+   "human_co_sign": "BOOLEAN",
+   "review_status": "{\"NONE\", \"ESCALATE\"}",
+   "source_chain": "String"
+  }
+ },
+ "examples__dao_treasury_guard": {
+  "constraints": [
+   "low_reputation_destination",
+   "low_reputation_amount_limit",
+   "external_transfer_approval",
+   "bridge_transfer_max_approval",
+   "bridge_always_requires_timelock",
+   "catastrophic_transfer_protection",
+   "large_transfer_timelock",
+   "emergency_action_unanimous",
+   "valid_proposal"
+  ],
+  "domain_name": "DAOTreasury",
+  "policy_hash": "2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "action": "{\"TRANSFER\", \"GRANT\", \"INVESTMENT\", \"EMERGENCY\"}",
+   "approval_count": "0..100",
+   "destination_type": "{\"INTERNAL\", \"EXTERNAL\", \"BRIDGE\", \"MULTISIG\"}",
+   "proposal_age_hours": "0..720",
+   "proposal_id": "0..100000",
+   "proposer_reputation": "0..1000",
+   "total_balance": "0..100000000",
+   "transfer_amount": "0..10000000"
+  }
+ },
+ "examples__openclaw_guard": {
+  "constraints": [
+   "embedded_no_bash",
+   "embedded_no_exec",
+   "unattended_no_bash",
+   "unattended_no_exec",
+   "embedded_no_cron",
+   "unattended_no_secrets_write",
+   "unattended_no_skill_install",
+   "untrusted_no_bash",
+   "untrusted_no_exec",
+   "untrusted_no_write",
+   "untrusted_no_edit",
+   "untrusted_no_apply_patch",
+   "untrusted_no_gmail_send",
+   "untrusted_no_gmail_delete",
+   "untrusted_no_sendMessage",
+   "untrusted_no_secrets_write",
+   "untrusted_no_node_exec",
+   "untrusted_no_cron",
+   "untrusted_no_skill_install",
+   "untrusted_no_navigate_unknown_domain",
+   "untrusted_no_click_unknown_domain",
+   "mass_delete_paired_blocked",
+   "bulk_delete_embedded_blocked",
+   "bulk_delete_unattended_blocked",
+   "bulk_delete_server_blocked",
+   "bulk_delete_no_approval",
+   "mass_send_no_approval",
+   "write_outside_no_approval",
+   "edit_outside_no_approval",
+   "patch_outside_no_approval",
+   "navigate_unknown_no_approval",
+   "click_unknown_no_approval",
+   "fetch_unknown_no_approval",
+   "download_unknown_no_approval",
+   "secrets_write_paired_blocked",
+   "secrets_write_no_approval",
+   "unverified_skill_blocked",
+   "skill_install_paired_blocked",
+   "pii_navigate_unknown_blocked",
+   "pii_fetch_unknown_blocked",
+   "pii_gmail_no_approval",
+   "pii_sendMessage_no_approval",
+   "node_exec_no_sandbox"
+  ],
+  "domain_name": "OpenClawGuard",
+  "policy_hash": "9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "approval_granted": "{\"YES\", \"NO\"}",
+   "deployment_mode": "{\"DESKTOP\", \"SERVER\", \"EMBEDDED\", \"UNATTENDED\"}",
+   "domain_allowlisted": "{\"YES\", \"NO\"}",
+   "path_in_workspace": "{\"YES\", \"NO\"}",
+   "pii_present": "{\"YES\", \"NO\"}",
+   "sandbox_active": "{\"YES\", \"NO\"}",
+   "sender_role": "{\"OWNER\", \"PAIRED\", \"UNPAIRED\", \"UNKNOWN\"}",
+   "skill_verified": "{\"YES\", \"NO\"}",
+   "target_count": "0..500",
+   "tool": "{\"bash\", \"exec\", \"read\", \"write\", \"edit\", \"glob\", \"apply_patch\", \"navigate\", \"screenshot\", \"click\", \"type\", \"evaluate\", \"fetch\", \"request\", \"download\", \"sendMessage\", \"gmail_send\", \"gmail_delete\", \"secrets_write\", \"node_exec\", \"cron\", \"skill_install\", \"camera_preview\"}"
+  }
+ },
+ "examples__tla_demo": {
+  "constraints": [
+   "no_destructive_ops",
+   "no_production_access",
+   "bounded_risk"
+  ],
+  "domain_name": "AIAgentSafetyDemo",
+  "policy_hash": "9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "agent_tier": "{\"STANDARD\", \"PREMIUM\"}",
+   "approved": "BOOLEAN",
+   "environment": "{\"dev\", \"staging\"}",
+   "risk_score": "0..5",
+   "task_type": "{\"READ\", \"WRITE\", \"ANALYZE\"}"
+  }
+ },
+ "examples__tla_demo_violation": {
+  "error": "CompilationError",
+  "message": "TLA⁺ formal verification failed: 2 property violation(s) found."
+ },
+ "quickstart__01_hello_world": {
+  "constraints": [
+   "limit_large_transfers"
+  ],
+  "domain_name": "HelloWorld",
+  "policy_hash": "52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "amount": "0..10000",
+   "destination": "{\"INTERNAL\", \"EXTERNAL\"}"
+  }
+ },
+ "quickstart__02_age_verification": {
+  "constraints": [
+   "no_mature_for_minors",
+   "no_alcohol_for_minors",
+   "alcohol_requires_verification"
+  ],
+  "domain_name": "AgeGate",
+  "policy_hash": "8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b",
+  "policy_id": null,
+  "policy_version": null,
+  "variable_domains": {
+   "category": "{\"GENERAL\", \"TEEN\", \"MATURE\", \"ALCOHOL\"}",
+   "parent_verified": "{\"YES\", \"NO\"}",
+   "user_age": "0..120"
+  }
+ }
+}

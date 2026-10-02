@@ -1,0 +1,105 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: SupplyChainProvenanceGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "PURCHASE", "batch_traceable": false, 
+"compliance_docs_present": false, "country_allowed": false, "supplier_verified": false}, 
+"violations": [{"message": "Violation 'purchase_requires_supplier_verification': 
+supplier_verified=False must be == True."}, {"message": "Violation 'country_must_be_allowed': 
+country_allowed=False must be == True."}], "warnings": [], "triggered_rule_ids": 
+["purchase_requires_supplier_verification", "country_must_be_allowed"], "violated_rule_ids": 
+["purchase_requires_supplier_verification", "country_must_be_allowed"]}
+{"allowed": true, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "SHIP", "batch_traceable": true, 
+"compliance_docs_present": true, "country_allowed": true, "supplier_verified": true}, "violations": 
+[], "warnings": [], "triggered_rule_ids": ["ship_requires_compliance_documents", 
+"country_must_be_allowed"], "violated_rule_ids": []}
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "PURCHASE", "batch_traceable": false, 
+"compliance_docs_present": false, "country_allowed": false, "supplier_verified": false}, 
+"violations": [{"message": "Violation 'purchase_requires_supplier_verification': 
+supplier_verified=False must be == True."}, {"message": "Violation 'country_must_be_allowed': 
+country_allowed=False must be == True."}], "warnings": [], "triggered_rule_ids": 
+["purchase_requires_supplier_verification", "country_must_be_allowed"], "violated_rule_ids": 
+["purchase_requires_supplier_verification", "country_must_be_allowed"]}
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "RECEIVE", "batch_traceable": false, 
+"compliance_docs_present": false, "country_allowed": false, "supplier_verified": false}, 
+"violations": [{"message": "Violation 'receive_requires_traceability': batch_traceable=False must be
+== True."}, {"message": "Violation 'country_must_be_allowed': country_allowed=False must be == 
+True."}], "warnings": [], "triggered_rule_ids": ["receive_requires_traceability", 
+"country_must_be_allowed"], "violated_rule_ids": ["receive_requires_traceability", 
+"country_must_be_allowed"]}
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "SHIP", "batch_traceable": false, 
+"compliance_docs_present": false, "country_allowed": false, "supplier_verified": false}, 
+"violations": [{"message": "Violation 'ship_requires_compliance_documents': 
+compliance_docs_present=False must be == True."}, {"message": "Violation 'country_must_be_allowed': 
+country_allowed=False must be == True."}], "warnings": [], "triggered_rule_ids": 
+["ship_requires_compliance_documents", "country_must_be_allowed"], "violated_rule_ids": 
+["ship_requires_compliance_documents", "country_must_be_allowed"]}
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "purchase", "batch_traceable": false, 
+"compliance_docs_present": false, "country_allowed": false, "supplier_verified": false}, 
+"violations": [{"message": "Violation 'country_must_be_allowed': country_allowed=False must be == 
+True."}], "warnings": [], "triggered_rule_ids": ["country_must_be_allowed"], "violated_rule_ids": 
+["country_must_be_allowed"]}
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "__UNKNOWN_VALUE__", "batch_traceable": false, 
+"compliance_docs_present": false, "country_allowed": false, "supplier_verified": false}, 
+"violations": [{"message": "Violation 'country_must_be_allowed': country_allowed=False must be == 
+True."}], "warnings": [], "triggered_rule_ids": ["country_must_be_allowed"], "violated_rule_ids": 
+["country_must_be_allowed"]}
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": 1, "batch_traceable": false, 
+"compliance_docs_present": false, "country_allowed": false, "supplier_verified": false}, 
+"violations": [{"message": "Violation 'country_must_be_allowed': country_allowed=False must be == 
+True."}], "warnings": [], "triggered_rule_ids": ["country_must_be_allowed"], "violated_rule_ids": 
+["country_must_be_allowed"]}
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"batch_traceable": false, "compliance_docs_present": false, 
+"country_allowed": false, "supplier_verified": false}, "violations": [{"message": "Violation 
+'country_must_be_allowed': country_allowed=False must be == True."}], "warnings": [], 
+"triggered_rule_ids": ["country_must_be_allowed"], "violated_rule_ids": ["country_must_be_allowed"]}
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "PURCHASE", "batch_traceable": false, 
+"compliance_docs_present": false, "country_allowed": false, "supplier_verified": true}, 
+"violations": [{"message": "Violation 'country_must_be_allowed': country_allowed=False must be == 
+True."}], "warnings": [], "triggered_rule_ids": ["purchase_requires_supplier_verification", 
+"country_must_be_allowed"], "violated_rule_ids": ["country_must_be_allowed"]}
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "PURCHASE", "batch_traceable": false, 
+"compliance_docs_present": false, "country_allowed": false, "supplier_verified": "YES"}, 
+"violations": [{"message": "Violation 'purchase_requires_supplier_verification': 
+supplier_verified='YES' must be == True."}, {"message": "Violation 'country_must_be_allowed': 
+country_allowed=False must be == True."}], "warnings": [], "triggered_rule_ids": 
+["purchase_requires_supplier_verification", "country_must_be_allowed"], "violated_rule_ids": 
+["purchase_requires_supplier_verification", "country_must_be_allowed"]}
+{"allowed": false, "domain": "SupplyChainProvenanceGuard", "policy_hash": 
+"018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "PURCHASE", "batch_traceable": false, 
+"compliance_docs_present": false, "country_allowed": false}, "violations": [{"message": "Missing 
+required key 'supplier_verified' for rule 'purchase_requires_supplier_verification'."}, {"message": 
+"Violation 'country_must_be_allowed': country_allowed=False must be == True."}], "warnings": [], 
+"triggered_rule_ids": ["purchase_requires_supplier_verification", "country_must_be_allowed"], 
+"violated_rule_ids": ["purchase_requires_supplier_verification", "country_must_be_allowed"]}

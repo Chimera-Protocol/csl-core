@@ -1,0 +1,672 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://github.com/Chimera-Protocol/csl-core/venom/report.v1.json",
+ "title": "CSL-Core Venom report",
+ "type": "object",
+ "required": [
+  "schema_version",
+  "host",
+  "agents",
+  "policies",
+  "coverage",
+  "drift",
+  "findings",
+  "exempted",
+  "rules_not_evaluated"
+ ],
+ "properties": {
+  "schema_version": {
+   "const": 1
+  },
+  "tool_version": {
+   "type": "string"
+  },
+  "host": {
+   "type": "object",
+   "required": [
+    "name",
+    "os",
+    "scanned_at",
+    "duration_ms",
+    "layers_run"
+   ],
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "os": {
+     "type": "string"
+    },
+    "scanned_at": {
+     "type": "string"
+    },
+    "duration_ms": {
+     "type": "integer"
+    },
+    "scope": {
+     "type": "string"
+    },
+    "mode": {
+     "enum": [
+      "host",
+      "folder",
+      "fixture"
+     ]
+    },
+    "layers_run": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "code",
+       "config",
+       "triggers",
+       "runtime",
+       "history",
+       "policies",
+       "mcp"
+      ]
+     }
+    },
+    "layers_unavailable": {
+     "type": "object"
+    },
+    "files_scanned": {
+     "type": "integer"
+    },
+    "parse_errors": {
+     "type": "integer"
+    },
+    "not_readable": {
+     "type": "integer"
+    },
+    "partial": {
+     "type": "boolean"
+    }
+   }
+  },
+  "agents": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/agent"
+   }
+  },
+  "policies": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "path",
+     "status"
+    ],
+    "properties": {
+     "path": {
+      "type": "string"
+     },
+     "status": {
+      "enum": [
+       "active",
+       "draft",
+       "found"
+      ]
+     },
+     "policy_hash": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "error": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    }
+   }
+  },
+  "coverage": {
+   "type": "object",
+   "required": [
+    "tools_total",
+    "guarded",
+    "wired_no_rule",
+    "unguarded",
+    "exempt"
+   ],
+   "properties": {
+    "tools_total": {
+     "type": "integer"
+    },
+    "guarded": {
+     "type": "integer"
+    },
+    "wired_no_rule": {
+     "type": "integer"
+    },
+    "unguarded": {
+     "type": "integer"
+    },
+    "exempt": {
+     "type": "integer"
+    },
+    "ratio": {
+     "type": [
+      "number",
+      "null"
+     ]
+    }
+   }
+  },
+  "drift": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "kind",
+     "policy",
+     "variable"
+    ],
+    "properties": {
+     "kind": {
+      "enum": [
+       "unknown_value",
+       "unsupplied_variable",
+       "coercion"
+      ]
+     }
+    }
+   }
+  },
+  "findings": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/finding"
+   }
+  },
+  "exempted": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/finding"
+   }
+  },
+  "rules_not_evaluated": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  }
+ },
+ "$defs": {
+  "evidence": {
+   "type": "object",
+   "required": [
+    "layer",
+    "path"
+   ],
+   "properties": {
+    "layer": {
+     "type": "string"
+    },
+    "path": {
+     "type": "string"
+    },
+    "line": {
+     "type": [
+      "integer",
+      "null"
+     ]
+    },
+    "detail": {
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   }
+  },
+  "param": {
+   "type": "object",
+   "required": [
+    "name"
+   ],
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "type": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "enum": {
+     "type": [
+      "array",
+      "null"
+     ],
+     "items": {
+      "type": "string"
+     }
+    },
+    "minimum": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "maximum": {
+     "type": [
+      "number",
+      "null"
+     ]
+    }
+   }
+  },
+  "tool": {
+   "type": "object",
+   "required": [
+    "name",
+    "source",
+    "risk_class"
+   ],
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "source": {
+     "type": "string"
+    },
+    "params": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/param"
+     }
+    },
+    "description": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "risk_class": {
+     "enum": [
+      "READ",
+      "WRITE",
+      "EXEC",
+      "EXTERNAL",
+      "SPEND",
+      "DESTRUCTIVE",
+      "IDENTITY",
+      "UNCLASSIFIED"
+     ]
+    },
+    "risk_reason": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "mcp_server": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "coverage": {
+     "enum": [
+      null,
+      "guarded",
+      "wired_no_rule",
+      "unguarded",
+      "exempt"
+     ]
+    },
+    "evidence": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/evidence"
+     }
+    }
+   }
+  },
+  "credential": {
+   "type": "object",
+   "required": [
+    "name",
+    "file",
+    "kind"
+   ],
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "file": {
+     "type": "string"
+    },
+    "kind": {
+     "enum": [
+      "cloud_root",
+      "org_token",
+      "llm_key",
+      "database_url",
+      "payment",
+      "other"
+     ]
+    }
+   },
+   "additionalProperties": false
+  },
+  "finding": {
+   "type": "object",
+   "required": [
+    "id",
+    "rule",
+    "severity",
+    "summary"
+   ],
+   "properties": {
+    "id": {
+     "type": "string",
+     "pattern": "^V\\d\\d$"
+    },
+    "rule": {
+     "type": "string"
+    },
+    "severity": {
+     "enum": [
+      "high",
+      "medium",
+      "low",
+      "info"
+     ]
+    },
+    "summary": {
+     "type": "string"
+    },
+    "agent_id": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "tool": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "evidence": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/evidence"
+     }
+    },
+    "recommendation": {
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   }
+  },
+  "agent": {
+   "type": "object",
+   "required": [
+    "id",
+    "display_name",
+    "kind",
+    "state",
+    "tools",
+    "access",
+    "runs",
+    "guard"
+   ],
+   "properties": {
+    "id": {
+     "type": "string"
+    },
+    "display_name": {
+     "type": "string"
+    },
+    "kind": {
+     "enum": [
+      "code",
+      "assistant",
+      "service",
+      "scheduled",
+      "unmanaged"
+     ]
+    },
+    "state": {
+     "enum": [
+      "running",
+      "stopped",
+      "scheduled",
+      "configured",
+      "unknown"
+     ]
+    },
+    "framework": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "model_ids": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "entrypoint": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "project": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "process_user": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "pids": {
+     "type": "array",
+     "items": {
+      "type": "integer"
+     }
+    },
+    "evidence": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/evidence"
+     }
+    },
+    "tools": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/tool"
+     }
+    },
+    "access": {
+     "type": "object",
+     "properties": {
+      "credentials": {
+       "type": "array",
+       "items": {
+        "$ref": "#/$defs/credential"
+       }
+      },
+      "fs_roots": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "network_listen": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "permission_mode": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "elevated": {
+       "type": "boolean"
+      }
+     }
+    },
+    "triggers": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "type"
+      ],
+      "properties": {
+       "type": {
+        "enum": [
+         "time",
+         "inbound_http",
+         "messaging",
+         "email",
+         "manual",
+         "boot"
+        ]
+       },
+       "schedule": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "source": {
+        "type": [
+         "string",
+         "null"
+        ]
+       }
+      }
+     }
+    },
+    "runs": {
+     "type": "object",
+     "required": [
+      "count",
+      "window"
+     ],
+     "properties": {
+      "count": {
+       "type": [
+        "integer",
+        "null"
+       ],
+       "minimum": 0
+      },
+      "window": {
+       "type": "string"
+      },
+      "last_run": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "per_day": {
+       "type": [
+        "array",
+        "null"
+       ],
+       "items": {
+        "type": "integer"
+       }
+      },
+      "source": {
+       "type": [
+        "string",
+        "null"
+       ]
+      }
+     }
+    },
+    "guard": {
+     "type": "object",
+     "required": [
+      "status"
+     ],
+     "properties": {
+      "status": {
+       "enum": [
+        "none",
+        "wired",
+        "wired_no_rule"
+       ]
+      },
+      "policy_ids": {
+       "type": "array"
+      },
+      "mechanism": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "mode": {
+       "enum": [
+        null,
+        "log",
+        "block"
+       ]
+      }
+     }
+    },
+    "exempt": {
+     "type": [
+      "object",
+      "null"
+     ]
+    },
+    "system_prompt": {
+     "type": "object",
+     "properties": {
+      "present": {
+       "type": "boolean"
+      },
+      "length": {
+       "type": [
+        "integer",
+        "null"
+       ]
+      },
+      "sha256": {
+       "type": [
+        "string",
+        "null"
+       ]
+      }
+     },
+     "additionalProperties": false
+    },
+    "sessions": {
+     "type": [
+      "integer",
+      "null"
+     ]
+    }
+   }
+  }
+ }
+}

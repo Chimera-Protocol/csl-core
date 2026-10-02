@@ -1,0 +1,31 @@
+usage: cslcore simulate [-h] [--input INPUT_JSON] [--input-file INPUT_FILE] [--dashboard]
+                        [--dry-run] [--fast-fail] [--no-raise]
+                        [--missing-key-behavior {block,warn,ignore}]
+                        [--evaluation-error-behavior {block,warn,ignore}] [--skip-verify]
+                        [--skip-validate] [--debug-z3] [--json] [--pretty-json]
+                        [--json-out JSON_OUT] [--quiet]
+                        policy
+
+positional arguments:
+  policy                Path to .csl policy file
+
+options:
+  -h, --help            show this help message and exit
+  --input INPUT_JSON    Single JSON object as a string
+  --input-file INPUT_FILE
+                        JSON file containing an object or a list of objects
+  --dashboard           Show rich audit dashboard per simulation
+  --dry-run             Do not block; report what WOULD be blocked
+  --fast-fail           Stop at first violation (faster)
+  --no-raise            Do not raise on BLOCK (still returns a result)
+  --missing-key-behavior {block,warn,ignore}
+                        What to do if a rule references a missing key (default: block)
+  --evaluation-error-behavior {block,warn,ignore}
+                        What to do on evaluation errors (type mismatch, etc.) (default: block)
+  --skip-verify         Skip Z3 verification (not recommended)
+  --skip-validate       Skip semantic validation (not recommended)
+  --debug-z3            On compile failure, print Z3 encoding trace (tail).
+  --json                Print machine-readable JSON output per simulation.
+  --pretty-json         Pretty-print JSON (with indentation).
+  --json-out JSON_OUT   Append JSONL output to a file (one line per simulation).
+  --quiet               Reduce human output (useful with --json).

@@ -1,0 +1,101 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: DeFiTradingGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": false, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": false, "price_impact": 0.0, 
+"slippage_tolerance": 0.0}, "violations": [{"message": "Violation 'require_verified_pool': 
+is_verified_pool=False must be MUST BE True."}], "warnings": [], "triggered_rule_ids": 
+["enforce_user_slippage", "enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": 
+["require_verified_pool"]}
+{"allowed": false, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": true, "price_impact": 100.0, 
+"slippage_tolerance": 100.0}, "violations": [{"message": "Violation 'enforce_hard_cap': 
+price_impact=100.0 must be <= 5.0."}], "warnings": [], "triggered_rule_ids": 
+["enforce_user_slippage", "enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": 
+["enforce_hard_cap"]}
+{"allowed": false, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": false, "price_impact": -0.5, 
+"slippage_tolerance": 0.0}, "violations": [{"message": "Violation 'require_verified_pool': 
+is_verified_pool=False must be MUST BE True."}], "warnings": [], "triggered_rule_ids": 
+["enforce_user_slippage", "enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": 
+["require_verified_pool"]}
+{"allowed": false, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": false, "price_impact": 100.0, 
+"slippage_tolerance": 0.0}, "violations": [{"message": "Violation 'enforce_user_slippage': 
+price_impact=100.0 must be <= 0.0."}, {"message": "Violation 'enforce_hard_cap': price_impact=100.0 
+must be <= 5.0."}, {"message": "Violation 'require_verified_pool': is_verified_pool=False must be 
+MUST BE True."}], "warnings": [], "triggered_rule_ids": ["enforce_user_slippage", 
+"enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": ["enforce_user_slippage", 
+"enforce_hard_cap", "require_verified_pool"]}
+{"allowed": false, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": false, "price_impact": 100.5, 
+"slippage_tolerance": 0.0}, "violations": [{"message": "Violation 'enforce_user_slippage': 
+price_impact=100.5 must be <= 0.0."}, {"message": "Violation 'enforce_hard_cap': price_impact=100.5 
+must be <= 5.0."}, {"message": "Violation 'require_verified_pool': is_verified_pool=False must be 
+MUST BE True."}], "warnings": [], "triggered_rule_ids": ["enforce_user_slippage", 
+"enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": ["enforce_user_slippage", 
+"enforce_hard_cap", "require_verified_pool"]}
+{"allowed": false, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": false, "price_impact": 50.0, 
+"slippage_tolerance": 0.0}, "violations": [{"message": "Violation 'enforce_user_slippage': 
+price_impact=50.0 must be <= 0.0."}, {"message": "Violation 'enforce_hard_cap': price_impact=50.0 
+must be <= 5.0."}, {"message": "Violation 'require_verified_pool': is_verified_pool=False must be 
+MUST BE True."}], "warnings": [], "triggered_rule_ids": ["enforce_user_slippage", 
+"enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": ["enforce_user_slippage", 
+"enforce_hard_cap", "require_verified_pool"]}
+{"allowed": false, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": false, "price_impact": 4.5, 
+"slippage_tolerance": 0.0}, "violations": [{"message": "Violation 'enforce_user_slippage': 
+price_impact=4.5 must be <= 0.0."}, {"message": "Violation 'require_verified_pool': 
+is_verified_pool=False must be MUST BE True."}], "warnings": [], "triggered_rule_ids": 
+["enforce_user_slippage", "enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": 
+["enforce_user_slippage", "require_verified_pool"]}
+{"allowed": true, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": true, "price_impact": 4.5, 
+"slippage_tolerance": 100.0}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["enforce_user_slippage", "enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": []}
+{"allowed": false, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": false, "price_impact": 5.0, 
+"slippage_tolerance": 0.0}, "violations": [{"message": "Violation 'enforce_user_slippage': 
+price_impact=5.0 must be <= 0.0."}, {"message": "Violation 'require_verified_pool': 
+is_verified_pool=False must be MUST BE True."}], "warnings": [], "triggered_rule_ids": 
+["enforce_user_slippage", "enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": 
+["enforce_user_slippage", "require_verified_pool"]}
+{"allowed": true, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": true, "price_impact": 5.0, 
+"slippage_tolerance": 100.0}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["enforce_user_slippage", "enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": []}
+{"allowed": false, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": false, "price_impact": 5.5, 
+"slippage_tolerance": 0.0}, "violations": [{"message": "Violation 'enforce_user_slippage': 
+price_impact=5.5 must be <= 0.0."}, {"message": "Violation 'enforce_hard_cap': price_impact=5.5 must
+be <= 5.0."}, {"message": "Violation 'require_verified_pool': is_verified_pool=False must be MUST BE
+True."}], "warnings": [], "triggered_rule_ids": ["enforce_user_slippage", "enforce_hard_cap", 
+"require_verified_pool"], "violated_rule_ids": ["enforce_user_slippage", "enforce_hard_cap", 
+"require_verified_pool"]}
+{"allowed": false, "domain": "DeFiTradingGuard", "policy_hash": 
+"5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"is_verified_pool": true, "price_impact": 5.5, 
+"slippage_tolerance": 100.0}, "violations": [{"message": "Violation 'enforce_hard_cap': 
+price_impact=5.5 must be <= 5.0."}], "warnings": [], "triggered_rule_ids": ["enforce_user_slippage",
+"enforce_hard_cap", "require_verified_pool"], "violated_rule_ids": ["enforce_hard_cap"]}

@@ -1,0 +1,28 @@
+// TLA+ Violation Demo
+// TLA+ will find that "TRANSFER_FUNDS" IS in the tool domain,
+// so the MUST NOT BE constraint is reachable and violated.
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  ENABLE_FORMAL_VERIFICATION: TRUE
+}
+
+DOMAIN ViolationDemo {
+  VARIABLES {
+    role:   {"ADMIN", "USER", "ANALYST"}
+    tool:   {"READ_DB", "SEND_EMAIL", "TRANSFER_FUNDS"}
+    amount: 0..100000
+  }
+
+  // VIOLATION: BFS will reach {role="USER", tool="TRANSFER_FUNDS"}
+  STATE_CONSTRAINT user_no_transfer {
+    WHEN role == "USER"
+    THEN tool MUST NOT BE "TRANSFER_FUNDS"
+  }
+
+  // VIOLATION: BFS will reach {amount=50001, tool="TRANSFER_FUNDS"}
+  STATE_CONSTRAINT large_transfer_blocked {
+    WHEN amount > 50000
+    THEN tool MUST NOT BE "TRANSFER_FUNDS"
+  }
+}

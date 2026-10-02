@@ -1,0 +1,123 @@
+// =============================================================
+// policy: Game NPC Resource Guard
+// Goal: Prevent NPCs from performing actions when required
+//       resources are depleted, while allowing valid recovery actions
+//       for different resource types.
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN GameNpcResourceGuard {
+  VARIABLES {
+    action: {"CAST_SPELL", "CAST_ULTIMATE", "SHOOT", "RELOAD", "THROW_KNIFE", "MEDITATE"}
+    mana_points: 0..100
+    ammo_count: 0..30
+    shots_requested: 0..30
+    knife_count: 0..2
+  }
+
+  // -----------------------------------------------------------
+  // Rule 1: BLOCK if action is CAST_SPELL and mana_points < 10
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT require_mana_for_spellcasting {
+    WHEN action == "CAST_SPELL"
+    THEN mana_points >= 10
+  }
+
+  // -----------------------------------------------------------
+  // Rule 2: BLOCK if action is CAST_ULTIMATE and mana_points < 80
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT require_mana_for_ultimate {
+    WHEN action == "CAST_ULTIMATE"
+    THEN mana_points >= 80
+  }
+
+  // -----------------------------------------------------------
+  // Rule 3: BLOCK if action is SHOOT and shots_requested = 0
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT require_positive_shot_count {
+    WHEN action == "SHOOT"
+    THEN shots_requested > 0
+  }
+
+  // -----------------------------------------------------------
+  // Rule 4: BLOCK if action is SHOOT and ammo_count is less than
+  //         the number of requested shots
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT require_ammo_for_shooting {
+    WHEN action == "SHOOT"
+    THEN ammo_count >= shots_requested
+  }
+
+  // -----------------------------------------------------------
+  // Rule 5: BLOCK if action is THROW_KNIFE and knife_count == 0
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT require_knife_for_throwing {
+    WHEN action == "THROW_KNIFE"
+    THEN knife_count > 0
+  }
+
+  // -----------------------------------------------------------
+  // Rule 6: ALLOW RELOAD at any time for ammo-based weapons
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT allow_reload_anytime {
+    WHEN action == "RELOAD"
+    THEN action MUST BE "RELOAD"
+  }
+
+  // -----------------------------------------------------------
+  // Rule 7: ALLOW MEDITATE at any time for mana recovery
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT allow_meditate_anytime {
+    WHEN action == "MEDITATE"
+    THEN action MUST BE "MEDITATE"
+  }
+}
+
+// Quick checks from repo root:
+// cslcore verify examples/community/game_npc_resource.csl
+
+// =============================================================
+// Example simulations
+// One BLOCK and one ALLOW example for each constrained action.
+// For always-allowed recovery actions, two ALLOW examples are shown.
+// =============================================================
+
+// CAST_SPELL
+// BLOCK:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"CAST_SPELL","mana_points":5,"ammo_count":10,"knife_count":1,"shots_requested":0}'
+// ALLOW:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"CAST_SPELL","mana_points":10,"ammo_count":0,"knife_count":0,"shots_requested":0}'
+
+// CAST_ULTIMATE
+// BLOCK:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"CAST_ULTIMATE","mana_points":79,"ammo_count":30,"knife_count":2,"shots_requested":0}'
+// ALLOW:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"CAST_ULTIMATE","mana_points":80,"ammo_count":0,"knife_count":0,"shots_requested":0}'
+
+// SHOOT
+// BLOCK:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"SHOOT","mana_points":0,"ammo_count":2,"knife_count":0,"shots_requested":3}'
+// ALLOW:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"SHOOT","mana_points":0,"ammo_count":3,"knife_count":0,"shots_requested":3}'
+
+// THROW_KNIFE
+// BLOCK:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"THROW_KNIFE","mana_points":100,"ammo_count":30,"knife_count":0,"shots_requested":0}'
+// ALLOW:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"THROW_KNIFE","mana_points":0,"ammo_count":0,"knife_count":1,"shots_requested":0}'
+
+// RELOAD
+// ALLOW:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"RELOAD","mana_points":0,"ammo_count":0,"knife_count":0,"shots_requested":0}'
+// ALLOW:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"RELOAD","mana_points":100,"ammo_count":30,"knife_count":2,"shots_requested":5}'
+
+// MEDITATE
+// ALLOW:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"MEDITATE","mana_points":0,"ammo_count":0,"knife_count":0,"shots_requested":0}'
+// ALLOW:
+// cslcore simulate examples/community/game_npc_resource.csl --input '{"action":"MEDITATE","mana_points":100,"ammo_count":30,"knife_count":2,"shots_requested":0}'

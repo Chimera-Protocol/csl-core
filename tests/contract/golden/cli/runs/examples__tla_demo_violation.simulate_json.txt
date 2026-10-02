@@ -1,0 +1,286 @@
+exit_code: 2
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: ViolationDemo
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   ├── Running TLA⁺ Model Checker (Temporal Logic of Actions)…
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                 TLA⁺ FORMAL VERIFICATION ENGINE                                  ║
+║                    Chimera Specification Language · Temporal Logic of Actions                    ║
+║                                                                                                  ║
+║             ⚙  BFS Mock Engine  ·  Python State-Space Explorer  ·  (TLC unavailable)             ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   ◉  Constructing Universe: "ViolationDemo"                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+                           Universe Variables                           
+                                                                        
+  Variable   Domain                                        Cardinality  
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 
+  role       {"ADMIN", "USER", "ANALYST"}                            3  
+  tool       {"READ_DB", "SEND_EMAIL", "TRANSFER_FUNDS"}             3  
+  amount     0..100000                                               ∞  
+                                                                        
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   ◉  Expanding State Space  (BFS / Breadth-First Search)                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4,500 / 4,500 states depth=41 frontier=0 <T>
+  └─ 4,500 states reachable · depth 41 · universe fully mapped
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   ◉  Verifying Temporal Properties  □(WHEN … THEN …)                                             │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ ├─ □(user_no_transfer) ❌ VIOLATED [13 states <T>]
+  │   Counterexample:
+  │     State 0: {'role': 'ADMIN', 'tool': 'READ_DB', 'amount': 0}
+  │     State 1: {'role': 'USER', 'tool': 'READ_DB', 'amount': 0}
+  │     State 2: {'role': 'ADMIN', 'tool': 'SEND_EMAIL', 'amount': 0}
+
+
+ ├─ □(large_transfer_blocked) ❌ VIOLATED [34 states <T>]
+  │   Counterexample:
+  │     State 0: {'role': 'ADMIN', 'tool': 'READ_DB', 'amount': 0}
+  │     State 1: {'role': 'USER', 'tool': 'READ_DB', 'amount': 0}
+  │     State 2: {'role': 'ADMIN', 'tool': 'SEND_EMAIL', 'amount': 0}
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   ◉  Generating Proof Certificate (SHA-256 signed)                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+  └─ Proof hash: f87b521fe06b9b88da25c5ddb07e6e28… ✅
+
+
+╔══════════════════════ TLA⁺ VERIFICATION FAILED — PROPERTY VIOLATION FOUND ═══════════════════════╗
+║                                                                                                  ║
+║    ❌  Domain     : ViolationDemo                                                                ║
+║    ⬡  States     : 4,500                                                                         ║
+║ ⏱ Total time : <T> ║
+║    🔐 Proof hash : f87b521fe06b9b88…                                                             ║
+║                                                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+═══════════════════════════════════   TLA⁺ VIOLATION ANALYSIS   ════════════════════════════════════
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃   ❌  CONSTRAINT VIOLATED  [1/2]  user_no_transfer                                               ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  Counterexample Trace:
+
+  ├─ State 0  role="ADMIN"  tool="READ_DB"  amount=0  
+  ├─ State 1  role="USER"  tool="READ_DB"  amount=0  
+  │   ···
+  ├─ State 11  role="ANALYST"  tool="READ_DB"  amount=20000  
+  └─ State 12  role="USER"  tool="TRANSFER_FUNDS"  amount=0    ◀  VIOLATION
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│    Root Cause                                                                                    │
+│                                                                                                  │
+│    Variable tool reached the forbidden value "TRANSFER_FUNDS" (at state 12) while the WHEN       │
+│  condition was satisfied. Both the condition and the forbidden value are simultaneously          │
+│  reachable in the declared state space.                                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+  💡  3 suggestion(s) found — review and apply below
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   🔒  SUGGESTION 1/3  ●●●  HIGH CONFIDENCE  ·  Domain Restriction                                │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  Remove "TRANSFER_FUNDS" from tool domain
+
+  The value "TRANSFER_FUNDS" is declared in the tool domain, making it reachable from any state.
+  Since your constraint forbids it under certain conditions, the safest fix is to move it to a 
+separate privileged variable that only higher-trust policies can reference.
+
+  BEFORE  ─────────────────────────────────────────────
+  tool: {"READ_DB", "SEND_EMAIL", "TRANSFER_FUNDS"}
+  AFTER   ─────────────────────────────────────────────
+  tool: {"READ_DB", "SEND_EMAIL"}
+  // NOTE: move "TRANSFER_FUNDS" to a separate privileged variable
+  privileged_tool: {"TRANSFER_FUNDS"}  // admin-only
+
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   🔧  SUGGESTION 2/3  ●●○  MEDIUM CONFIDENCE  ·  Condition Strengthening                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  Narrow the WHEN clause with an explicit gate
+
+  The current constraint fires too broadly — it applies to every state that satisfies the condition,
+but the full state space contains states where the action variable holds the forbidden/required 
+value.
+  Adding a 'approved' boolean gate ensures the constraint only fires when an explicit flag is set, 
+giving you a control plane for edge cases.
+
+  BEFORE  ─────────────────────────────────────────────
+  STATE_CONSTRAINT user_no_transfer {
+  WHEN role == "USER"
+  THEN tool MUST NOT BE "TRANSFER_FUNDS"
+}
+  AFTER   ─────────────────────────────────────────────
+  STATE_CONSTRAINT user_no_transfer {
+  WHEN role == "USER" AND approved == False
+  THEN tool MUST NOT BE "TRANSFER_FUNDS"
+}
+
+// Add to VARIABLES:
+//   approved: BOOLEAN
+
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   🔄  SUGGESTION 3/3  ●○○  LOW CONFIDENCE  ·  Policy Inversion                                   │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  Invert policy: define what IS allowed instead of what is forbidden
+
+  Rather than forbidding "TRANSFER_FUNDS", explicitly declare which values tool MAY take under this 
+condition.
+  This is more robust because it prevents future values added to the domain from silently bypassing 
+the intent of the constraint.
+
+  BEFORE  ─────────────────────────────────────────────
+  STATE_CONSTRAINT user_no_transfer {
+  WHEN role == "USER"
+  THEN tool MUST NOT BE "TRANSFER_FUNDS"
+}
+  AFTER   ─────────────────────────────────────────────
+  // Option A — restrict domain to allowed values only:
+tool: {"READ_DB", "SEND_EMAIL"}
+
+// Option B — keep domain but state explicitly:
+STATE_CONSTRAINT user_no_transfer_inverted {
+  WHEN role == "USER"
+  THEN tool MUST NOT BE "TRANSFER_FUNDS"
+}
+
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃   ❌  CONSTRAINT VIOLATED  [2/2]  large_transfer_blocked                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+  Counterexample Trace:
+
+  ├─ State 0  role="ADMIN"  tool="READ_DB"  amount=0  
+  ├─ State 1  role="USER"  tool="READ_DB"  amount=0  
+  │   ···
+  ├─ State 32  role="USER"  tool="READ_DB"  amount=80000  
+  └─ State 33  role="ADMIN"  tool="TRANSFER_FUNDS"  amount=60000    ◀  VIOLATION
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│    Root Cause                                                                                    │
+│                                                                                                  │
+│    Variable tool reached the forbidden value "TRANSFER_FUNDS" (at state 33) while the WHEN       │
+│  condition was satisfied. Both the condition and the forbidden value are simultaneously          │
+│  reachable in the declared state space.                                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+  💡  3 suggestion(s) found — review and apply below
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   🔒  SUGGESTION 1/3  ●●●  HIGH CONFIDENCE  ·  Domain Restriction                                │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  Remove "TRANSFER_FUNDS" from tool domain
+
+  The value "TRANSFER_FUNDS" is declared in the tool domain, making it reachable from any state.
+  Since your constraint forbids it under certain conditions, the safest fix is to move it to a 
+separate privileged variable that only higher-trust policies can reference.
+
+  BEFORE  ─────────────────────────────────────────────
+  tool: {"READ_DB", "SEND_EMAIL", "TRANSFER_FUNDS"}
+  AFTER   ─────────────────────────────────────────────
+  tool: {"READ_DB", "SEND_EMAIL"}
+  // NOTE: move "TRANSFER_FUNDS" to a separate privileged variable
+  privileged_tool: {"TRANSFER_FUNDS"}  // admin-only
+
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   🔧  SUGGESTION 2/3  ●●○  MEDIUM CONFIDENCE  ·  Condition Strengthening                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  Narrow the WHEN clause with an explicit gate
+
+  The current constraint fires too broadly — it applies to every state that satisfies the condition,
+but the full state space contains states where the action variable holds the forbidden/required 
+value.
+  Adding a 'approved' boolean gate ensures the constraint only fires when an explicit flag is set, 
+giving you a control plane for edge cases.
+
+  BEFORE  ─────────────────────────────────────────────
+  STATE_CONSTRAINT large_transfer_blocked {
+  WHEN amount > 50000
+  THEN tool MUST NOT BE "TRANSFER_FUNDS"
+}
+  AFTER   ─────────────────────────────────────────────
+  STATE_CONSTRAINT large_transfer_blocked {
+  WHEN amount > 50000 AND approved == False
+  THEN tool MUST NOT BE "TRANSFER_FUNDS"
+}
+
+// Add to VARIABLES:
+//   approved: BOOLEAN
+
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   🔄  SUGGESTION 3/3  ●○○  LOW CONFIDENCE  ·  Policy Inversion                                   │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  Invert policy: define what IS allowed instead of what is forbidden
+
+  Rather than forbidding "TRANSFER_FUNDS", explicitly declare which values tool MAY take under this 
+condition.
+  This is more robust because it prevents future values added to the domain from silently bypassing 
+the intent of the constraint.
+
+  BEFORE  ─────────────────────────────────────────────
+  STATE_CONSTRAINT large_transfer_blocked {
+  WHEN amount > 50000
+  THEN tool MUST NOT BE "TRANSFER_FUNDS"
+}
+  AFTER   ─────────────────────────────────────────────
+  // Option A — restrict domain to allowed values only:
+tool: {"READ_DB", "SEND_EMAIL"}
+
+// Option B — keep domain but state explicitly:
+STATE_CONSTRAINT large_transfer_blocked_inverted {
+  WHEN amount > 50000
+  THEN tool MUST NOT BE "TRANSFER_FUNDS"
+}
+
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  📋  2 violation(s)  ·  6 suggestion(s) generated  ·  Fix the issues above and re-run cslcore 
+formal to confirm
+
+
+❌ [CRITICAL] TLA⁺ FORMAL VERIFICATION FAILED!
+   • [SAFETY_VIOLATION] user_no_transfer: BFS model checking found a counterexample for □(user_no_transfer): invariant violated after 13 states.
+     State 0: {'role': 'ADMIN', 'tool': 'READ_DB', 'amount': 0}
+     State 1: {'role': 'USER', 'tool': 'READ_DB', 'amount': 0}
+     State 2: {'role': 'ADMIN', 'tool': 'SEND_EMAIL', 'amount': 0}
+   • [SAFETY_VIOLATION] large_transfer_blocked: BFS model checking found a counterexample for □(large_transfer_blocked): invariant violated after 34 states.
+     State 0: {'role': 'ADMIN', 'tool': 'READ_DB', 'amount': 0}
+     State 1: {'role': 'USER', 'tool': 'READ_DB', 'amount': 0}
+     State 2: {'role': 'ADMIN', 'tool': 'SEND_EMAIL', 'amount': 0}
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ Compile/verify failed                                                                    │
+│ TLA⁺ formal verification failed: 2 property violation(s) found.                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯

@@ -1,0 +1,46 @@
+// Contract probe: equality and inequality in THEN, NOT, ALWAYS and scaled conditions.
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+  ENABLE_FORMAL_VERIFICATION: FALSE
+  ENABLE_CAUSAL_INFERENCE: FALSE
+  INTEGRATION: "native"
+}
+
+DOMAIN ModalProbe {
+  VARIABLES {
+    tool: {"READ", "WRITE", "DELETE", "PAY"}
+    amount: 0..10000
+    approved: {"YES", "NO"}
+    role: {"ADMIN", "USER"}
+    level: {"LOW", "HIGH"}
+    cap: 0..1000
+    reviewer: {"YES", "NO"}
+    region: {"EU", "US"}
+  }
+
+  STATE_CONSTRAINT always_no_delete {
+    ALWAYS True
+    THEN tool MUST NOT BE "DELETE"
+  }
+  STATE_CONSTRAINT pay_needs_admin {
+    WHEN tool == "PAY"
+    THEN role == "ADMIN"
+  }
+  STATE_CONSTRAINT not_approved_small {
+    WHEN NOT (approved == "YES")
+    THEN cap < 100
+  }
+  STATE_CONSTRAINT write_large_not_low {
+    WHEN tool == "WRITE" AND amount > 1000
+    THEN level != "LOW"
+  }
+  STATE_CONSTRAINT scaled_limit {
+    WHEN amount * 2 >= 5000
+    THEN reviewer MUST BE "YES"
+  }
+  STATE_CONSTRAINT region_may {
+    WHEN tool == "READ"
+    THEN region MAY BE "EU"
+  }
+}

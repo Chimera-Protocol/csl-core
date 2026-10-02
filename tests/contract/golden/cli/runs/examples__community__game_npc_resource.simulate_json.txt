@@ -1,0 +1,80 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: GameNpcResourceGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": false, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "CAST_SPELL", "ammo_count": 0, "knife_count": 0, 
+"mana_points": 0, "shots_requested": 0}, "violations": [{"message": "Violation 
+'require_mana_for_spellcasting': mana_points=0 must be >= 10."}], "warnings": [], 
+"triggered_rule_ids": ["require_mana_for_spellcasting"], "violated_rule_ids": 
+["require_mana_for_spellcasting"]}
+{"allowed": true, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "MEDITATE", "ammo_count": 30, "knife_count": 2, 
+"mana_points": 100, "shots_requested": 30}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["allow_meditate_anytime"], "violated_rule_ids": []}
+{"allowed": false, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "CAST_SPELL", "ammo_count": 0, "knife_count": 0, 
+"mana_points": 0, "shots_requested": 0}, "violations": [{"message": "Violation 
+'require_mana_for_spellcasting': mana_points=0 must be >= 10."}], "warnings": [], 
+"triggered_rule_ids": ["require_mana_for_spellcasting"], "violated_rule_ids": 
+["require_mana_for_spellcasting"]}
+{"allowed": false, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "CAST_ULTIMATE", "ammo_count": 0, "knife_count": 0,
+"mana_points": 0, "shots_requested": 0}, "violations": [{"message": "Violation 
+'require_mana_for_ultimate': mana_points=0 must be >= 80."}], "warnings": [], "triggered_rule_ids": 
+["require_mana_for_ultimate"], "violated_rule_ids": ["require_mana_for_ultimate"]}
+{"allowed": false, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "SHOOT", "ammo_count": 0, "knife_count": 0, 
+"mana_points": 0, "shots_requested": 0}, "violations": [{"message": "Violation 
+'require_positive_shot_count': shots_requested=0 must be > 0."}], "warnings": [], 
+"triggered_rule_ids": ["require_positive_shot_count", "require_ammo_for_shooting"], 
+"violated_rule_ids": ["require_positive_shot_count"]}
+{"allowed": true, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "RELOAD", "ammo_count": 0, "knife_count": 0, 
+"mana_points": 0, "shots_requested": 0}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["allow_reload_anytime"], "violated_rule_ids": []}
+{"allowed": false, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "THROW_KNIFE", "ammo_count": 0, "knife_count": 0, 
+"mana_points": 0, "shots_requested": 0}, "violations": [{"message": "Violation 
+'require_knife_for_throwing': knife_count=0 must be > 0."}], "warnings": [], "triggered_rule_ids": 
+["require_knife_for_throwing"], "violated_rule_ids": ["require_knife_for_throwing"]}
+{"allowed": true, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "MEDITATE", "ammo_count": 0, "knife_count": 0, 
+"mana_points": 0, "shots_requested": 0}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["allow_meditate_anytime"], "violated_rule_ids": []}
+{"allowed": true, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "cast_spell", "ammo_count": 0, "knife_count": 0, 
+"mana_points": 0, "shots_requested": 0}, "violations": [], "warnings": [], "triggered_rule_ids": [],
+"violated_rule_ids": []}
+{"allowed": true, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "__UNKNOWN_VALUE__", "ammo_count": 0, 
+"knife_count": 0, "mana_points": 0, "shots_requested": 0}, "violations": [], "warnings": [], 
+"triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": 1, "ammo_count": 0, "knife_count": 0, 
+"mana_points": 0, "shots_requested": 0}, "violations": [], "warnings": [], "triggered_rule_ids": [],
+"violated_rule_ids": []}
+{"allowed": true, "domain": "GameNpcResourceGuard", "policy_hash": 
+"da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"ammo_count": 0, "knife_count": 0, "mana_points": 0, 
+"shots_requested": 0}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}

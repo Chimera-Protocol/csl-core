@@ -1,0 +1,25 @@
+// =============================================================
+// policy: Game NPC "Friendly Fire" Prevention (#6)
+// =============================================================
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN GameNpcROE {
+  VARIABLES {
+    target_faction: String
+    my_faction: String
+    has_peace_treaty: {"TRUE", "FALSE"}
+  }
+
+  STATE_CONSTRAINT no_friendly_fire {
+    ALWAYS True
+    THEN target_faction != my_faction
+  }
+
+  STATE_CONSTRAINT honor_ceasefire {
+    ALWAYS True
+    THEN has_peace_treaty != "TRUE"
+  }
+}

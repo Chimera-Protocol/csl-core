@@ -1,0 +1,97 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: AgentToolGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 5000, "approval_token": "YES", "db_table": 
+"CUSTOMERS", "pii_present": "NO", "recipient_domain": "INTERNAL", "tool": "TRANSFER_FUNDS", 
+"user_role": "ADMIN"}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["transfer_requires_approval", "admin_transfer_limit", "no_delete_record_tool"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approval_token": "NO", "db_table": "CUSTOMERS",
+"pii_present": "NO", "recipient_domain": "INTERNAL", "tool": "QUERY_DB", "user_role": "USER"}, 
+"violations": [], "warnings": [], "triggered_rule_ids": ["non_admin_no_transfer", 
+"no_secrets_table_queries", "no_delete_record_tool"], "violated_rule_ids": []}
+{"allowed": true, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approval_token": "NO", "db_table": 
+"TRANSACTIONS", "pii_present": "NO", "recipient_domain": "INTERNAL", "tool": "QUERY_DB", 
+"user_role": "ANALYST"}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["non_admin_no_transfer", "no_secrets_table_queries", "no_delete_record_tool"], "violated_rule_ids":
+[]}
+{"allowed": true, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approval_token": "NO", "db_table": "CUSTOMERS",
+"pii_present": "YES", "recipient_domain": "INTERNAL", "tool": "SEND_EMAIL", "user_role": "ADMIN"}, 
+"violations": [], "warnings": [], "triggered_rule_ids": ["no_external_email_with_pii", 
+"no_delete_record_tool"], "violated_rule_ids": []}
+{"allowed": true, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approval_token": "NO", "db_table": "CUSTOMERS",
+"pii_present": "NO", "recipient_domain": "EXTERNAL", "tool": "SEND_EMAIL", "user_role": "USER"}, 
+"violations": [], "warnings": [], "triggered_rule_ids": ["non_admin_no_transfer", 
+"no_delete_record_tool"], "violated_rule_ids": []}
+{"allowed": false, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 1000, "approval_token": "YES", "db_table": 
+"CUSTOMERS", "pii_present": "NO", "recipient_domain": "INTERNAL", "tool": "TRANSFER_FUNDS", 
+"user_role": "USER"}, "violations": [{"message": "Violation 'non_admin_no_transfer': 
+tool='TRANSFER_FUNDS' must be MUST NOT BE 'TRANSFER_FUNDS'."}], "warnings": [], 
+"triggered_rule_ids": ["non_admin_no_transfer", "no_delete_record_tool"], "violated_rule_ids": 
+["non_admin_no_transfer"]}
+{"allowed": false, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 500, "approval_token": "YES", "db_table": 
+"CUSTOMERS", "pii_present": "NO", "recipient_domain": "INTERNAL", "tool": "TRANSFER_FUNDS", 
+"user_role": "ANALYST"}, "violations": [{"message": "Violation 'non_admin_no_transfer': 
+tool='TRANSFER_FUNDS' must be MUST NOT BE 'TRANSFER_FUNDS'."}], "warnings": [], 
+"triggered_rule_ids": ["non_admin_no_transfer", "no_delete_record_tool"], "violated_rule_ids": 
+["non_admin_no_transfer"]}
+{"allowed": false, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 3000, "approval_token": "NO", "db_table": 
+"CUSTOMERS", "pii_present": "NO", "recipient_domain": "INTERNAL", "tool": "TRANSFER_FUNDS", 
+"user_role": "ADMIN"}, "violations": [{"message": "Violation 'transfer_requires_approval': 
+approval_token='NO' must be == 'YES'."}], "warnings": [], "triggered_rule_ids": 
+["transfer_requires_approval", "admin_transfer_limit", "no_delete_record_tool"], 
+"violated_rule_ids": ["transfer_requires_approval"]}
+{"allowed": false, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 10000, "approval_token": "YES", "db_table": 
+"CUSTOMERS", "pii_present": "NO", "recipient_domain": "INTERNAL", "tool": "TRANSFER_FUNDS", 
+"user_role": "ADMIN"}, "violations": [{"message": "Violation 'admin_transfer_limit': amount=10000 
+must be <= 5000."}], "warnings": [], "triggered_rule_ids": ["transfer_requires_approval", 
+"admin_transfer_limit", "no_delete_record_tool"], "violated_rule_ids": ["admin_transfer_limit"]}
+{"allowed": false, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approval_token": "NO", "db_table": "CUSTOMERS",
+"pii_present": "YES", "recipient_domain": "EXTERNAL", "tool": "SEND_EMAIL", "user_role": "ADMIN"}, 
+"violations": [{"message": "Violation 'no_external_email_with_pii': recipient_domain='EXTERNAL' must
+be MUST NOT BE 'EXTERNAL'."}], "warnings": [], "triggered_rule_ids": ["no_external_email_with_pii", 
+"no_delete_record_tool"], "violated_rule_ids": ["no_external_email_with_pii"]}
+{"allowed": false, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approval_token": "NO", "db_table": "CUSTOMERS",
+"pii_present": "YES", "recipient_domain": "EXTERNAL", "tool": "SEND_EMAIL", "user_role": "USER"}, 
+"violations": [{"message": "Violation 'no_external_email_with_pii': recipient_domain='EXTERNAL' must
+be MUST NOT BE 'EXTERNAL'."}], "warnings": [], "triggered_rule_ids": ["non_admin_no_transfer", 
+"no_external_email_with_pii", "no_delete_record_tool"], "violated_rule_ids": 
+["no_external_email_with_pii"]}
+{"allowed": false, "domain": "AgentToolGuard", "policy_hash": 
+"52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approval_token": "NO", "db_table": "SECRETS", 
+"pii_present": "NO", "recipient_domain": "INTERNAL", "tool": "QUERY_DB", "user_role": "ADMIN"}, 
+"violations": [{"message": "Violation 'no_secrets_table_queries': db_table='SECRETS' must be MUST 
+NOT BE 'SECRETS'."}], "warnings": [], "triggered_rule_ids": ["no_secrets_table_queries", 
+"no_delete_record_tool"], "violated_rule_ids": ["no_secrets_table_queries"]}

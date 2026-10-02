@@ -1,0 +1,123 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: ConstructionSiteSafetyGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "task_type": "GENERAL", "worker_certified": false}, 
+"violations": [{"message": "Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST
+BE True."}], "warnings": [], "triggered_rule_ids": ["ppe_required_for_all_tasks"], 
+"violated_rule_ids": ["ppe_required_for_all_tasks"]}
+{"allowed": true, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": true, "fall_protection_ready": true, 
+"hazard_level": 5, "lift_plan_approved": true, "ppe_confirmed": true, "protective_system_ready": 
+true, "supervisor_approved": true, "task_type": "LIFTING", "worker_certified": true}, "violations": 
+[], "warnings": [], "triggered_rule_ids": ["ppe_required_for_all_tasks", 
+"supervisor_required_for_high_risk", "lift_plan_for_lifting", "lifting_worker_certification", 
+"lifting_supervisor_approval"], "violated_rule_ids": []}
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "task_type": "GENERAL", "worker_certified": false}, 
+"violations": [{"message": "Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST
+BE True."}], "warnings": [], "triggered_rule_ids": ["ppe_required_for_all_tasks"], 
+"violated_rule_ids": ["ppe_required_for_all_tasks"]}
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "task_type": "HEIGHT", "worker_certified": false}, 
+"violations": [{"message": "Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST
+BE True."}, {"message": "Violation 'fall_protection_for_heights': fall_protection_ready=False must 
+be MUST BE True."}, {"message": "Violation 'height_worker_certification': worker_certified=False 
+must be MUST BE True."}], "warnings": [], "triggered_rule_ids": ["ppe_required_for_all_tasks", 
+"fall_protection_for_heights", "height_worker_certification"], "violated_rule_ids": 
+["ppe_required_for_all_tasks", "fall_protection_for_heights", "height_worker_certification"]}
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "task_type": "ELECTRICAL", "worker_certified": false}, 
+"violations": [{"message": "Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST
+BE True."}, {"message": "Violation 'energy_isolation_for_electrical': energy_isolated=False must be 
+MUST BE True."}, {"message": "Violation 'energy_worker_certification': worker_certified=False must 
+be MUST BE True."}], "warnings": [], "triggered_rule_ids": ["ppe_required_for_all_tasks", 
+"energy_isolation_for_electrical", "energy_worker_certification"], "violated_rule_ids": 
+["ppe_required_for_all_tasks", "energy_isolation_for_electrical", "energy_worker_certification"]}
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "task_type": "EXCAVATION", "worker_certified": false}, 
+"violations": [{"message": "Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST
+BE True."}, {"message": "Violation 'protective_system_for_excavation': protective_system_ready=False
+must be MUST BE True."}, {"message": "Violation 'excavation_supervisor_approval': 
+supervisor_approved=False must be MUST BE True."}], "warnings": [], "triggered_rule_ids": 
+["ppe_required_for_all_tasks", "protective_system_for_excavation", 
+"excavation_supervisor_approval"], "violated_rule_ids": ["ppe_required_for_all_tasks", 
+"protective_system_for_excavation", "excavation_supervisor_approval"]}
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "task_type": "LIFTING", "worker_certified": false}, 
+"violations": [{"message": "Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST
+BE True."}, {"message": "Violation 'lift_plan_for_lifting': lift_plan_approved=False must be MUST BE
+True."}, {"message": "Violation 'lifting_worker_certification': worker_certified=False must be MUST 
+BE True."}, {"message": "Violation 'lifting_supervisor_approval': supervisor_approved=False must be 
+MUST BE True."}], "warnings": [], "triggered_rule_ids": ["ppe_required_for_all_tasks", 
+"lift_plan_for_lifting", "lifting_worker_certification", "lifting_supervisor_approval"], 
+"violated_rule_ids": ["ppe_required_for_all_tasks", "lift_plan_for_lifting", 
+"lifting_worker_certification", "lifting_supervisor_approval"]}
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "task_type": "general", "worker_certified": false}, 
+"violations": [{"message": "Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST
+BE True."}], "warnings": [], "triggered_rule_ids": ["ppe_required_for_all_tasks"], 
+"violated_rule_ids": ["ppe_required_for_all_tasks"]}
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "task_type": "__UNKNOWN_VALUE__", "worker_certified": false}, 
+"violations": [{"message": "Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST
+BE True."}], "warnings": [], "triggered_rule_ids": ["ppe_required_for_all_tasks"], 
+"violated_rule_ids": ["ppe_required_for_all_tasks"]}
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "task_type": 1, "worker_certified": false}, "violations": 
+[{"message": "Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST BE True."}], 
+"warnings": [], "triggered_rule_ids": ["ppe_required_for_all_tasks"], "violated_rule_ids": 
+["ppe_required_for_all_tasks"]}
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "worker_certified": false}, "violations": [{"message": 
+"Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST BE True."}], "warnings": 
+[], "triggered_rule_ids": ["ppe_required_for_all_tasks"], "violated_rule_ids": 
+["ppe_required_for_all_tasks"]}
+{"allowed": false, "domain": "ConstructionSiteSafetyGuard", "policy_hash": 
+"df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"energy_isolated": false, "fall_protection_ready": false, 
+"hazard_level": 0, "lift_plan_approved": false, "ppe_confirmed": false, "protective_system_ready": 
+false, "supervisor_approved": false, "task_type": "GENERAL", "worker_certified": true}, 
+"violations": [{"message": "Violation 'ppe_required_for_all_tasks': ppe_confirmed=False must be MUST
+BE True."}], "warnings": [], "triggered_rule_ids": ["ppe_required_for_all_tasks"], 
+"violated_rule_ids": ["ppe_required_for_all_tasks"]}

@@ -1,0 +1,34 @@
+exit_code: 0
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ Verifying policy                                                                         │
+│ policies/chimera_core__mcp__examples__banking_guard.csl                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: BankingGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+                                  Compiled Policy Metadata                                  
+                                                                                            
+  Key                            Value                                                      
+ ────────────────────────────────────────────────────────────────────────────────────────── 
+  Domain                         BankingGuard                                               
+  Policy                         BankingGuard                                               
+  Policy Hash                    3817fc916bb862077924a798ce3604253e3e7142345571188236678f…  
+  Engine Version                 <VERSION>                                                      
+                                                                                            
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ Verification passed                                                                      │
+│ No logical contradictions found (given CSL-Core analysis scope).                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+                 ✨ If you find CSL useful, please consider starring us on GitHub:                  
+                           https://github.com/chimera-protocol/csl-core                             
+

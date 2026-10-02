@@ -1,0 +1,34 @@
+exit_code: 0
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ Verifying policy                                                                         │
+│ policies/examples__community__defi_slippage_guard.csl                                    │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: DeFiSlippageGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+                                  Compiled Policy Metadata                                  
+                                                                                            
+  Key                            Value                                                      
+ ────────────────────────────────────────────────────────────────────────────────────────── 
+  Domain                         DeFiSlippageGuard                                          
+  Policy                         DeFiSlippageGuard                                          
+  Policy Hash                    cc0432ac071d79d53714b71c35866b061af4e7f270ecf854e5fadc6c…  
+  Engine Version                 <VERSION>                                                      
+                                                                                            
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ Verification passed                                                                      │
+│ No logical contradictions found (given CSL-Core analysis scope).                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+                 ✨ If you find CSL useful, please consider starring us on GitHub:                  
+                           https://github.com/chimera-protocol/csl-core                             
+

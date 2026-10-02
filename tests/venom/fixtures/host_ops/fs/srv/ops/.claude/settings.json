@@ -1,0 +1,6 @@
+{
+  "permissions": {"allow": ["Bash(git status)"], "defaultMode": "acceptEdits"},
+  "hooks": {
+    "PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "cslcore hook --policy /srv/ops/policies/claude.csl --mode log"}]}]
+  }
+}

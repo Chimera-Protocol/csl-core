@@ -1,0 +1,24 @@
+// =============================================================
+// policy: Pediatric Safety Guard
+// Goal: Block unsafe pediatric dosing for a specific antibiotic.
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN PediatricSafetyGuard {
+  VARIABLES {
+    patient_age: 0..120
+    dosage_mg: 0..10000
+    drug_type: String
+  }
+
+  // BLOCK only when:
+  // drug_type == "ANTIBIOTIC_A" AND patient_age < 12 AND dosage_mg > 250
+  STATE_CONSTRAINT pediatric_antibiotic_a_max_dose {
+    WHEN drug_type == "ANTIBIOTIC_A" AND patient_age < 12
+    THEN dosage_mg <= 250
+  }
+}

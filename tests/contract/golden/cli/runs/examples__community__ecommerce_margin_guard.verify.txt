@@ -1,0 +1,34 @@
+exit_code: 0
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ Verifying policy                                                                         │
+│ policies/examples__community__ecommerce_margin_guard.csl                                 │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: EcommerceMarginGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+                                  Compiled Policy Metadata                                  
+                                                                                            
+  Key                            Value                                                      
+ ────────────────────────────────────────────────────────────────────────────────────────── 
+  Domain                         EcommerceMarginGuard                                       
+  Policy                         EcommerceMarginGuard                                       
+  Policy Hash                    8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5…  
+  Engine Version                 <VERSION>                                                      
+                                                                                            
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ Verification passed                                                                      │
+│ No logical contradictions found (given CSL-Core analysis scope).                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+                 ✨ If you find CSL useful, please consider starring us on GitHub:                  
+                           https://github.com/chimera-protocol/csl-core                             
+

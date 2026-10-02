@@ -1,0 +1,11 @@
+usage: cslcore formal [-h] [--mock] [--timeout N] [--no-download] [--export-tla DIR] policy
+
+positional arguments:
+  policy            Path to .csl policy file
+
+options:
+  -h, --help        show this help message and exit
+  --mock            Force Python BFS engine even if TLC (tla2tools.jar) is available
+  --timeout N       TLC subprocess timeout in seconds (default: 60)
+  --no-download     Do not auto-download tla2tools.jar if missing
+  --export-tla DIR  Export the auto-generated .tla and .cfg files to DIR (TLA+ Toolbox compatible)

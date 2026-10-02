@@ -1,0 +1,4 @@
+exit_code: 2
+---
+usage: cslcore verify [-h] [--skip-verify] [--skip-validate] [--debug-z3] policy
+cslcore verify: error: the following arguments are required: policy

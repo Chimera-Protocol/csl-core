@@ -1,0 +1,30 @@
+╭─  CSL-Core watch 0.6.0  ─────────────────────────────────────────────────────╮
+│ log mode · 2h 14m · 8/min · 240 checks · 36.7% flagged                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────╮╭──────────────────────────────────────────╮
+│ AGENTS              mode  block% ││ LIVE                                     │
+│   ● ingest-worker   LOG      43% ││ 14:27:53 ingest… http_get          ALLOW │
+│   ● claude-code     LOG       0% ││ 14:27:46 ingest… run_command WOULD BLOCK │
+│   ● publisher       LOG     100% ││ 14:27:39 ingest… run_command WOULD BLOCK │
+│                                  ││ 14:27:32 ingest… run_command WOULD BLOCK │
+│                                  ││ 14:27:25 claude… write_file        ALLOW │
+│                                  ││ 14:27:18 ingest… http_get          ALLOW │
+│                                  ││ 14:27:11 ingest… run_command WOULD BLOCK │
+│                                  ││ 14:27:04 claude… write_file        ALLOW │
+│                                  ││ 14:26:57 claude… write_file        ALLOW │
+│                                  ││ 14:26:50 ingest… write_file  WOULD BLOCK │
+│                                  ││ 14:26:43 claude… write_file        ALLOW │
+│                                  ││ 14:26:36 ingest… run_command WOULD BLOCK │
+╰──────────────────────────────────╯╰──────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────╮
+│  TUNING  rules by would-block                                                │
+│      57  no_shell_outside_workspace               ingest-worker              │
+│      22  no_live_service_writes                   ingest-worker, publisher   │
+│       9  no_public_page_edits                     publisher                  │
+│ tune a rule: cslcore studio --agent <agent>                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ 240 checks · 88 flagged (36.7%) · 0 errors                                   │
+╰──────────────────────────────────────────────────────────────────────────────╯

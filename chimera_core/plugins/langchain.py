@@ -144,9 +144,14 @@ def wrap_tool(
     context_mapper: Optional[ContextMapper] = None,
     inject: Optional[Dict[str, Any]] = None,
     tool_field: Optional[str] = None,
-    enable_dashboard: bool = False
+    enable_dashboard: bool = False,
+    reuse_guard: bool = False,
 ) -> BaseTool:
-    """Wraps a tool with ChimeraGuard protection."""
+    """Wraps a tool with ChimeraGuard protection.
+
+    reuse_guard (0.6): enforce with the given guard object itself (its RuntimeConfig, and
+    any decision logging it does) instead of a fresh guard built from its policy.
+    """
     
     # 1. Create Wrapper
     wrapper = GuardedTool(
@@ -161,7 +166,8 @@ def wrap_tool(
         constitution=guard.constitution,
         enable_dashboard=enable_dashboard,
         context_mapper=context_mapper, # <--- Critical: Pass mapper to engine
-        title=f"Tool::{wrapper.name}"
+        title=f"Tool::{wrapper.name}",
+        guard=guard if reuse_guard else None,
     )
     wrapper._inject = inject or {}
     wrapper._tool_field = tool_field
@@ -175,7 +181,8 @@ def guard_tools(
     context_mapper: Optional[ContextMapper] = None,
     inject: Optional[Dict[str, Any]] = None,
     tool_field: Optional[str] = None,
-    enable_dashboard: bool = False
+    enable_dashboard: bool = False,
+    reuse_guard: bool = False,
 ) -> List[BaseTool]:
     """Wraps multiple tools at once."""
     return [
@@ -185,7 +192,8 @@ def guard_tools(
             context_mapper=context_mapper, 
             inject=inject, 
             tool_field=tool_field, 
-            enable_dashboard=enable_dashboard
+            enable_dashboard=enable_dashboard,
+            reuse_guard=reuse_guard,
         )
         for t in tools
     ]

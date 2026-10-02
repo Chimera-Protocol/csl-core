@@ -1,0 +1,83 @@
+// =============================================================
+// CSL-Core Example: Agent Tool Guard (v0.1)
+// Goal: Deterministic permission + parameter safety for AI agents
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+  ENABLE_FORMAL_VERIFICATION: FALSE
+  ENABLE_CAUSAL_INFERENCE: FALSE
+  INTEGRATION: "native"
+}
+
+DOMAIN AgentToolGuard {
+
+  VARIABLES {
+    // Who is requesting / operating the agent
+    user_role: {"ADMIN", "USER", "ANALYST"}
+
+    // Which tool the agent is about to call
+    tool: {"SEND_EMAIL", "TRANSFER_FUNDS", "QUERY_DB", "DELETE_RECORD"}
+
+    // Optional, tool-dependent parameters
+    amount: 0..100000
+    recipient_domain: {"INTERNAL", "EXTERNAL"}
+    db_table: {"CUSTOMERS", "TRANSACTIONS", "SECRETS"}
+    pii_present: {"YES", "NO"}
+    approval_token: {"YES", "NO"}
+  }
+
+  // -----------------------------------------------------------
+  // 1) Non-admin users must never perform money transfers
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT non_admin_no_transfer {
+    WHEN user_role == "USER" OR user_role == "ANALYST"
+    THEN tool MUST NOT BE "TRANSFER_FUNDS"
+  }
+
+  // -----------------------------------------------------------
+  // 2) Money transfers require an explicit approval token
+  //    (Simulates "human-in-the-loop" gate or signed approval)
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT transfer_requires_approval {
+    // Only applies to ADMIN transfers.
+    // Non-admin transfers are already forbidden by non_admin_no_transfer.
+    WHEN tool == "TRANSFER_FUNDS" AND user_role == "ADMIN"
+    THEN approval_token == "YES"
+  }
+
+
+  // -----------------------------------------------------------
+  // 3) Even admins have a hard transfer limit per action
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT admin_transfer_limit {
+    WHEN tool == "TRANSFER_FUNDS" AND user_role == "ADMIN"
+    THEN amount <= 5000
+  }
+
+  // -----------------------------------------------------------
+  // 4) If PII is present, agent may only email INTERNAL recipients
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT no_external_email_with_pii {
+    WHEN tool == "SEND_EMAIL" AND pii_present == "YES"
+    THEN recipient_domain MUST NOT BE "EXTERNAL"
+  }
+
+  // -----------------------------------------------------------
+  // 5) Restrict high-risk DB access: SECRETS table is forbidden
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT no_secrets_table_queries {
+    WHEN tool == "QUERY_DB"
+    THEN db_table MUST NOT BE "SECRETS"
+  }
+
+  // -----------------------------------------------------------
+  // 6) Dangerous destructive tool calls must never happen
+  //    (Hard-ban DELETE_RECORD for this alpha example)
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT no_delete_record_tool {
+    ALWAYS True
+    THEN tool MUST NOT BE "DELETE_RECORD"
+  }
+}

@@ -1,0 +1,7 @@
+[Unit]
+Description=Ingest worker
+
+[Service]
+User=root
+ExecStart=/usr/bin/python3 /srv/ingest-worker/worker.py
+Restart=always

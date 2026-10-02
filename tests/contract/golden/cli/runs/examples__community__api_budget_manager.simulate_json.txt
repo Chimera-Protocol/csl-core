@@ -1,0 +1,67 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: ApiBudgetManager
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 0.0, "monthly_cumulative": 0.0, "user_tier": 
+"ENTERPRISE"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": false, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 100000.0, "monthly_cumulative": 1000000.0, 
+"user_tier": "FREE"}, "violations": [{"message": "Violation 'free_daily_limit': daily_spend=100000.0
+must be <= 5.0."}], "warnings": [], "triggered_rule_ids": ["free_daily_limit"], "violated_rule_ids":
+["free_daily_limit"]}
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 0.0, "monthly_cumulative": 0.0, "user_tier": 
+"ENTERPRISE"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 0.0, "monthly_cumulative": 0.0, "user_tier": 
+"PRO"}, "violations": [], "warnings": [], "triggered_rule_ids": ["pro_monthly_limit"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 0.0, "monthly_cumulative": 0.0, "user_tier": 
+"FREE"}, "violations": [], "warnings": [], "triggered_rule_ids": ["free_daily_limit"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 0.0, "monthly_cumulative": 0.0, "user_tier": 
+"enterprise"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 0.0, "monthly_cumulative": 0.0, "user_tier": 
+"__UNKNOWN_VALUE__"}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 0.0, "monthly_cumulative": 0.0, "user_tier": 
+1}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 0.0, "monthly_cumulative": 0.0}, "violations":
+[], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": -0.5, "monthly_cumulative": 0.0, "user_tier": 
+"ENTERPRISE"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 100000.0, "monthly_cumulative": 0.0, 
+"user_tier": "ENTERPRISE"}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "ApiBudgetManager", "policy_hash": 
+"929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"daily_spend": 100000.5, "monthly_cumulative": 0.0, 
+"user_tier": "ENTERPRISE"}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}

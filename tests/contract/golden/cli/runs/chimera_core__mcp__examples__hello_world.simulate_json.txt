@@ -1,0 +1,66 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: HelloWorld
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "destination": "INTERNAL"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": false, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 10000, "destination": "EXTERNAL"}, "violations": 
+[{"message": "Violation 'limit_large_transfers': destination='EXTERNAL' must be MUST BE 
+'INTERNAL'."}], "warnings": [], "triggered_rule_ids": ["limit_large_transfers"], 
+"violated_rule_ids": ["limit_large_transfers"]}
+{"allowed": true, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": -1, "destination": "INTERNAL"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 10000, "destination": "INTERNAL"}, "violations": 
+[], "warnings": [], "triggered_rule_ids": ["limit_large_transfers"], "violated_rule_ids": []}
+{"allowed": true, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 10001, "destination": "INTERNAL"}, "violations": 
+[], "warnings": [], "triggered_rule_ids": ["limit_large_transfers"], "violated_rule_ids": []}
+{"allowed": true, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 5000, "destination": "INTERNAL"}, "violations": [],
+"warnings": [], "triggered_rule_ids": ["limit_large_transfers"], "violated_rule_ids": []}
+{"allowed": true, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 99, "destination": "INTERNAL"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 99, "destination": "EXTERNAL"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 100, "destination": "INTERNAL"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["limit_large_transfers"], "violated_rule_ids": []}
+{"allowed": false, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 100, "destination": "EXTERNAL"}, "violations": 
+[{"message": "Violation 'limit_large_transfers': destination='EXTERNAL' must be MUST BE 
+'INTERNAL'."}], "warnings": [], "triggered_rule_ids": ["limit_large_transfers"], 
+"violated_rule_ids": ["limit_large_transfers"]}
+{"allowed": true, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 101, "destination": "INTERNAL"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["limit_large_transfers"], "violated_rule_ids": []}
+{"allowed": false, "domain": "HelloWorld", "policy_hash": 
+"52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 101, "destination": "EXTERNAL"}, "violations": 
+[{"message": "Violation 'limit_large_transfers': destination='EXTERNAL' must be MUST BE 
+'INTERNAL'."}], "warnings": [], "triggered_rule_ids": ["limit_large_transfers"], 
+"violated_rule_ids": ["limit_large_transfers"]}

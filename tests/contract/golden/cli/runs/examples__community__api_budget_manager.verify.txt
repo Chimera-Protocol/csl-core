@@ -1,0 +1,34 @@
+exit_code: 0
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ Verifying policy                                                                         │
+│ policies/examples__community__api_budget_manager.csl                                     │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: ApiBudgetManager
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+                                  Compiled Policy Metadata                                  
+                                                                                            
+  Key                            Value                                                      
+ ────────────────────────────────────────────────────────────────────────────────────────── 
+  Domain                         ApiBudgetManager                                           
+  Policy                         ApiBudgetManager                                           
+  Policy Hash                    929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2…  
+  Engine Version                 <VERSION>                                                      
+                                                                                            
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ Verification passed                                                                      │
+│ No logical contradictions found (given CSL-Core analysis scope).                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+                 ✨ If you find CSL useful, please consider starring us on GitHub:                  
+                           https://github.com/chimera-protocol/csl-core                             
+

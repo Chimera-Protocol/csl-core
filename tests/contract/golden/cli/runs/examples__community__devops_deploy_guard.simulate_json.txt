@@ -1,0 +1,61 @@
+exit_code: 0
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: DevOpsGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "MONDAY", "target_env": 
+"STAGING"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 23, "day_of_week": "SUNDAY", "target_env": 
+"DEV"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "MONDAY", "target_env": 
+"STAGING"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "MONDAY", "target_env": 
+"PROD"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "MONDAY", "target_env": 
+"DEV"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "MONDAY", "target_env": 
+"staging"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "MONDAY", "target_env": 
+"__UNKNOWN_VALUE__"}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "MONDAY", "target_env": 1},
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "MONDAY"}, "violations": 
+[], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "MONDAY", "target_env": 
+"STAGING"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "TUESDAY", "target_env": 
+"STAGING"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "DevOpsGuard", "policy_hash": 
+"137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"current_hour": 0, "day_of_week": "WEDNESDAY", "target_env": 
+"STAGING"}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}

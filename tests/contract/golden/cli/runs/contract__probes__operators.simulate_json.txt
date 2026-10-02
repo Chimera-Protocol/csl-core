@@ -1,0 +1,79 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: OperatorProbe
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 0, "b": 0, "c": 0, "d": 0, "flag": "YES", "mode": "ONE",
+"t1": "YES", "t2": "ONE", "t3": 0, "t4": 0, "t5": 0, "t6": 0, "t7": 0}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["when_lte", "when_lt"], "violated_rule_ids": []}
+{"allowed": false, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 100, "b": 100, "c": 100, "d": 100, "flag": "NO", "mode":
+"THREE", "t1": "NO", "t2": "THREE", "t3": 100, "t4": 100, "t5": 100, "t6": 100, "t7": 100}, 
+"violations": [{"message": "Violation 'when_gte': t3=100 must be <= 40."}, {"message": "Violation 
+'when_arith': t7=100 must be <= 75."}], "warnings": [], "triggered_rule_ids": ["when_gte", 
+"when_gt", "when_arith"], "violated_rule_ids": ["when_gte", "when_arith"]}
+{"allowed": true, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": -1, "b": 0, "c": 0, "d": 0, "flag": "YES", "mode": 
+"ONE", "t1": "YES", "t2": "ONE", "t3": 0, "t4": 0, "t5": 0, "t6": 0, "t7": 0}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["when_lte", "when_lt"], "violated_rule_ids": []}
+{"allowed": true, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 100, "b": 0, "c": 0, "d": 0, "flag": "YES", "mode": 
+"ONE", "t1": "YES", "t2": "ONE", "t3": 0, "t4": 0, "t5": 0, "t6": 0, "t7": 0}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["when_lt"], "violated_rule_ids": []}
+{"allowed": true, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 101, "b": 0, "c": 0, "d": 0, "flag": "YES", "mode": 
+"ONE", "t1": "YES", "t2": "ONE", "t3": 0, "t4": 0, "t5": 0, "t6": 0, "t7": 0}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["when_lt"], "violated_rule_ids": []}
+{"allowed": true, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 50, "b": 0, "c": 0, "d": 0, "flag": "YES", "mode": 
+"ONE", "t1": "YES", "t2": "ONE", "t3": 0, "t4": 0, "t5": 0, "t6": 0, "t7": 0}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["when_lt"], "violated_rule_ids": []}
+{"allowed": true, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 9, "b": 0, "c": 0, "d": 0, "flag": "YES", "mode": "ONE",
+"t1": "YES", "t2": "ONE", "t3": 0, "t4": 0, "t5": 0, "t6": 0, "t7": 0}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["when_lte", "when_lt"], "violated_rule_ids": []}
+{"allowed": false, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 9, "b": 100, "c": 100, "d": 100, "flag": "NO", "mode": 
+"THREE", "t1": "NO", "t2": "THREE", "t3": 100, "t4": 100, "t5": 100, "t6": 100, "t7": 100}, 
+"violations": [{"message": "Violation 'when_lte': t1='NO' must be MUST BE 'YES'."}, {"message": 
+"Violation 'when_gte': t3=100 must be <= 40."}], "warnings": [], "triggered_rule_ids": ["when_lte", 
+"when_gte", "when_gt"], "violated_rule_ids": ["when_lte", "when_gte"]}
+{"allowed": true, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 10, "b": 0, "c": 0, "d": 0, "flag": "YES", "mode": 
+"ONE", "t1": "YES", "t2": "ONE", "t3": 0, "t4": 0, "t5": 0, "t6": 0, "t7": 0}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["when_lte", "when_lt"], "violated_rule_ids": []}
+{"allowed": false, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 10, "b": 100, "c": 100, "d": 100, "flag": "NO", "mode": 
+"THREE", "t1": "NO", "t2": "THREE", "t3": 100, "t4": 100, "t5": 100, "t6": 100, "t7": 100}, 
+"violations": [{"message": "Violation 'when_lte': t1='NO' must be MUST BE 'YES'."}, {"message": 
+"Violation 'when_gte': t3=100 must be <= 40."}], "warnings": [], "triggered_rule_ids": ["when_lte", 
+"when_gte", "when_gt"], "violated_rule_ids": ["when_lte", "when_gte"]}
+{"allowed": true, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 11, "b": 0, "c": 0, "d": 0, "flag": "YES", "mode": 
+"ONE", "t1": "YES", "t2": "ONE", "t3": 0, "t4": 0, "t5": 0, "t6": 0, "t7": 0}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["when_lt"], "violated_rule_ids": []}
+{"allowed": false, "domain": "OperatorProbe", "policy_hash": 
+"f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"a": 11, "b": 100, "c": 100, "d": 100, "flag": "NO", "mode": 
+"THREE", "t1": "NO", "t2": "THREE", "t3": 100, "t4": 100, "t5": 100, "t6": 100, "t7": 100}, 
+"violations": [{"message": "Violation 'when_gte': t3=100 must be <= 40."}], "warnings": [], 
+"triggered_rule_ids": ["when_gte", "when_gt"], "violated_rule_ids": ["when_gte"]}
