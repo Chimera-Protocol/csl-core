@@ -2,9 +2,11 @@
 `cslcore venom map`: the reach map, full screen and interactive.
 
     arrows / Tab   select a node; the panel shows what reaches it and what it reaches
+    1 to 9         jump to that agent
     Enter          dive into an agent: its tools around it, and what each tool reaches
     Esc            back out
-    3              turn the map into a slowly rotating sphere, and back
+    s              turn the map into a slowly rotating sphere, and back
+    n              names on the map on / off (on by default)
     r              replay the spread
     q              quit
 
@@ -184,7 +186,7 @@ class MapView:
         self.sphere = False
         self.zoom: Optional[Tuple[float, str]] = None  # (start, "in" | "out")
         self.dive: Optional[Dive] = None
-        self.labels = False  # agent names on the canvas
+        self.labels = True  # agent names on the canvas
         self.angle = 0.0  # the sphere's turn; it eases toward the selected node
         self.last_frame = self.t0
         self.idle0 = self.t0  # last key: the globe drifts on its own only after a while
@@ -208,10 +210,14 @@ class MapView:
             self.sel = (self.sel - 1) % len(self.order)
         elif key == "enter" and self.selected_agent() is not None:
             self.zoom = (now, "in")
-        elif key == "3":
+        elif key in ("s", "S"):
             self.sphere = not self.sphere
-        elif key == "l":
+        elif key in ("n", "N", "l"):
             self.labels = not self.labels
+        elif key.isdigit() and key != "0":  # jump to the agent with that number
+            target = next((p.id for p in self.topo.placed.values() if p.number == int(key)), None)
+            if target in self.order:
+                self.sel = self.order.index(target)
         elif key == "r":
             self.spread0 = now
         return True
@@ -325,7 +331,7 @@ class MapView:
             chain = Text.assemble(("REACH CHAIN  ", "label"),
                                   ("  →  ".join(g.nodes[n].label for n in g.top.nodes), "bold #f0abfc"))
         keys = ("Esc back · q quit" if self.mode == "dive"
-                else "↑↓ select · Enter dive in · 3 sphere · l names · r replay · q quit")
+                else "↑↓ or 1-9 select · Enter dive in · s sphere · n names · r replay · q quit")
         body = Group(head, Text(""), grid, Text(""), chain, Text(keys, style="muted"))
         title = Text.assemble((" CSL-Core Venom ", "brand"), ("· reach map ", "muted"))
         return Panel(body, title=title, title_align="left", box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))

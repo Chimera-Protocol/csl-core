@@ -36,8 +36,12 @@ def test_keys_select_dive_and_back(inv):
     v.zoom = (time.monotonic() - 5, "out")
     v.frame(time.monotonic(), 130)
     assert v.mode == "map"
-    v.handle("3")
-    assert v.sphere
+    v.handle("2")  # numbers jump to agents
+    assert v.topo.placed[v.selected()].number == 2
+    v.handle("s")
+    assert v.sphere and v.labels  # names are on by default
+    v.handle("n")
+    assert not v.labels
     assert v.handle("q") is False
 
 

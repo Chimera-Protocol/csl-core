@@ -165,3 +165,19 @@ def test_open_rule_policy_requests_the_studio(ws):
     path, agent = p.studio_request
     assert agent == "membership-bot" and path.endswith("policies/membership-bot.csl")
     assert p.editor_request is None and not list(ws.drafts.glob("*.csl"))  # the studio makes its own draft
+
+
+def test_live_map_toggles_and_draws_pulses(ws):
+    import time
+
+    _guard("membership-bot", mode="log").verify("transfer_funds", {"amount": 700, "to_wallet": "w"})
+    p = _panel(ws)
+    p.handle("g")
+    assert p.map_on and p.crumbs()[-1] == "Map" and ("g", "stream") in p.hints()
+    for rec in p.model.stream:
+        rec["_seen"] = time.monotonic()  # as if it had just arrived
+    text = _frame(p)
+    assert "reach map" in text
+    assert p.topo is not None and p.topo_size is not None
+    p.handle("esc")
+    assert not p.map_on and "reach map" not in _frame(p)

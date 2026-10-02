@@ -115,7 +115,9 @@ class WatchModel:
             self.first_ts = self.first_ts or ts
             self.last_ts = ts if self.last_ts is None or ts > self.last_ts else self.last_ts
             self.minute.append(ts.timestamp())
-        self.stream.append({k: rec.get(k) for k in ("ts", "agent", "tool", "decision", "rules")})
+        item = {k: rec.get(k) for k in ("ts", "agent", "tool", "decision", "rules")}
+        item["_seen"] = time.monotonic()  # when it arrived here, for the live map's pulses
+        self.stream.append(item)
 
     def per_minute(self, now: datetime) -> float:
         cutoff = now.timestamp() - 60
@@ -207,7 +209,10 @@ class ControlPanel:
         self.pending: Optional[Tuple[str, str, str]] = None  # (action, target, question)
         self.message: Optional[Tuple[str, str]] = None  # (text, style)
         self.editor_request: Optional[str] = None  # path the run loop opens in $EDITOR
-        self.studio_request: Optional[Tuple[str, str]] = None  # (policy path, agent) the run loop opens in the studio
+        self.studio_request: Optional[Tuple[str, str]] = None
+        self.map_on = False  # the live view shows the reach map instead of the decision stream
+        self.topo = None
+        self.topo_size: Optional[Tuple[int, int]] = None  # (policy path, agent) the run loop opens in the studio
 
     # data ------------------------------------------------------------------------------
     def all_agents(self) -> List[str]:
@@ -275,6 +280,8 @@ class ControlPanel:
         out = ["Agents" + (f" matching '{self.query}'" if self.query else "")]
         if self.view == "tools" and self.current():
             out += [self.current() or "", "Tools"]
+        elif self.map_on and self.view == "live":
+            out.append("Map")
         return out
 
     def hints(self) -> List[Tuple[str, str]]:
@@ -289,7 +296,7 @@ class ControlPanel:
         if self.focus == "rules":
             return [("↑↓", "rule"), ("Enter", "open"), ("Tab", "agents"), ("Esc", "back")]
         out = [("↑↓", "select"), ("Enter", "tools"), ("m", "mode"), ("M", "all"), ("d", "disable"), ("e", "exempt"),
-               ("/", "search"), ("Tab", "rules"), ("?", "help")]
+               ("/", "search"), ("Tab", "rules"), ("g", "stream" if self.map_on else "map"), ("?", "help")]
         out.append(("Esc", "clear search") if self.query else ("q", "quit"))
         return out
 
@@ -312,9 +319,14 @@ class ControlPanel:
         if key == "?":
             self.view = "live" if self.view == "help" else "help"
             return True
+        if key in ("g", "G") and self.view == "live":
+            self.map_on = not self.map_on
+            return True
         if key in ("esc", "left"):
             if self.view != "live":
                 self.view = "live"
+            elif self.map_on and key == "esc":
+                self.map_on = False
             elif self.focus == "rules":
                 self.focus = "agents"
             elif self.query:
@@ -720,6 +732,32 @@ def footer_text(model: WatchModel, inv: Optional[Inventory]) -> Text:
     return t
 
 
+def map_pane(panel: "ControlPanel", model: WatchModel, inv: Inventory, cols: int, rows: int) -> Text:
+    """The reach map with live decisions flowing on it (see Topo._pulses)."""
+    from .reach import build
+    from .render.mapview import TOOL_IMPACT
+    from .render.topo import Topo
+
+    if panel.topo is None or panel.topo_size != (cols, rows):
+        panel.topo = Topo(build(inv), w=cols, h=rows, max_agents=12, seed=VENOM_VERSION)
+        panel.topo_size = (cols, rows)
+    by_key = {agent_key(a): a for a in inv.agents}
+    now = time.monotonic()
+    pulses = []
+    for rec in list(model.stream)[-60:]:
+        age = now - rec.get("_seen", 0)
+        if age > 1.2:
+            continue
+        a = by_key.get(str(rec.get("agent")))
+        if a is None:
+            continue
+        tool = next((t for t in a.tools if t.name == rec.get("tool")), None)
+        target = TOOL_IMPACT.get(tool.risk_class) if tool is not None else None
+        pulses.append((a.id, target, str(rec.get("decision", "ALLOW")), age))
+    sel = by_key.get(panel.current() or "")
+    return panel.topo.render(now, complete=True, selected=sel.id if sel else None, pulses=pulses)
+
+
 def render(model: WatchModel, inv: Optional[Inventory], states: Dict[str, str], modes: Dict[str, str],
            now: datetime, started: datetime, width: int, height: int, panel: Optional["ControlPanel"] = None) -> Layout:
     title = Text.assemble((" CSL-Core watch ", "brand"), (VENOM_VERSION + " ", "muted"))
@@ -748,7 +786,11 @@ def render(model: WatchModel, inv: Optional[Inventory], states: Dict[str, str], 
                             Text("(it starts in log mode: nothing is blocked, every", style="muted"),
                             Text("decision appears here as ALLOW or WOULD BLOCK).", style="muted")),
                       box=box.ROUNDED, border_style="muted", padding=(0, 1))
-    if panel is not None and panel.view == "tools" and panel.current():
+    if panel is not None and panel.view == "live" and panel.map_on and inv is not None:
+        cols = max(30, int(width * (3 / 5 if wide else 6 / 11)) - 8)
+        right = Panel(map_pane(panel, model, inv, cols, max(8, body_h - 4)), title=Text(" reach map · live ", style="label"),
+                      title_align="left", box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))
+    elif panel is not None and panel.view == "tools" and panel.current():
         right = Panel(tools_pane(panel, panel.current(), body_h - 4), box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))
     elif panel is not None and panel.view == "rule":
         right = Panel(rule_pane(panel), title=Text(" rule ", style="label"), title_align="left", box=box.ROUNDED,
