@@ -27,7 +27,7 @@ from rich.text import Text
 
 from ..model import Agent, Inventory
 from ..reach import IMPACTS, ReachGraph, build
-from .topo import AGENT, CHAIN, IMPACT_STYLE, INPUT, Sphere, Topo, ViewCanvas, Zoom
+from .topo import AGENT, CHAIN, IMPACT_STYLE, INPUT, Sphere, Then, Topo, ViewCanvas, Zoom
 from .web import Canvas, _branch, _walk
 
 RISK_COLOR = {"READ": "#94a3b8", "WRITE": "#fbbf24", "EXTERNAL": "#7dd3fc", "IDENTITY": "#f0abfc",
@@ -35,6 +35,7 @@ RISK_COLOR = {"READ": "#94a3b8", "WRITE": "#fbbf24", "EXTERNAL": "#7dd3fc", "IDE
 TOOL_IMPACT = {"EXEC": "impact:exec", "SPEND": "impact:spend", "DESTRUCTIVE": "impact:destroy",
                "EXTERNAL": "impact:publish"}
 ZOOM_S = 0.4
+DRIFT = 0.125  # radians per second when nobody touches the globe
 
 
 @dataclass
@@ -148,6 +149,9 @@ class Dive:
                 Text(f"{a.kind} · {a.state}" + (f" · runs as {a.process_user}" if a.process_user else ""), style="muted"),
                 Text("")]
         rows.append(Text("TOOLS", style="label"))
+        rows.append(Text.assemble(("●", RISK_COLOR["EXEC"]), (" commands ", "muted"), ("●", RISK_COLOR["WRITE"]),
+                                  (" writes ", "muted"), ("●", RISK_COLOR["EXTERNAL"]), (" outside ", "muted"),
+                                  ("●", RISK_COLOR["READ"]), (" reads ", "muted"), ("◆", "#2dd4bf"), (" a rule decides", "muted")))
         for s in self.tools:
             rows.append(Text.assemble(("● " if s.open else "◆ ", s.color if s.open else "#2dd4bf"), (s.label, "text"),
                                       ("  no rule" if s.open else "  a rule decides", "muted")))
@@ -180,10 +184,16 @@ class MapView:
         self.sphere = False
         self.zoom: Optional[Tuple[float, str]] = None  # (start, "in" | "out")
         self.dive: Optional[Dive] = None
+        self.labels = False  # agent names on the canvas
+        self.angle = 0.0  # the sphere's turn; it eases toward the selected node
+        self.last_frame = self.t0
+        self.idle0 = self.t0  # last key: the globe drifts on its own only after a while
+        self.back0: Optional[float] = None  # when the map zooms back out after a dive
 
     # -- input ------------------------------------------------------------------------------
     def handle(self, key: str) -> bool:
         now = time.monotonic()
+        self.idle0 = now
         if key in ("q", "ctrl-c"):
             return False
         if self.zoom and now - self.zoom[0] < ZOOM_S:
@@ -200,6 +210,8 @@ class MapView:
             self.zoom = (now, "in")
         elif key == "3":
             self.sphere = not self.sphere
+        elif key == "l":
+            self.labels = not self.labels
         elif key == "r":
             self.spread0 = now
         return True
@@ -212,18 +224,46 @@ class MapView:
         return next((a for a in self.inv.agents if a.id == sid), None)
 
     # -- frames -----------------------------------------------------------------------------
+    def _facing(self) -> float:
+        """The sphere angle that brings the selected node to the front."""
+        p = self.topo.placed.get(self.selected() or "")
+        return -(p.x / self.topo.W - 0.5) * 2 * math.pi if p is not None else 0.0
+
+    def _turn(self, now: float) -> None:
+        dt = min(0.2, now - self.last_frame)
+        self.last_frame = now
+        if now - self.idle0 > 4.0:  # left alone, it drifts slowly: a full turn in about 50 seconds
+            self.angle += DRIFT * dt
+            return
+        diff = (self._facing() - self.angle + math.pi) % (2 * math.pi) - math.pi
+        self.angle += diff * min(1.0, dt * 2.5)  # otherwise it turns the selected node to the front
+
+    def _map_view(self, zoom: float = 1.0):
+        """The camera for the map: flat or the sphere, zoomed around the selected node."""
+        p = self.topo.placed.get(self.selected() or "")
+        W, H = self.topo.W, self.topo.H
+        if self.sphere:
+            globe = Sphere(self.angle, W, H)
+            if zoom == 1.0 or p is None:
+                return globe
+            X, Y, _ = globe(p.x, p.y)
+            return Then(globe, Zoom(X, Y, zoom, W, H))
+        if zoom == 1.0 or p is None:
+            return None
+        return Zoom(p.x, p.y, zoom, W, H)
+
     def canvas(self, now: float) -> Text:
         t = now - self.t0
         st = now - self.spread0
-        view = Sphere(t * 0.35, self.topo.W, self.topo.H) if self.sphere and self.mode == "map" else None
+        self._turn(now)
+        sel = self.selected()
         if self.zoom:
             start, direction = self.zoom
             k = min(1.0, (now - start) / ZOOM_S)
-            p = self.topo.placed.get(self.selected() or "")
             if direction == "in":
-                if k < 1 and p is not None:
-                    return self.topo.render(t, spread_t=st, view=Zoom(p.x, p.y, 1 + 5 * k * k, self.topo.W, self.topo.H),
-                                            selected=self.selected())
+                if k < 1:
+                    return self.topo.render(t, spread_t=st, view=self._map_view(1 + 5 * k * k), selected=sel,
+                                            labels=self.labels)
                 if self.mode != "dive":
                     a = self.selected_agent()
                     self.dive = Dive(self.g, a, self.w, self.h) if a is not None else None
@@ -235,16 +275,27 @@ class MapView:
                     return self.dive.render(99.0, view=Zoom(self.dive.W / 2, self.dive.H / 2, max(0.05, 1 - k),
                                                             self.dive.W, self.dive.H))
                 self.mode, self.dive, self.zoom = "map", None, None
+                self.back0 = now  # the map comes back, zooming out from the node
         if self.mode == "dive" and self.dive is not None:
             k = min(1.0, (now - self.dive_t0) / 0.3)
             view = Zoom(self.dive.W / 2, self.dive.H / 2, 0.4 + 0.6 * k, self.dive.W, self.dive.H) if k < 1 else None
             return self.dive.render(now - self.dive_t0, view=view)
-        return self.topo.render(t, spread_t=st if st >= 0 else None, view=view, selected=self.selected())
+        scale = 1.0
+        if self.back0 is not None:
+            k = (now - self.back0) / ZOOM_S
+            if k < 1:
+                scale = 1 + 5 * (1 - k) ** 2
+            else:
+                self.back0 = None
+        return self.topo.render(t, spread_t=st if st >= 0 else None, view=self._map_view(scale), selected=sel,
+                                labels=self.labels)
 
     def side(self) -> Group:
         if self.mode == "dive" and self.dive is not None:
             return Group(*self.dive.panel())
         rows = self.topo.legend(99.0)
+        rows.append(Text.assemble(("◇", INPUT), (" input  ", "muted"), ("●", AGENT), (" agent  ", "muted"),
+                                  ("▲", "#f87171"), (" at stake  ", "muted"), ("━", CHAIN), (" strongest chain", "muted")))
         sid = self.selected()
         if sid in self.g.nodes:
             node = self.g.nodes[sid]
@@ -274,7 +325,7 @@ class MapView:
             chain = Text.assemble(("REACH CHAIN  ", "label"),
                                   ("  →  ".join(g.nodes[n].label for n in g.top.nodes), "bold #f0abfc"))
         keys = ("Esc back · q quit" if self.mode == "dive"
-                else "↑↓ select · Enter dive in · 3 sphere · r replay · q quit")
+                else "↑↓ select · Enter dive in · 3 sphere · l names · r replay · q quit")
         body = Group(head, Text(""), grid, Text(""), chain, Text(keys, style="muted"))
         title = Text.assemble((" CSL-Core Venom ", "brand"), ("· reach map ", "muted"))
         return Panel(body, title=title, title_align="left", box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))

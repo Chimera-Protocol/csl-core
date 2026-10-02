@@ -58,6 +58,18 @@ class Sphere:
         return self.W / 2 + cx * self.R, self.H / 2 + cy * self.R, cz  # braille dots are square
 
 
+class Then:
+    """Two cameras in a row: the first decides depth (a sphere), the second moves the image (a zoom)."""
+
+    def __init__(self, first, second) -> None:
+        self.first, self.second, self.R = first, second, getattr(first, "R", 0)
+
+    def __call__(self, x: float, y: float) -> Tuple[float, float, float]:
+        X, Y, d = self.first(x, y)
+        X2, Y2, _ = self.second(X, Y)
+        return X2, Y2, d
+
+
 class ViewCanvas(Canvas):
     """A canvas that sends every point through a camera; the far side of a sphere stays dim."""
 
@@ -258,12 +270,14 @@ class Topo:
         return spread_t is not None and nid in self.reached and spread_t >= self.reached[nid]
 
     def render(self, t: float, spread_t: Optional[float] = None, complete: bool = False,
-               drop: Optional[float] = None, view=None, selected: Optional[str] = None) -> Text:
+               drop: Optional[float] = None, view=None, selected: Optional[str] = None,
+               pulses: Sequence[Tuple[str, Optional[str], str, float]] = (), labels: bool = False) -> Text:
         """spread_t: seconds since the drop landed on the origin (None: not yet);
         drop: 0..1 while the drop travels from the centre to the origin;
         view: a camera (Zoom, Sphere); selected: a node to ring."""
         c = ViewCanvas(self.w, self.h, view) if view is not None else Canvas(self.w, self.h)
-        if isinstance(view, Sphere):  # a globe behind the map: meridians, parallels and the rim
+        globe = view if isinstance(view, Sphere) else (view.first if isinstance(view, Then) and isinstance(view.first, Sphere) else None)
+        if globe is not None:  # a globe behind the map: meridians, parallels and the rim
             for k in range(0, 360, 30):
                 for j in range(0, 90):
                     X, Y, d = view(k / 360 * self.W, j / 90 * self.H)
@@ -276,7 +290,10 @@ class Topo:
                         Canvas.dot(c, X, Y, "#134e4a", -1)
             for k in range(0, 240):
                 a = k / 240 * 2 * math.pi
-                Canvas.dot(c, self.W / 2 + math.cos(a) * view.R, self.H / 2 + math.sin(a) * view.R, "#0f766e", -1)
+                rx, ry = self.W / 2 + math.cos(a) * globe.R, self.H / 2 + math.sin(a) * globe.R
+                if isinstance(view, Then):
+                    rx, ry, _ = view.second(rx, ry)
+                Canvas.dot(c, rx, ry, "#0f766e", -1)
         st = 99.0 if complete else spread_t
         for x, y in self.dust:
             c.dot(x, y, "#1e293b", -1)
@@ -375,6 +392,10 @@ class Topo:
                 c.put(p.x, p.y, "●", f"bold {CHAIN}" if on_art and (pulse or age < 0.4) else (f"bold {AGENT}" if age < 0.4 else AGENT))
                 if p.number is not None:
                     c.put(p.x + 2.2, p.y, str(p.number) if p.number < 10 else "+", "bold #e2e8f0" if on_art else "#94a3b8")
+        self._pulses(c, pulses)
+        for p in self.placed.values():  # names on the canvas: every agent with labels on, always the selected node
+            if (labels and p.kind == "agent" and self.taken(p.id, st)) or p.id == selected:
+                self._label(c, view, p, "bold #fde047" if p.id == selected else "#94a3b8")
         if selected in self.placed:
             p = self.placed[selected]
             c.ring(p.x, p.y, 3.2 + 0.4 * math.sin(t * 6), "bold #fde047", 8)
@@ -382,6 +403,46 @@ class Topo:
             o = self.placed[self.origin]
             c.ring(o.x, o.y, 1 + st * 10, "bold #fdf4ff", 7)
         return c.render()
+
+    def _label(self, c, view, p: Placed, style: str) -> None:
+        """A node's name beside it, placed after the camera so it never bends with the sphere."""
+        X, Y, d = view(p.x, p.y) if view is not None else (p.x, p.y, 1.0)
+        if d < 0.1:
+            return
+        text = p.label if len(p.label) <= 18 else p.label[:17] + "…"
+        right = X + 4 + 2 * len(text) < self.W
+        x0 = X + (4.2 if p.number is not None else 2.6) if right else X - 2.6 - 2 * len(text)
+        for i, ch in enumerate(text):
+            Canvas.put(c, x0 + 2 * i, Y, ch, style)
+
+    def _pulses(self, c, pulses: Sequence[Tuple[str, Optional[str], str, float]]) -> None:
+        """Live decisions: ALLOW travels as teal light from the agent toward what the call does;
+        WOULD BLOCK flashes purple at the agent, BLOCK red, and the light stops short."""
+        paths = {(e.src, e.dst): self.curves[id(e)] for e in self.edges}
+        for agent, target, decision, age in pulses:
+            p = self.placed.get(agent)
+            if p is None or age < 0:
+                continue
+            path = paths.get((agent, target)) if target else None
+            if decision == "ALLOW":
+                if path:
+                    head = int(len(path) * min(1.0, age / 0.9))
+                    for d in range(4):
+                        j = head - d
+                        if 0 <= j < len(path):
+                            c.dot(*path[j], "bold #ccfbf1" if d == 0 else "#5eead4", 8 - d)
+                elif age < 0.6:
+                    c.ring(p.x, p.y, 1.5 + age * 6, "#5eead4", 6)
+            else:
+                color = CHAIN if decision == "WOULD_BLOCK" else "#f87171"
+                if age < 0.8:
+                    c.ring(p.x, p.y, 1.5 + age * 9, color, 8, step=age)
+                    c.put(p.x, p.y, "●", f"bold {color}")
+                if path and age < 0.5:  # the call starts, and is stopped short
+                    head = int(len(path) * 0.3 * min(1.0, age / 0.3))
+                    for j in range(max(0, head - 3), head + 1):
+                        if j < len(path):
+                            c.dot(*path[j], color, 8)
 
     def legend(self, spread_t: Optional[float], complete: bool = False) -> List[Text]:
         """Right-hand legend: each node appears as the spread takes it; the artery stands out."""
