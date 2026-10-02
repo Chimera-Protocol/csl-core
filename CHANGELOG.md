@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.2]
+
+### Added
+- Reach chains: a reach graph built from what discovery found (untrusted inputs, which agent can
+  change which other agent through its declared file scope, its account or root, and what each
+  agent can do: root, money, credentials, commands, publishing). Chains are routes from an input
+  through at least two agents to something none of the earlier agents could do alone; a tool with an
+  active rule breaks them. The strongest chain is shown step by step with its evidence on the scan
+  screen and in the Markdown and JSON reports; a host without chains shows its most serious direct
+  exposure.
+- The discovery animation ends in the reach map: the web draws back into one point, a drop lands on
+  the entry of the strongest chain, and the spread follows only real reach, with the chain as a
+  purple artery.
+- `cslcore venom map`: the reach map full screen. Arrows or `1` to `9` select, Enter dives into an
+  agent (its tools and what each reaches), `s` turns the map into a 3D globe that brings the
+  selected node to the front, `n` names, `r` replays the spread; `--once` prints one frame.
+- `cslcore watch`: `g` shows the live reach map, with every decision flowing over it as it happens.
+
+### Changed
+- Canvas output merges neighbouring cells of the same style, so animations draw with far less output.
+
 ## [0.6.1]
 
 ### Fixed

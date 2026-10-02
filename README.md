@@ -82,6 +82,34 @@ root" to "an inbound webhook reaches a public posting tool". Nothing on the host
 credential values, prompts and transcripts never reach any output. Reports land in
 `.csl/venom/reports/`, and `cslcore venom --check` gates CI.
 
+When discovery finishes, the web draws back into one point and spreads again along what can really
+reach what: the **reach map**, with the strongest chain lit as a purple artery.
+
+### See what can reach what: `cslcore venom map`
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Chimera-Protocol/csl-core/main/docs/assets/map.gif" alt="cslcore venom map: reach chains, the 3D globe and a dive into one agent" width="860">
+</p>
+
+Each agent on its own may look harmless. The risk is in the chain: an agent that reads web content
+can change the code of another agent that runs as root, or holds a cloud credential, or moves money.
+Venom builds the **reach graph** from what discovery found (who receives untrusted input, whose
+declared file scope or account covers whose files, who runs as root, which tools have no rule) and
+finds the chains that **escalate**: routes through two or more agents to something none of the
+earlier agents could do on its own. A tool with an active rule breaks the chain.
+
+`cslcore venom map` opens it full screen:
+
+- **Select** with the arrows or jump with `1` to `9`; the panel shows what reaches the node and what
+  it reaches.
+- **Enter** dives into an agent: its tools on a ring, and what each tool reaches.
+- **`s`** turns the map into a 3D globe that brings the selected node to the front; `n` hides the
+  names, `r` replays the spread.
+
+The strongest chain is also on the scan screen and in the reports, step by step with its evidence.
+On a host without chains, the most serious direct exposure is shown instead (for example an
+assistant that reads web content and runs commands without a rule).
+
 ### 2. Set up: `cslcore setup`
 
 <p align="center">
@@ -132,6 +160,9 @@ block (`m`), disable an agent or a single tool (kill switch), exempt an agent fr
 recorded reason, or open the rule in the studio. Changes reach running agents on their next call,
 without a restart, and every change is recorded in `.csl/venom/audit.jsonl`. The same controls are
 on the command line: `cslcore mode`.
+
+Press `g` for the **live reach map**: every decision flows over it as it happens, an ALLOW as teal
+light from the agent toward what the call does, a WOULD BLOCK as a purple flash at the agent.
 
 ## The policy language
 
@@ -240,6 +271,7 @@ never activated by the assistant; activation stays with you.
 |---|---|
 | `cslcore setup` | Guided first install, resumable |
 | `cslcore venom` | Read-only discovery; `venom report --agent NAME` for one agent, `--check` for CI |
+| `cslcore venom map` | The reach map, full screen: chains, dive into an agent, 3D globe |
 | `cslcore studio` | Write, prove (Z3, TLA+), bind and go live, in the terminal |
 | `cslcore watch` | Live management panel |
 | `cslcore map` | Generate mappings and run the mapping test (`--test`, `--mapping`, `--cases`) |
@@ -301,7 +333,8 @@ python examples/run_examples.py
 
 ## Roadmap
 
-**Shipped:** discovery of agents across seven layers, guided setup, policy studio with Z3 and TLA+,
+**Shipped:** discovery of agents across seven layers, reach chains and the interactive reach map
+(3D globe, dive in, live decisions in watch), guided setup, policy studio with Z3 and TLA+,
 mapping tests with bypass tricks, live management panel with log and block modes, kill switches and
 exemptions, live policy reload, Claude Code and LangChain integrations, MCP server, upgrade path from
 0.5.1.

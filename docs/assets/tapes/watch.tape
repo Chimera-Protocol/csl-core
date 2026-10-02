@@ -5,7 +5,7 @@ Source docs/assets/tapes/_settings.tape
 Hide
 Type "export PS1='\[\e[1;36m\]$\[\e[0m\] ' PATH=$PWD/.venv/bin:$PATH && cd /tmp/csl-demo && clear"
 Enter
-Type "(python $OLDPWD/scripts/venom_demo_traffic.py --workspace /tmp/csl-demo/ws --rate 20 >/dev/null 2>&1 &) && cd ws && clear"
+Type "(python $OLDPWD/scripts/venom_demo_traffic.py --workspace /tmp/csl-demo/ws --rate 25 >/dev/null 2>&1 &) && cd ws && clear"
 Enter
 Sleep 1s
 Show
@@ -26,10 +26,12 @@ Tab
 Sleep 3s
 Escape
 Sleep 1s
-Type "?"
-Sleep 3s
-Escape
-Sleep 1s
+Type "g"
+Sleep 5s
+Down
+Sleep 2.5s
+Down
+Sleep 2.5s
 Hide
 Type "q"
 Sleep 1s
