@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import difflib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -70,7 +71,22 @@ def _diff(expected: str, actual: str, name: str, limit: int = 80) -> str:
     return "\n".join(lines[:limit]) + more
 
 
+_TLC_VERSION = re.compile(r"TLC2 Version [0-9.]+ \(rev: [0-9a-f]+\)")
+
+
+def _tool_versions(v: Any) -> Any:
+    """The TLC release the machine has is not 0.5.1 behaviour: compare it as a placeholder."""
+    if isinstance(v, str):
+        return _TLC_VERSION.sub("TLC2 Version <TLC>", v)
+    if isinstance(v, dict):
+        return {k: _tool_versions(x) for k, x in v.items()}
+    if isinstance(v, list):
+        return [_tool_versions(x) for x in v]
+    return v
+
+
 def _assert_same(expected: Any, actual: Any, name: str) -> None:
+    expected, actual = _tool_versions(expected), _tool_versions(actual)
     if expected != actual:
         e = expected if isinstance(expected, str) else json.dumps(expected, indent=1, sort_keys=True, default=str)
         a = actual if isinstance(actual, str) else json.dumps(actual, indent=1, sort_keys=True, default=str)
