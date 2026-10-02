@@ -1,0 +1,34 @@
+// =============================================================
+// CSL-Core Community Example: PII Output Guard
+// Goal: Block agent responses that contain PII or low-confidence output.
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN PiiOutputGuard {
+  VARIABLES {
+    // Raw LLM response text
+    output_text: String
+
+    // Regex scanner signal for PII presence
+    pii_detected: BOOLEAN
+
+    // Model confidence score in [0.0, 1.0]
+    confidence_score: 0.0..1.0
+  }
+
+  // MUST BLOCK if PII is detected.
+  STATE_CONSTRAINT no_pii_in_output {
+    ALWAYS True
+    THEN pii_detected == FALSE
+  }
+
+  // MUST BLOCK if confidence is below 0.70.
+  STATE_CONSTRAINT minimum_confidence {
+    ALWAYS True
+    THEN confidence_score >= 0.70
+  }
+}

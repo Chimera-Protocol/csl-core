@@ -1,0 +1,107 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: OpenClawGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "NO", "deployment_mode": "EMBEDDED", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"NO", "sender_role": "OWNER", "skill_verified": "YES", "target_count": 0, "tool": "camera_preview"},
+"violations": [], "warnings": [], "triggered_rule_ids": ["embedded_no_bash", "embedded_no_exec", 
+"embedded_no_cron", "secrets_write_no_approval", "node_exec_no_sandbox"], "violated_rule_ids": []}
+{"allowed": true, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "YES", "deployment_mode": "DESKTOP", 
+"domain_allowlisted": "YES", "path_in_workspace": "NO", "pii_present": "NO", "sandbox_active": "NO",
+"sender_role": "OWNER", "skill_verified": "YES", "target_count": 0, "tool": "write"}, "violations": 
+[], "warnings": [], "triggered_rule_ids": ["node_exec_no_sandbox"], "violated_rule_ids": []}
+{"allowed": true, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "NO", "deployment_mode": "DESKTOP", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"NO", "sender_role": "OWNER", "skill_verified": "YES", "target_count": 3, "tool": "gmail_send"}, 
+"violations": [], "warnings": [], "triggered_rule_ids": ["secrets_write_no_approval", 
+"node_exec_no_sandbox"], "violated_rule_ids": []}
+{"allowed": true, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "YES", "deployment_mode": "SERVER", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"YES", "sender_role": "OWNER", "skill_verified": "YES", "target_count": 0, "tool": "node_exec"}, 
+"violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "YES", "deployment_mode": "DESKTOP", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"NO", "sender_role": "OWNER", "skill_verified": "YES", "target_count": 0, "tool": "secrets_write"}, 
+"violations": [], "warnings": [], "triggered_rule_ids": ["node_exec_no_sandbox"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "NO", "deployment_mode": "DESKTOP", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"NO", "sender_role": "OWNER", "skill_verified": "YES", "target_count": 0, "tool": "navigate"}, 
+"violations": [], "warnings": [], "triggered_rule_ids": ["secrets_write_no_approval", 
+"node_exec_no_sandbox"], "violated_rule_ids": []}
+{"allowed": true, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "NO", "deployment_mode": "DESKTOP", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"NO", "sender_role": "OWNER", "skill_verified": "YES", "target_count": 0, "tool": "skill_install"}, 
+"violations": [], "warnings": [], "triggered_rule_ids": ["secrets_write_no_approval", 
+"node_exec_no_sandbox"], "violated_rule_ids": []}
+{"allowed": true, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "YES", "deployment_mode": "DESKTOP", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"NO", "sender_role": "OWNER", "skill_verified": "YES", "target_count": 100, "tool": "gmail_delete"},
+"violations": [], "warnings": [], "triggered_rule_ids": ["node_exec_no_sandbox"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "NO", "deployment_mode": "SERVER", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"NO", "sender_role": "PAIRED", "skill_verified": "YES", "target_count": 0, "tool": "read"}, 
+"violations": [], "warnings": [], "triggered_rule_ids": ["secrets_write_paired_blocked", 
+"secrets_write_no_approval", "skill_install_paired_blocked", "node_exec_no_sandbox"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "NO", "deployment_mode": "DESKTOP", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"NO", "sender_role": "OWNER", "skill_verified": "YES", "target_count": 0, "tool": "cron"}, 
+"violations": [], "warnings": [], "triggered_rule_ids": ["secrets_write_no_approval", 
+"node_exec_no_sandbox"], "violated_rule_ids": []}
+{"allowed": false, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "NO", "deployment_mode": "UNATTENDED", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"NO", "sender_role": "PAIRED", "skill_verified": "YES", "target_count": 80, "tool": "gmail_delete"},
+"violations": [{"message": "Violation 'mass_delete_paired_blocked': tool='gmail_delete' must be MUST
+NOT BE 'gmail_delete'."}, {"message": "Violation 'bulk_delete_unattended_blocked': 
+tool='gmail_delete' must be MUST NOT BE 'gmail_delete'."}, {"message": "Violation 
+'bulk_delete_no_approval': tool='gmail_delete' must be MUST NOT BE 'gmail_delete'."}], "warnings": 
+[], "triggered_rule_ids": ["unattended_no_bash", "unattended_no_exec", 
+"unattended_no_secrets_write", "unattended_no_skill_install", "mass_delete_paired_blocked", 
+"bulk_delete_unattended_blocked", "bulk_delete_no_approval", "mass_send_no_approval", 
+"secrets_write_paired_blocked", "secrets_write_no_approval", "skill_install_paired_blocked", 
+"node_exec_no_sandbox"], "violated_rule_ids": ["mass_delete_paired_blocked", 
+"bulk_delete_unattended_blocked", "bulk_delete_no_approval"]}
+{"allowed": false, "domain": "OpenClawGuard", "policy_hash": 
+"9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approval_granted": "NO", "deployment_mode": "DESKTOP", 
+"domain_allowlisted": "YES", "path_in_workspace": "YES", "pii_present": "NO", "sandbox_active": 
+"NO", "sender_role": "UNKNOWN", "skill_verified": "YES", "target_count": 0, "tool": "bash"}, 
+"violations": [{"message": "Violation 'untrusted_no_bash': tool='bash' must be MUST NOT BE 
+'bash'."}], "warnings": [], "triggered_rule_ids": ["untrusted_no_bash", "untrusted_no_exec", 
+"untrusted_no_write", "untrusted_no_edit", "untrusted_no_apply_patch", "untrusted_no_gmail_send", 
+"untrusted_no_gmail_delete", "untrusted_no_sendMessage", "untrusted_no_secrets_write", 
+"untrusted_no_node_exec", "untrusted_no_cron", "untrusted_no_skill_install", 
+"secrets_write_no_approval", "node_exec_no_sandbox"], "violated_rule_ids": ["untrusted_no_bash"]}

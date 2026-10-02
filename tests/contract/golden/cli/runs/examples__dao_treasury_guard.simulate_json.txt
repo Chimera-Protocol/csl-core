@@ -1,0 +1,105 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: DAOTreasury
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "approval_count": 1, 
+"destination_type": "INTERNAL", "proposal_age_hours": 1, "proposal_id": 10, "proposer_reputation": 
+50, "total_balance": 1000000, "transfer_amount": 5000}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["low_reputation_destination", "low_reputation_amount_limit", 
+"valid_proposal"], "violated_rule_ids": []}
+{"allowed": true, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "approval_count": 5, 
+"destination_type": "EXTERNAL", "proposal_age_hours": 48, "proposal_id": 100, "proposer_reputation":
+800, "total_balance": 2000000, "transfer_amount": 100000}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["external_transfer_approval", "valid_proposal"], "violated_rule_ids": []}
+{"allowed": true, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "approval_count": 7, 
+"destination_type": "BRIDGE", "proposal_age_hours": 72, "proposal_id": 200, "proposer_reputation": 
+900, "total_balance": 1000000, "transfer_amount": 50000}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["bridge_transfer_max_approval", "bridge_always_requires_timelock", 
+"valid_proposal"], "violated_rule_ids": []}
+{"allowed": true, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "EMERGENCY", "approval_count": 10, 
+"destination_type": "EXTERNAL", "proposal_age_hours": 1, "proposal_id": 999, "proposer_reputation": 
+900, "total_balance": 1000000, "transfer_amount": 500000}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["external_transfer_approval", "emergency_action_unanimous", 
+"valid_proposal"], "violated_rule_ids": []}
+{"allowed": false, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "approval_count": 5, 
+"destination_type": "EXTERNAL", "proposal_age_hours": 48, "proposal_id": 1, "proposer_reputation": 
+50, "total_balance": 1000000, "transfer_amount": 5000}, "violations": [{"message": "Violation 
+'low_reputation_destination': destination_type='EXTERNAL' must be == 'INTERNAL'."}], "warnings": [],
+"triggered_rule_ids": ["low_reputation_destination", "low_reputation_amount_limit", 
+"valid_proposal"], "violated_rule_ids": ["low_reputation_destination"]}
+{"allowed": false, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "approval_count": 1, 
+"destination_type": "INTERNAL", "proposal_age_hours": 1, "proposal_id": 2, "proposer_reputation": 
+50, "total_balance": 1000000, "transfer_amount": 15000}, "violations": [{"message": "Violation 
+'low_reputation_amount_limit': transfer_amount=15000 must be <= 10000."}], "warnings": [], 
+"triggered_rule_ids": ["low_reputation_destination", "low_reputation_amount_limit", 
+"valid_proposal"], "violated_rule_ids": ["low_reputation_amount_limit"]}
+{"allowed": false, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "approval_count": 3, 
+"destination_type": "EXTERNAL", "proposal_age_hours": 48, "proposal_id": 3, "proposer_reputation": 
+800, "total_balance": 1000000, "transfer_amount": 60000}, "violations": [{"message": "Violation 
+'external_transfer_approval': approval_count=3 must be >= 5."}], "warnings": [], 
+"triggered_rule_ids": ["external_transfer_approval", "large_transfer_timelock", "valid_proposal"], 
+"violated_rule_ids": ["external_transfer_approval"]}
+{"allowed": false, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "approval_count": 5, 
+"destination_type": "EXTERNAL", "proposal_age_hours": 12, "proposal_id": 4, "proposer_reputation": 
+800, "total_balance": 1000000, "transfer_amount": 60000}, "violations": [{"message": "Violation 
+'large_transfer_timelock': proposal_age_hours=12 must be >= 24."}], "warnings": [], 
+"triggered_rule_ids": ["external_transfer_approval", "large_transfer_timelock", "valid_proposal"], 
+"violated_rule_ids": ["large_transfer_timelock"]}
+{"allowed": false, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "approval_count": 5, 
+"destination_type": "BRIDGE", "proposal_age_hours": 72, "proposal_id": 5, "proposer_reputation": 
+900, "total_balance": 1000000, "transfer_amount": 50000}, "violations": [{"message": "Violation 
+'bridge_transfer_max_approval': approval_count=5 must be >= 7."}], "warnings": [], 
+"triggered_rule_ids": ["bridge_transfer_max_approval", "bridge_always_requires_timelock", 
+"valid_proposal"], "violated_rule_ids": ["bridge_transfer_max_approval"]}
+{"allowed": false, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "approval_count": 7, 
+"destination_type": "BRIDGE", "proposal_age_hours": 1, "proposal_id": 4, "proposer_reputation": 700,
+"total_balance": 1000000, "transfer_amount": 50000}, "violations": [{"message": "Violation 
+'bridge_always_requires_timelock': proposal_age_hours=1 must be >= 24."}], "warnings": [], 
+"triggered_rule_ids": ["bridge_transfer_max_approval", "bridge_always_requires_timelock", 
+"valid_proposal"], "violated_rule_ids": ["bridge_always_requires_timelock"]}
+{"allowed": false, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "approval_count": 2, 
+"destination_type": "EXTERNAL", "proposal_age_hours": 48, "proposal_id": 7, "proposer_reputation": 
+900, "total_balance": 1000000, "transfer_amount": 500000}, "violations": [{"message": "Violation 
+'external_transfer_approval': approval_count=2 must be >= 5."}, {"message": "Violation 
+'catastrophic_transfer_protection': approval_count=2 must be >= 3."}], "warnings": [], 
+"triggered_rule_ids": ["external_transfer_approval", "catastrophic_transfer_protection", 
+"large_transfer_timelock", "valid_proposal"], "violated_rule_ids": ["external_transfer_approval", 
+"catastrophic_transfer_protection"]}
+{"allowed": false, "domain": "DAOTreasury", "policy_hash": 
+"2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "EMERGENCY", "approval_count": 5, 
+"destination_type": "INTERNAL", "proposal_age_hours": 1, "proposal_id": 8, "proposer_reputation": 
+900, "total_balance": 1000000, "transfer_amount": 100000}, "violations": [{"message": "Violation 
+'emergency_action_unanimous': approval_count=5 must be >= 10."}], "warnings": [], 
+"triggered_rule_ids": ["emergency_action_unanimous", "valid_proposal"], "violated_rule_ids": 
+["emergency_action_unanimous"]}

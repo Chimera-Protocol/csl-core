@@ -1,0 +1,25 @@
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+  ENABLE_FORMAL_VERIFICATION: FALSE
+  ENABLE_CAUSAL_INFERENCE: FALSE
+  INTEGRATION: "native"
+}
+
+DOMAIN MembershipGuard {
+  VARIABLES {
+    tool: {"TRANSFER_FUNDS", "CHECK_BALANCE"}
+    amount: 0..100000
+    requires_dual_approval: {"YES", "NO"}
+  }
+
+  STATE_CONSTRAINT transfer_limit {
+    WHEN tool == "TRANSFER_FUNDS"
+    THEN amount <= 5000
+  }
+
+  STATE_CONSTRAINT large_transfer_needs_dual_approval {
+    WHEN tool == "TRANSFER_FUNDS" AND amount > 1000
+    THEN requires_dual_approval MUST BE "YES"
+  }
+}

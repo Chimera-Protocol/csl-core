@@ -1,0 +1,71 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: AgeGate
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "GENERAL", "parent_verified": "YES", "user_age": 
+0}, "violations": [], "warnings": [], "triggered_rule_ids": ["no_mature_for_minors", 
+"no_alcohol_for_minors"], "violated_rule_ids": []}
+{"allowed": false, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "ALCOHOL", "parent_verified": "NO", "user_age": 
+120}, "violations": [{"message": "Violation 'alcohol_requires_verification': parent_verified='NO' 
+must be MUST BE 'YES'."}], "warnings": [], "triggered_rule_ids": ["alcohol_requires_verification"], 
+"violated_rule_ids": ["alcohol_requires_verification"]}
+{"allowed": true, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "GENERAL", "parent_verified": "YES", "user_age": 
+-1}, "violations": [], "warnings": [], "triggered_rule_ids": ["no_mature_for_minors", 
+"no_alcohol_for_minors"], "violated_rule_ids": []}
+{"allowed": true, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "GENERAL", "parent_verified": "YES", "user_age": 
+120}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "GENERAL", "parent_verified": "YES", "user_age": 
+121}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "GENERAL", "parent_verified": "YES", "user_age": 
+60}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "GENERAL", "parent_verified": "YES", "user_age": 
+17}, "violations": [], "warnings": [], "triggered_rule_ids": ["no_mature_for_minors", 
+"no_alcohol_for_minors"], "violated_rule_ids": []}
+{"allowed": false, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "ALCOHOL", "parent_verified": "NO", "user_age": 
+17}, "violations": [{"message": "Violation 'no_alcohol_for_minors': category='ALCOHOL' must be MUST 
+NOT BE 'ALCOHOL'."}], "warnings": [], "triggered_rule_ids": ["no_mature_for_minors", 
+"no_alcohol_for_minors"], "violated_rule_ids": ["no_alcohol_for_minors"]}
+{"allowed": true, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "GENERAL", "parent_verified": "YES", "user_age": 
+18}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": false, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "ALCOHOL", "parent_verified": "NO", "user_age": 
+18}, "violations": [{"message": "Violation 'alcohol_requires_verification': parent_verified='NO' 
+must be MUST BE 'YES'."}], "warnings": [], "triggered_rule_ids": ["alcohol_requires_verification"], 
+"violated_rule_ids": ["alcohol_requires_verification"]}
+{"allowed": true, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "GENERAL", "parent_verified": "YES", "user_age": 
+19}, "violations": [], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": false, "domain": "AgeGate", "policy_hash": 
+"8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"category": "ALCOHOL", "parent_verified": "NO", "user_age": 
+19}, "violations": [{"message": "Violation 'alcohol_requires_verification': parent_verified='NO' 
+must be MUST BE 'YES'."}], "warnings": [], "triggered_rule_ids": ["alcohol_requires_verification"], 
+"violated_rule_ids": ["alcohol_requires_verification"]}

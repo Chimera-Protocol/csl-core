@@ -11,6 +11,7 @@ Tools:
     - scaffold_policy: Generate a CSL policy template from description
     - tla_verify:      TLA+ formal verification with full TLC results
     - universe_info:   State space analysis for a CSL policy
+    - venom_*:         (0.6) discovered agents and AI-assisted policy drafts
 
 Resources:
     - policy://examples/* : Built-in example policies
@@ -1005,6 +1006,109 @@ STATE_CONSTRAINT no_pii_external {
 - **Temporal verification:** TLA+ proves safety across ALL possible state transitions
 - **Deterministic:** Same input always produces same output, no probabilistic behavior
 """
+
+
+# ---------------------------------------------------------------------------
+# Tools: Venom (0.6) AI-assisted policy authoring. Additive; the tools above are unchanged.
+# The venom package is imported inside each tool, so importing this module stays as in 0.5.1.
+# ---------------------------------------------------------------------------
+
+def _venom_workspace(workspace: str) -> str:
+    import os
+    return workspace or os.environ.get("CSL_VENOM_WORKSPACE") or os.getcwd()
+
+
+@mcp.tool()
+def venom_inventory(workspace: str = "") -> str:
+    """
+    Summary of the AI agents Venom discovered on this machine: kind, state, tool count,
+    riskiest tool class, guard status, coverage and top findings. Redacted: no credential
+    values, no prompt text.
+
+    Args:
+        workspace: Venom workspace folder (default: CSL_VENOM_WORKSPACE or the server's folder).
+    """
+    from chimera_core.venom import mcp_tools
+    return mcp_tools.inventory(_venom_workspace(workspace))
+
+
+@mcp.tool()
+def venom_agent(agent_id: str, workspace: str = "") -> str:
+    """
+    One agent in detail: its tools with parameters and risk classes, triggers, guard
+    status and the agent key to use in policies. No secrets, no prompt text.
+
+    Args:
+        agent_id: agent id, name or key (from venom_inventory).
+        workspace: Venom workspace folder.
+    """
+    from chimera_core.venom import mcp_tools
+    return mcp_tools.agent(agent_id, _venom_workspace(workspace))
+
+
+@mcp.tool()
+def venom_policy_context(agent_id: str, workspace: str = "") -> str:
+    """
+    Everything needed to draft or revise a policy for one agent: the active policy (or a
+    deterministic starting draft on first install), its findings, vocabulary drift and
+    the rules a valid draft must follow.
+
+    Args:
+        agent_id: agent id, name or key.
+        workspace: Venom workspace folder.
+    """
+    from chimera_core.venom import mcp_tools
+    return mcp_tools.policy_context(agent_id, _venom_workspace(workspace))
+
+
+@mcp.tool()
+def venom_save_draft(agent_id: str, csl_content: str, note: str = "", workspace: str = "") -> str:
+    """
+    Verify a CSL draft (parse, validate, Z3) and, only if it passes, save it to the
+    workspace's .csl/venom/drafts/. Never activates anything: the operator reviews and
+    activates drafts with the cslcore CLI.
+
+    Args:
+        agent_id: the agent the draft is for.
+        csl_content: complete CSL policy source.
+        note: one line explaining the draft (kept as a comment).
+        workspace: Venom workspace folder.
+    """
+    from chimera_core.venom import mcp_tools
+    return mcp_tools.save_draft(agent_id, csl_content, note, _venom_workspace(workspace))
+
+
+@mcp.tool()
+def venom_propose_exemption(agent: str, scope: str, reason: str, tool: str = "", workspace: str = "") -> str:
+    """
+    Propose that an agent (scope "agent") or one tool (scope "tool") be exempted from
+    guarding. Always recorded as proposed; only the operator can approve it in the CLI.
+
+    Args:
+        agent: agent id (or "*" with scope "tool").
+        scope: "agent" or "tool".
+        reason: why it can be trusted.
+        tool: tool name when scope is "tool".
+        workspace: Venom workspace folder.
+    """
+    from chimera_core.venom import mcp_tools
+    return mcp_tools.propose_exemption(agent, scope, reason, tool or None, _venom_workspace(workspace))
+
+
+@mcp.prompt()
+def venom_draft(agent_id: str) -> str:
+    """(0.6) Draft a CSL policy for one discovered agent and save it for review."""
+    return (
+        f"Draft a CSL-Core policy for the agent `{agent_id}`.\n\n"
+        f"1. Call venom_policy_context(agent_id=\"{agent_id}\") and venom_agent(agent_id=\"{agent_id}\").\n"
+        "2. Write a policy that limits what can go wrong with this agent's riskiest tools: amounts, "
+        "destinations, commands, deletions. Use only the real tool names and parameters you were given, "
+        "and keep the agent_id variable.\n"
+        "3. Check it with verify_policy and fix any error it reports.\n"
+        f"4. Save it with venom_save_draft(agent_id=\"{agent_id}\", csl_content=..., note=...).\n\n"
+        "Then summarise in three lines what the policy allows and blocks. Do not activate anything; "
+        "the operator reviews and activates it with cslcore."
+    )
 
 
 # ---------------------------------------------------------------------------

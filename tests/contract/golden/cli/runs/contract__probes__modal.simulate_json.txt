@@ -1,0 +1,79 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: ModalProbe
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approved": "YES", "cap": 0, "level": "LOW", 
+"region": "EU", "reviewer": "YES", "role": "ADMIN", "tool": "READ"}, "violations": [], "warnings": 
+[], "triggered_rule_ids": ["always_no_delete", "region_may"], "violated_rule_ids": []}
+{"allowed": false, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 10000, "approved": "NO", "cap": 1000, "level": 
+"HIGH", "region": "US", "reviewer": "NO", "role": "USER", "tool": "PAY"}, "violations": [{"message":
+"Violation 'pay_needs_admin': role='USER' must be == 'ADMIN'."}, {"message": "Violation 
+'not_approved_small': cap=1000 must be < 100."}, {"message": "Violation 'scaled_limit': 
+reviewer='NO' must be MUST BE 'YES'."}], "warnings": [], "triggered_rule_ids": ["always_no_delete", 
+"pay_needs_admin", "not_approved_small", "scaled_limit"], "violated_rule_ids": ["pay_needs_admin", 
+"not_approved_small", "scaled_limit"]}
+{"allowed": true, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approved": "YES", "cap": 0, "level": "LOW", 
+"region": "EU", "reviewer": "YES", "role": "ADMIN", "tool": "READ"}, "violations": [], "warnings": 
+[], "triggered_rule_ids": ["always_no_delete", "region_may"], "violated_rule_ids": []}
+{"allowed": true, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approved": "YES", "cap": 0, "level": "LOW", 
+"region": "EU", "reviewer": "YES", "role": "ADMIN", "tool": "WRITE"}, "violations": [], "warnings": 
+[], "triggered_rule_ids": ["always_no_delete"], "violated_rule_ids": []}
+{"allowed": false, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approved": "YES", "cap": 0, "level": "LOW", 
+"region": "EU", "reviewer": "YES", "role": "ADMIN", "tool": "DELETE"}, "violations": [{"message": 
+"Violation 'always_no_delete': tool='DELETE' must be MUST NOT BE 'DELETE'."}], "warnings": [], 
+"triggered_rule_ids": ["always_no_delete"], "violated_rule_ids": ["always_no_delete"]}
+{"allowed": true, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approved": "YES", "cap": 0, "level": "LOW", 
+"region": "EU", "reviewer": "YES", "role": "ADMIN", "tool": "PAY"}, "violations": [], "warnings": 
+[], "triggered_rule_ids": ["always_no_delete", "pay_needs_admin"], "violated_rule_ids": []}
+{"allowed": true, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approved": "YES", "cap": 0, "level": "LOW", 
+"region": "EU", "reviewer": "YES", "role": "ADMIN", "tool": "read"}, "violations": [], "warnings": 
+[], "triggered_rule_ids": ["always_no_delete"], "violated_rule_ids": []}
+{"allowed": true, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approved": "YES", "cap": 0, "level": "LOW", 
+"region": "EU", "reviewer": "YES", "role": "ADMIN", "tool": "__UNKNOWN_VALUE__"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["always_no_delete"], "violated_rule_ids": []}
+{"allowed": true, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approved": "YES", "cap": 0, "level": "LOW", 
+"region": "EU", "reviewer": "YES", "role": "ADMIN", "tool": 1}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["always_no_delete"], "violated_rule_ids": []}
+{"allowed": false, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "approved": "YES", "cap": 0, "level": "LOW", 
+"region": "EU", "reviewer": "YES", "role": "ADMIN"}, "violations": [{"message": "Missing required 
+key 'tool' for rule 'always_no_delete'."}], "warnings": [], "triggered_rule_ids": 
+["always_no_delete"], "violated_rule_ids": ["always_no_delete"]}
+{"allowed": true, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": -1, "approved": "YES", "cap": 0, "level": "LOW", 
+"region": "EU", "reviewer": "YES", "role": "ADMIN", "tool": "READ"}, "violations": [], "warnings": 
+[], "triggered_rule_ids": ["always_no_delete", "region_may"], "violated_rule_ids": []}
+{"allowed": true, "domain": "ModalProbe", "policy_hash": 
+"2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 10000, "approved": "YES", "cap": 0, "level": "LOW",
+"region": "EU", "reviewer": "YES", "role": "ADMIN", "tool": "READ"}, "violations": [], "warnings": 
+[], "triggered_rule_ids": ["always_no_delete", "scaled_limit", "region_may"], "violated_rule_ids": 
+[]}

@@ -1,0 +1,79 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: EcommerceMarginGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 0.0, "suggested_price": 0.0, 
+"unit_cost": 0.0}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["enforce_minimum_margin"], "violated_rule_ids": []}
+{"allowed": false, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 1.0, "suggested_price": 1000000.0, 
+"unit_cost": 1000000.0}, "violations": [{"message": "Violation 'enforce_minimum_margin': 
+suggested_price=1000000.0 must be >= 2000000.0."}], "warnings": [], "triggered_rule_ids": 
+["enforce_minimum_margin"], "violated_rule_ids": ["enforce_minimum_margin"]}
+{"allowed": true, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 0.0, "suggested_price": 0.0, 
+"unit_cost": -0.5}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["enforce_minimum_margin"], "violated_rule_ids": []}
+{"allowed": false, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 0.0, "suggested_price": 0.0, 
+"unit_cost": 1000000.0}, "violations": [{"message": "Violation 'enforce_minimum_margin': 
+suggested_price=0.0 must be >= 1000000.0."}], "warnings": [], "triggered_rule_ids": 
+["enforce_minimum_margin"], "violated_rule_ids": ["enforce_minimum_margin"]}
+{"allowed": false, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 0.0, "suggested_price": 0.0, 
+"unit_cost": 1000000.5}, "violations": [{"message": "Violation 'enforce_minimum_margin': 
+suggested_price=0.0 must be >= 1000000.5."}], "warnings": [], "triggered_rule_ids": 
+["enforce_minimum_margin"], "violated_rule_ids": ["enforce_minimum_margin"]}
+{"allowed": false, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 0.0, "suggested_price": 0.0, 
+"unit_cost": 500000.0}, "violations": [{"message": "Violation 'enforce_minimum_margin': 
+suggested_price=0.0 must be >= 500000.0."}], "warnings": [], "triggered_rule_ids": 
+["enforce_minimum_margin"], "violated_rule_ids": ["enforce_minimum_margin"]}
+{"allowed": false, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 0.0, "suggested_price": 0.0, 
+"unit_cost": 0.5}, "violations": [{"message": "Violation 'enforce_minimum_margin': 
+suggested_price=0.0 must be >= 0.5."}], "warnings": [], "triggered_rule_ids": 
+["enforce_minimum_margin"], "violated_rule_ids": ["enforce_minimum_margin"]}
+{"allowed": true, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 1.0, "suggested_price": 1000000.0, 
+"unit_cost": 0.5}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["enforce_minimum_margin"], "violated_rule_ids": []}
+{"allowed": false, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 0.0, "suggested_price": 0.0, 
+"unit_cost": 1}, "violations": [{"message": "Violation 'enforce_minimum_margin': suggested_price=0.0
+must be >= 1.0."}], "warnings": [], "triggered_rule_ids": ["enforce_minimum_margin"], 
+"violated_rule_ids": ["enforce_minimum_margin"]}
+{"allowed": true, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 1.0, "suggested_price": 1000000.0, 
+"unit_cost": 1}, "violations": [], "warnings": [], "triggered_rule_ids": ["enforce_minimum_margin"],
+"violated_rule_ids": []}
+{"allowed": false, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 0.0, "suggested_price": 0.0, 
+"unit_cost": 1.5}, "violations": [{"message": "Violation 'enforce_minimum_margin': 
+suggested_price=0.0 must be >= 1.5."}], "warnings": [], "triggered_rule_ids": 
+["enforce_minimum_margin"], "violated_rule_ids": ["enforce_minimum_margin"]}
+{"allowed": true, "domain": "EcommerceMarginGuard", "policy_hash": 
+"8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"min_margin_percent": 1.0, "suggested_price": 1000000.0, 
+"unit_cost": 1.5}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["enforce_minimum_margin"], "violated_rule_ids": []}

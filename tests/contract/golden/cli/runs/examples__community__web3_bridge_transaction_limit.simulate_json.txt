@@ -1,0 +1,97 @@
+exit_code: 0
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: Web3BridgeTransactionLimitGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"bridge_protocol": "LAYERZERO", "daily_bridge_volume_usd": 0.0, "destination_chain": "sample", 
+"human_co_sign": false, "review_status": "NONE", "source_chain": "sample"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "MULTISIG", "amount_usd": 10000000.0, 
+"asset_symbol": "other", "bridge_action": "BLOCK", "bridge_audit_status": "EXPLOITED_HISTORY", 
+"bridge_protocol": "OTHER", "daily_bridge_volume_usd": 10000000.0, "destination_chain": "other", 
+"human_co_sign": true, "review_status": "ESCALATE", "source_chain": "other"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": ["block_exploited_bridge_history", 
+"escalate_large_bridge_transfer"], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"bridge_protocol": "LAYERZERO", "daily_bridge_volume_usd": 0.0, "destination_chain": "sample", 
+"human_co_sign": false, "review_status": "NONE", "source_chain": "sample"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"bridge_protocol": "WORMHOLE", "daily_bridge_volume_usd": 0.0, "destination_chain": "sample", 
+"human_co_sign": false, "review_status": "NONE", "source_chain": "sample"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"bridge_protocol": "ACROSS", "daily_bridge_volume_usd": 0.0, "destination_chain": "sample", 
+"human_co_sign": false, "review_status": "NONE", "source_chain": "sample"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"bridge_protocol": "STARGATE", "daily_bridge_volume_usd": 0.0, "destination_chain": "sample", 
+"human_co_sign": false, "review_status": "NONE", "source_chain": "sample"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"bridge_protocol": "OTHER", "daily_bridge_volume_usd": 0.0, "destination_chain": "sample", 
+"human_co_sign": false, "review_status": "NONE", "source_chain": "sample"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"bridge_protocol": "layerzero", "daily_bridge_volume_usd": 0.0, "destination_chain": "sample", 
+"human_co_sign": false, "review_status": "NONE", "source_chain": "sample"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"bridge_protocol": "__UNKNOWN_VALUE__", "daily_bridge_volume_usd": 0.0, "destination_chain": 
+"sample", "human_co_sign": false, "review_status": "NONE", "source_chain": "sample"}, "violations": 
+[], "warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"bridge_protocol": 1, "daily_bridge_volume_usd": 0.0, "destination_chain": "sample", 
+"human_co_sign": false, "review_status": "NONE", "source_chain": "sample"}, "violations": [], 
+"warnings": [], "triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"daily_bridge_volume_usd": 0.0, "destination_chain": "sample", "human_co_sign": false, 
+"review_status": "NONE", "source_chain": "sample"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": [], "violated_rule_ids": []}
+{"allowed": true, "domain": "Web3BridgeTransactionLimitGuard", "policy_hash": 
+"1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_signing_key": "HOT", "amount_usd": 0.0, 
+"asset_symbol": "sample", "bridge_action": "EXECUTE", "bridge_audit_status": "AUDITED", 
+"bridge_protocol": "LAYERZERO", "daily_bridge_volume_usd": 0.0, "destination_chain": "sample", 
+"human_co_sign": false, "review_status": "NONE"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": [], "violated_rule_ids": []}

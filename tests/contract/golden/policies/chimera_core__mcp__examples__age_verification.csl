@@ -1,0 +1,47 @@
+// =============================================================
+// CSL-Core Example: Age Verification
+// Goal: Protect minors from restricted content categories.
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+}
+
+DOMAIN AgeGate {
+
+  VARIABLES {
+    // User age
+    user_age: 0..120
+
+    // Content category requested
+    category: {"GENERAL", "TEEN", "MATURE", "ALCOHOL"}
+
+    // Is parent verified?
+    parent_verified: {"YES", "NO"}
+  }
+
+  // -----------------------------------------------------------
+  // Rule 1: Minors ( < 18) cannot access MATURE content
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT no_mature_for_minors {
+    WHEN user_age < 18
+    THEN category MUST NOT BE "MATURE"
+  }
+
+  // -----------------------------------------------------------
+  // Rule 2: Minors ( < 18) cannot access ALCOHOL content
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT no_alcohol_for_minors {
+    WHEN user_age < 18
+    THEN category MUST NOT BE "ALCOHOL"
+  }
+
+  // -----------------------------------------------------------
+  // Rule 3: Adults require ID verification for ALCOHOL
+  // Fix: Added "AND user_age >= 18" to avoid conflict with Rule 2
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT alcohol_requires_verification {
+    WHEN category == "ALCOHOL" AND user_age >= 18
+    THEN parent_verified MUST BE "YES"
+  }
+}

@@ -87,8 +87,11 @@ class ChimeraPlugin(ABC):
         enable_dashboard: bool = False,
         title: Optional[str] = None,
         context_mapper: Optional[ContextMapper] = None,
+        guard: Optional[ChimeraGuard] = None,
     ):
-        self.guard = ChimeraGuard(constitution)
+        # 0.6: an existing guard (for example one in log mode with a decision logger) can be
+        # passed in; by default a fresh guard is built exactly as in 0.5.1.
+        self.guard = guard if guard is not None else ChimeraGuard(constitution)
         self.enable_dashboard = enable_dashboard and VISUALIZER_AVAILABLE
         self.visualizer = RuntimeVisualizer() if self.enable_dashboard else None
         

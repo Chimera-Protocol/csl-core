@@ -1,0 +1,14 @@
+{
+ "commands": {
+  "formal": "Run TLA⁺ formal verification with full terminal animations",
+  "repl": "Interactive REPL for rapid policy testing (JSON lines)",
+  "simulate": "Run runtime guard against one or more JSON inputs",
+  "verify": "Parse + validate + Z3 verify + compile a CSL policy"
+ },
+ "description": "CSL-Core CLI — deterministic safety for AI policies",
+ "options": [
+  "--version",
+  "-h,--help"
+ ],
+ "prog": "cslcore"
+}

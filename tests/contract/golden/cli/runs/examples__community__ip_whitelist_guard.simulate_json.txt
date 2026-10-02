@@ -1,0 +1,77 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: IpWhitelistGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": false, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "HIGH", "destination_ip": "sample", 
+"is_internal_ip": false}, "violations": [{"message": "Violation 'block_sensitive_external': 
+is_internal_ip=False must be == True."}], "warnings": [], "triggered_rule_ids": 
+["block_sensitive_external"], "violated_rule_ids": ["block_sensitive_external"]}
+{"allowed": true, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "LOW", "destination_ip": "other", 
+"is_internal_ip": true}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}
+{"allowed": false, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "HIGH", "is_internal_ip": false}, 
+"violations": [{"message": "Violation 'block_sensitive_external': is_internal_ip=False must be == 
+True."}], "warnings": [], "triggered_rule_ids": ["block_sensitive_external"], "violated_rule_ids": 
+["block_sensitive_external"]}
+{"allowed": true, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "HIGH", "destination_ip": "sample", 
+"is_internal_ip": true}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["block_sensitive_external"], "violated_rule_ids": []}
+{"allowed": false, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "HIGH", "destination_ip": "sample", 
+"is_internal_ip": "YES"}, "violations": [{"message": "Violation 'block_sensitive_external': 
+is_internal_ip='YES' must be == True."}], "warnings": [], "triggered_rule_ids": 
+["block_sensitive_external"], "violated_rule_ids": ["block_sensitive_external"]}
+{"allowed": false, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "HIGH", "destination_ip": "sample"}, 
+"violations": [{"message": "Missing required key 'is_internal_ip' for rule 
+'block_sensitive_external'."}], "warnings": [], "triggered_rule_ids": ["block_sensitive_external"], 
+"violated_rule_ids": ["block_sensitive_external"]}
+{"allowed": false, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "HIGH", "destination_ip": "sample", 
+"is_internal_ip": false}, "violations": [{"message": "Violation 'block_sensitive_external': 
+is_internal_ip=False must be == True."}], "warnings": [], "triggered_rule_ids": 
+["block_sensitive_external"], "violated_rule_ids": ["block_sensitive_external"]}
+{"allowed": true, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "MEDIUM", "destination_ip": "sample", 
+"is_internal_ip": false}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "LOW", "destination_ip": "sample", 
+"is_internal_ip": false}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "high", "destination_ip": "sample", 
+"is_internal_ip": false}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": "__UNKNOWN_VALUE__", "destination_ip": 
+"sample", "is_internal_ip": false}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "IpWhitelistGuard", "policy_hash": 
+"7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"data_sensitivity": 1, "destination_ip": "sample", 
+"is_internal_ip": false}, "violations": [], "warnings": [], "triggered_rule_ids": [], 
+"violated_rule_ids": []}

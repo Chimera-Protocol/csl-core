@@ -1,0 +1,10 @@
+usage: cslcore verify [-h] [--skip-verify] [--skip-validate] [--debug-z3] policy
+
+positional arguments:
+  policy           Path to .csl policy file
+
+options:
+  -h, --help       show this help message and exit
+  --skip-verify    Skip Z3 verification (not recommended)
+  --skip-validate  Skip semantic validation (not recommended)
+  --debug-z3       On failure, print Z3 encoding trace (tail) to debug sort mismatches.

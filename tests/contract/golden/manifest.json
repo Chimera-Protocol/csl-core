@@ -1,0 +1,19 @@
+{
+ "tag": "v0.5.1",
+ "commit": "d23fe5470295d40f09ae0bbaff86ac5feb0ed3fc",
+ "generated_at": "2026-09-30T23:34:00Z",
+ "python": "3.12.5",
+ "z3_solver": "5.1.0.0",
+ "rich": "15.0.0",
+ "mcp": "1.30.0",
+ "normalisation": [
+  "package version string replaced by <VERSION>",
+  "latency_ms removed from guard results",
+  "TLC time, PID and worker lines removed from tla_verify output",
+  "memory addresses (' at 0x...') removed from reprs",
+  "argparse 'optional arguments:' heading rendered as 'options:'",
+  "durations ('<number>ms', '<number>s', 'h:mm:ss') replaced by <T>; space runs collapsed on those lines",
+  "TLA+ runs use the Python model checker (real TLC depends on a local Java install)"
+ ],
+ "policies": 31
+}

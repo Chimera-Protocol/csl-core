@@ -1,0 +1,28 @@
+// =============================================================
+// policy: IP Whitelist Guard
+// Goal: Block data transfers to non-internal IPs for sensitive data.
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN IpWhitelistGuard {
+  VARIABLES {
+    // Raw destination IP address
+    destination_ip: String
+
+    // Pre-evaluated signal: TRUE if IP starts with "10.0."
+    is_internal_ip: BOOLEAN
+
+    // Sensitivity level of the data being transferred
+    data_sensitivity: {"HIGH", "MEDIUM", "LOW"}
+  }
+
+  // MUST BLOCK if data is HIGH sensitivity and IP is not internal.
+  STATE_CONSTRAINT block_sensitive_external {
+    WHEN data_sensitivity == "HIGH"
+    THEN is_internal_ip == TRUE
+  }
+}

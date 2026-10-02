@@ -1,0 +1,94 @@
+// =============================================================
+// Community Policy: Web3 Bridge Transaction Limit Guard
+// Goal: Gate autonomous DeFi bridge transfers with deterministic
+//       audit, signing-key, per-transaction, and 24h volume limits.
+//
+// Covered requirements:
+// 1) BLOCK if bridge_audit_status == "EXPLOITED_HISTORY".
+// 2) BLOCK if bridge_audit_status == "UNAUDITED" and amount_usd > 1000.
+// 3) BLOCK if amount_usd > 50000 and human_co_sign is FALSE.
+// 4) BLOCK if agent_signing_key == "HOT" and amount_usd > 5000.
+// 5) BLOCK if daily_bridge_volume_usd + amount_usd > 100000 and
+//    human_co_sign is FALSE.
+// 6) ESCALATE if amount_usd > 10000.
+// 7) ESCALATE if bridge_audit_status == "PARTIALLY_AUDITED".
+//
+// BLOCK is represented by the bridge_action output, while ESCALATE is
+// represented by review_status. This keeps hard denials and review routing
+// compatible when the same transaction triggers both categories.
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN Web3BridgeTransactionLimitGuard {
+  VARIABLES {
+    bridge_protocol: {"LAYERZERO", "WORMHOLE", "ACROSS", "STARGATE", "OTHER"}
+    source_chain: String
+    destination_chain: String
+    asset_symbol: String
+    amount_usd: 0.0..10000000.0
+    bridge_audit_status: {"AUDITED", "PARTIALLY_AUDITED", "UNAUDITED", "EXPLOITED_HISTORY"}
+    daily_bridge_volume_usd: 0.0..10000000.0
+    agent_signing_key: {"HOT", "WARM", "MULTISIG"}
+    human_co_sign: BOOLEAN
+    bridge_action: {"EXECUTE", "BLOCK"}
+    review_status: {"NONE", "ESCALATE"}
+  }
+
+  // Exploited bridges are never allowed.
+  STATE_CONSTRAINT block_exploited_bridge_history {
+    WHEN bridge_audit_status == "EXPLOITED_HISTORY"
+    THEN bridge_action MUST BE "BLOCK"
+  }
+
+  // Unaudited bridges are capped at $1,000.
+  STATE_CONSTRAINT cap_unaudited_bridge_amount {
+    WHEN bridge_audit_status == "UNAUDITED" AND amount_usd > 1000.0
+    THEN bridge_action MUST BE "BLOCK"
+  }
+
+  // Transactions above $50,000 need a human co-signature.
+  STATE_CONSTRAINT large_bridge_transfer_requires_cosign {
+    WHEN amount_usd > 50000.0 AND human_co_sign == FALSE
+    THEN bridge_action MUST BE "BLOCK"
+  }
+
+  // Hot keys cannot move more than $5,000 through a bridge.
+  STATE_CONSTRAINT hot_key_bridge_transfer_limit {
+    WHEN agent_signing_key == "HOT" AND amount_usd > 5000.0
+    THEN bridge_action MUST BE "BLOCK"
+  }
+
+  // Without a human co-signature, the 24h rolling bridge volume cannot exceed $100,000.
+  STATE_CONSTRAINT unsigned_daily_bridge_volume_limit {
+    WHEN human_co_sign == FALSE AND daily_bridge_volume_usd + amount_usd > 100000.0
+    THEN bridge_action MUST BE "BLOCK"
+  }
+
+  // Amounts above $10,000 must be escalated for review.
+  STATE_CONSTRAINT escalate_large_bridge_transfer {
+    WHEN amount_usd > 10000.0
+    THEN review_status MUST BE "ESCALATE"
+  }
+
+  // Partially audited bridges must be escalated even when the amount is small.
+  STATE_CONSTRAINT escalate_partially_audited_bridge {
+    WHEN bridge_audit_status == "PARTIALLY_AUDITED"
+    THEN review_status MUST BE "ESCALATE"
+  }
+}
+
+// Quick checks from repo root:
+// cslcore verify examples/community/web3_bridge_transaction_limit.csl
+//
+// ALLOW: small audited bridge transfer, under hot-key and daily limits.
+// cslcore simulate examples/community/web3_bridge_transaction_limit.csl --input '{"bridge_protocol":"ACROSS","source_chain":"ethereum","destination_chain":"base","asset_symbol":"USDC","amount_usd":900.0,"bridge_audit_status":"AUDITED","daily_bridge_volume_usd":10000.0,"agent_signing_key":"HOT","human_co_sign":false,"bridge_action":"EXECUTE","review_status":"NONE"}'
+//
+// BLOCK: bridge has exploited history, so EXECUTE is rejected.
+// cslcore simulate examples/community/web3_bridge_transaction_limit.csl --input '{"bridge_protocol":"WORMHOLE","source_chain":"ethereum","destination_chain":"polygon","asset_symbol":"ETH","amount_usd":500.0,"bridge_audit_status":"EXPLOITED_HISTORY","daily_bridge_volume_usd":2000.0,"agent_signing_key":"WARM","human_co_sign":true,"bridge_action":"EXECUTE","review_status":"ESCALATE"}'
+//
+// ESCALATE: amount is above $10,000, so review_status must be ESCALATE.
+// cslcore simulate examples/community/web3_bridge_transaction_limit.csl --input '{"bridge_protocol":"STARGATE","source_chain":"arbitrum","destination_chain":"optimism","asset_symbol":"USDC","amount_usd":15000.0,"bridge_audit_status":"AUDITED","daily_bridge_volume_usd":20000.0,"agent_signing_key":"MULTISIG","human_co_sign":false,"bridge_action":"EXECUTE","review_status":"ESCALATE"}'

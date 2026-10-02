@@ -23,6 +23,7 @@ maintainers = [
 dependencies = [
     "z3-solver>=4.12.0",
     "rich>=13.0.0",
+    "textual>=1.0.0",  # cslcore studio: the CSL editor (0.6)
 ]
 
 classifiers = [
@@ -54,6 +55,7 @@ dev = [
 ]
 
 mcp = ["mcp[cli]>=1.2.0,<2.0.0"]
+venom = ["psutil>=5.9"]
 
 # LİNKLERİNİ GÜNCELLE
 [project.urls]

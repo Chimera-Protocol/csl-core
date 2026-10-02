@@ -1,0 +1,76 @@
+// =============================================================
+// CSL-Core Example: DAO Treasury Guard (v0.1)
+// Goal: Deterministic permission + parameter safety for AI agents
+// =============================================================
+
+CONFIG {
+    ENFORCEMENT_MODE: BLOCK
+    CHECK_LOGICAL_CONSISTENCY: TRUE
+    ENABLE_FORMAL_VERIFICATION: FALSE
+    ENABLE_CAUSAL_INFERENCE: FALSE
+    INTEGRATION: "native"
+}
+
+DOMAIN DAOTreasury {
+    VARIABLES {
+        transfer_amount: 0..10000000,
+        total_balance: 0..100000000,
+        proposal_id: 0..100000,
+        approval_count: 0..100,
+        proposer_reputation: 0..1000,
+        proposal_age_hours: 0..720,
+        destination_type: {"INTERNAL", "EXTERNAL", "BRIDGE", "MULTISIG"},
+        action: {"TRANSFER", "GRANT", "INVESTMENT", "EMERGENCY"}
+    }
+    
+    STATE_CONSTRAINT low_reputation_destination {
+        WHEN proposer_reputation < 100
+        THEN destination_type == "INTERNAL"
+    }
+    
+    STATE_CONSTRAINT low_reputation_amount_limit {
+        WHEN proposer_reputation < 100
+        THEN transfer_amount <= 10000
+    }
+    
+    STATE_CONSTRAINT external_transfer_approval {
+        WHEN proposer_reputation >= 100 
+             AND destination_type == "EXTERNAL" 
+             AND transfer_amount > 50000
+        THEN approval_count >= 5
+    }
+    
+    STATE_CONSTRAINT bridge_transfer_max_approval {
+        WHEN proposer_reputation >= 100 
+             AND destination_type == "BRIDGE" 
+             AND transfer_amount > 10000
+        THEN approval_count >= 7
+    }
+    
+    STATE_CONSTRAINT bridge_always_requires_timelock {
+        WHEN proposer_reputation >= 100 
+             AND destination_type == "BRIDGE" 
+             AND action != "EMERGENCY"
+        THEN proposal_age_hours >= 24
+    }
+    
+    STATE_CONSTRAINT catastrophic_transfer_protection {
+        WHEN transfer_amount > (total_balance * 0.1) AND action != "EMERGENCY"
+        THEN approval_count >= 3
+    }
+    
+    STATE_CONSTRAINT large_transfer_timelock {
+        WHEN transfer_amount > (total_balance * 0.05) AND action != "EMERGENCY"
+        THEN proposal_age_hours >= 24
+    }
+    
+    STATE_CONSTRAINT emergency_action_unanimous {
+        WHEN action == "EMERGENCY"
+        THEN approval_count >= 10
+    }
+    
+    STATE_CONSTRAINT valid_proposal {
+        WHEN transfer_amount > 0
+        THEN proposal_id > 0
+    }
+}

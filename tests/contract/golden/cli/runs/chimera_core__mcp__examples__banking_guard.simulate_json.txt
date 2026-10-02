@@ -1,0 +1,84 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: BankingGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "amount": 0, "country": "TR", 
+"device_trust": 0, "is_vip": "TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [], "warnings":
+[], "triggered_rule_ids": ["no_sanctioned_country", "transfer_limit_vip", 
+"risk_ceiling_for_transfer"], "violated_rule_ids": []}
+{"allowed": false, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "DEPOSIT", "amount": 100000, "country": "NK", 
+"device_trust": 1, "is_vip": "FALSE", "kyc_level": 5, "risk_score": 1}, "violations": [{"message": 
+"Violation 'no_sanctioned_country': country='NK' must be MUST NOT BE 'NK'."}], "warnings": [], 
+"triggered_rule_ids": ["no_sanctioned_country"], "violated_rule_ids": ["no_sanctioned_country"]}
+{"allowed": true, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "amount": 0, "country": "TR", 
+"device_trust": 0, "is_vip": "TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [], "warnings":
+[], "triggered_rule_ids": ["no_sanctioned_country", "transfer_limit_vip", 
+"risk_ceiling_for_transfer"], "violated_rule_ids": []}
+{"allowed": true, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "WITHDRAW", "amount": 0, "country": "TR", 
+"device_trust": 0, "is_vip": "TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [], "warnings":
+[], "triggered_rule_ids": ["no_sanctioned_country"], "violated_rule_ids": []}
+{"allowed": true, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "DEPOSIT", "amount": 0, "country": "TR", 
+"device_trust": 0, "is_vip": "TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [], "warnings":
+[], "triggered_rule_ids": ["no_sanctioned_country"], "violated_rule_ids": []}
+{"allowed": true, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "transfer", "amount": 0, "country": "TR", 
+"device_trust": 0, "is_vip": "TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [], "warnings":
+[], "triggered_rule_ids": ["no_sanctioned_country"], "violated_rule_ids": []}
+{"allowed": true, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "__UNKNOWN_VALUE__", "amount": 0, "country": "TR", 
+"device_trust": 0, "is_vip": "TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [], "warnings":
+[], "triggered_rule_ids": ["no_sanctioned_country"], "violated_rule_ids": []}
+{"allowed": true, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": 1, "amount": 0, "country": "TR", "device_trust": 0,
+"is_vip": "TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_sanctioned_country"], "violated_rule_ids": []}
+{"allowed": true, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"amount": 0, "country": "TR", "device_trust": 0, "is_vip": 
+"TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["no_sanctioned_country"], "violated_rule_ids": []}
+{"allowed": true, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "amount": -1, "country": "TR", 
+"device_trust": 0, "is_vip": "TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [], "warnings":
+[], "triggered_rule_ids": ["no_sanctioned_country", "transfer_limit_vip", 
+"risk_ceiling_for_transfer"], "violated_rule_ids": []}
+{"allowed": false, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "amount": 100000, "country": "TR", 
+"device_trust": 0, "is_vip": "TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [{"message": 
+"Violation 'transfer_limit_vip': amount=100000 must be <= 10000."}, {"message": "Violation 
+'device_trust_for_medium_transfer': device_trust=0 must be >= 0.7."}], "warnings": [], 
+"triggered_rule_ids": ["no_sanctioned_country", "transfer_limit_vip", "risk_ceiling_for_transfer", 
+"device_trust_for_medium_transfer"], "violated_rule_ids": ["transfer_limit_vip", 
+"device_trust_for_medium_transfer"]}
+{"allowed": false, "domain": "BankingGuard", "policy_hash": 
+"3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"action": "TRANSFER", "amount": 100001, "country": "TR", 
+"device_trust": 0, "is_vip": "TRUE", "kyc_level": 0, "risk_score": 0}, "violations": [{"message": 
+"Violation 'transfer_limit_vip': amount=100001 must be <= 10000."}, {"message": "Violation 
+'device_trust_for_medium_transfer': device_trust=0 must be >= 0.7."}], "warnings": [], 
+"triggered_rule_ids": ["no_sanctioned_country", "transfer_limit_vip", "risk_ceiling_for_transfer", 
+"device_trust_for_medium_transfer"], "violated_rule_ids": ["transfer_limit_vip", 
+"device_trust_for_medium_transfer"]}

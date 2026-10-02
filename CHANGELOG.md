@@ -7,6 +7,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] - Venom
+
+CSL-Core goes from passive to active: it finds the agents on a host, shows what they can reach,
+helps write and verify their policies, tests the mapping from real tool calls to policy
+variables, and gives the operator a live management panel. 0.5.1 behavior is unchanged.
+
+### Added
+- `cslcore venom`: read-only discovery of every AI agent on the host (or `--root` folder) across
+  code (Python and TypeScript / JavaScript, parsed and never executed), assistant and MCP configs,
+  cron / systemd / launchd, processes, containers, listening ports, run history and existing
+  policies. Risk classes per tool, coverage, vocabulary drift and findings V01 to V16. JSON and
+  Markdown reports (`schema_version: 1`) with a redaction pass; `--check` for CI;
+  `cslcore venom report --agent ID` for one agent in detail. `--probe` lists the real tools of
+  configured MCP servers (stdio servers start only after confirmation; HTTP only on loopback).
+- `cslcore setup`: a resumable ten-step flow (scope, discover, inventory, findings, exemptions,
+  policies, verify, map, wire, activate) with an enforcement mode per agent. `--yes` never approves
+  exemptions and never activates; activation in scripted runs needs `--activate`.
+- `cslcore policy`: workbench for first install and existing policies (list, show, new, edit,
+  extend, fix, verify, diff, activate). Every draft passes one gate: parse, validate, Z3, diff,
+  operator confirmation. Template drafts use only discovered tool names and encode exemptions as
+  `agent_id != "..."`.
+- `chimera_core.mapping`: fail-closed helpers `to_enum`, `to_flag`, `to_range` and
+  `guarded_verify`. `cslcore map` generates mappings and runs the mapping test, which flags any
+  malformed or unknown input that ends in ALLOW (finding V11); it also tests hand-written mappings.
+- Log mode and decision logs (`chimera_core.venom.observe.venom_guard`), `cslcore hook` for Claude
+  Code `PreToolUse`, and `cslcore watch`: a live management panel with agents, decision stream, rule
+  tuning, per-agent log / block switch, kill switch per agent and per tool. Changes reach running
+  agents on their next call and are recorded in `.csl/venom/audit.jsonl`. `cslcore mode` offers the
+  same controls on the command line.
+- `cslcore exempt`: exemptions with a required reason and approver, optional expiry (V13).
+- Setup is one step per screen with plain-language findings (why it matters, what to do), a
+  policy menu per agent (keep an existing policy, templates, write it in the studio or your own
+  editor, or your
+  assistant: Claude Code is run directly when installed, the MCP prompt `venom_draft` otherwise),
+  one default mode for all agents with exceptions by pattern, and bulk activation. It fits
+  narrow terminals. A completed workspace opens a home screen with status and next steps.
+- `cslcore mode --all` / `--match`; a workspace default mode.
+- 0.5.1 installations: existing policies are adopted in place (never copied or changed);
+  `observe(guard, agent=...)` wraps an existing guard (block mode by default, same
+  `ChimeraError`); own mappers are tested function-only (LangChain, plain, OpenClaw).
+  `docs/venom/MIGRATION.md`.
+- Panel navigation (breadcrumb, Enter, Esc, Tab, `/`), exemptions per agent, tool or rule with a
+  reason, rule relaxing through a verified draft, policy history; running guards reload a changed
+  policy and keep the last good one.
+- Discovery animation driven by real scan progress; any key skips; off for CI, `--json`,
+  `NO_COLOR`, non-terminals and `--no-anim`.
+- MCP tools for AI-assisted authoring in the user's own assistant: `venom_inventory`,
+  `venom_agent`, `venom_policy_context`, `venom_save_draft` (verifies, writes drafts only),
+  `venom_propose_exemption` (proposals only).
+- `ChimeraPlugin` and the LangChain `wrap_tool` / `guard_tools` accept an existing guard
+  (`guard=` / `reuse_guard=True`); the default path is the 0.5.1 one.
+- `cslcore studio`: a CSL editor in the terminal (Textual) with highlighting, separate Z3 (`F5`)
+  and TLA+ (`F8`) checks with animations, suggestions from Z3, TLA+ and the discovered agents that
+  apply as patches, a fit and replay view per bound agent (recorded decisions replayed against the
+  edited text), agent binding one by one or in bulk (`Ctrl+B`) and going live (`Ctrl+L`, Z3 must
+  pass; previous version kept). Opened from setup's policy step (`w`), the watch panel (`o`) and
+  the scan's NEXT line.
+- Explicit bindings between policies and agents (`.csl/venom/state.json`); one policy can guard
+  many agents, each with its own mapping. `venom_guard(agent)` follows a rebinding live.
+- Mapping bypass tests: `chimera_core.mapping.in_scope`, `command_allowed` and
+  `destination_allowed` classify the derived checks policies rely on (path inside a folder,
+  command on an allowlist, destination allowed) and answer NO to anything they cannot read
+  unambiguously; generated mappings use them. `cslcore map --test` sends bypass tricks at every
+  derived check, each built outside the allowed region so the right answer is known (scope:
+  traversal, prefix, relative, home, encoded, NUL, backslash, double slash, dot segments, sibling;
+  command: chaining, and / or, pipe, background, substitution, redirect, newline, wrapper, extra
+  arguments, glob; destination: credentials, suffix, lookalike, path, scheme, parser confusion,
+  control characters, numeric hosts, other port, homograph, separators, header injection, display
+  name). Own mappers: `--classify VAR=scope|command|destination[:param]`, `--allowed-root`,
+  `--allowed-command`, `--allowed-destination`; a check without an accepted value is reported as
+  not covered, never as passing. Regression cases: `--cases FILE`, kept with `--keep-cases` in
+  `.csl/venom/cases/<agent>.jsonl` for every later test. Testing an own mapper brings literal
+  constants, other functions of the same file and standard-library imports along without running
+  the file; setup asks which checks an own mapper computes. Guide: `docs/venom/MAPPING.md`.
+- Decision logging checks the log path once per file (about 0.06 ms per call).
+- `scripts/venom_demo_traffic.py --count N --seed S` for repeatable traffic.
+- New required dependency: `textual` (the studio). Optional extra `csl-core[venom]` (psutil).
+
+### Compatibility
+- A contract suite generated from tag v0.5.1 (public API signatures, CLI help and outputs, MCP tool
+  schemas and outputs, policy hashes and guard decisions across example and probe policies) runs
+  first in CI together with the unmodified v0.5.1 test suite. `runtime.py`, `language/`,
+  `engines/` and `factory.py` are untouched.
+- The scope planned for 0.6.1 (decision logger, log mode, watch) and 0.6.2 (live MCP, TS / JS
+  layer) shipped in this release.
+
 ## [0.5.1] - TLA+ Correctness
 
 Found while assembling ground-truth data for an academic writeup of this project: running the real

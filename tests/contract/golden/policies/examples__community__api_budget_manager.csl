@@ -1,0 +1,27 @@
+// =============================================================
+// policy: API Budget Manager
+// =============================================================
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN ApiBudgetManager {
+  VARIABLES {
+    user_tier: {"ENTERPRISE", "PRO", "FREE"}
+    daily_spend: 0.0..100000.0
+    monthly_cumulative: 0.0..1000000.0
+  }
+
+  // FREE users cannot exceed daily spend limit.
+  STATE_CONSTRAINT free_daily_limit {
+    WHEN user_tier == "FREE"
+    THEN daily_spend <= 5.0
+  }
+
+  // PRO users cannot exceed monthly cumulative limit.
+  STATE_CONSTRAINT pro_monthly_limit {
+    WHEN user_tier == "PRO"
+    THEN monthly_cumulative <= 100.0
+  }
+}

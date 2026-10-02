@@ -1,0 +1,327 @@
+{
+ "chimera_core__mcp__examples__age_verification": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b",
+  "load_guard_hash": "8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b"
+ },
+ "chimera_core__mcp__examples__agent_tool_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565",
+  "load_guard_hash": "52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565"
+ },
+ "chimera_core__mcp__examples__banking_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea",
+  "load_guard_hash": "3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea"
+ },
+ "chimera_core__mcp__examples__dao_treasury_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e",
+  "load_guard_hash": "2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e"
+ },
+ "chimera_core__mcp__examples__hello_world": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4",
+  "load_guard_hash": "52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4"
+ },
+ "chimera_core__mcp__examples__tla_demo": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983",
+  "load_guard_hash": "9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983"
+ },
+ "chimera_core__mcp__examples__tla_demo_violation": {
+  "error": "CompilationError"
+ },
+ "contract__probes__modal": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1",
+  "load_guard_hash": "2dc7c09e1f003c7b6e3427bb4df6db5ff6c54fe78603f2525520f67edfe256c1"
+ },
+ "contract__probes__operators": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067",
+  "load_guard_hash": "f06edcdf9947515be67fdd797e647cd4cab8e1181beec659c68ac590adbed067"
+ },
+ "examples__agent_tool_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565",
+  "load_guard_hash": "52ef22ccb7db2aa623e7d33a64f0e1e36a0c9632543e34e6bc865d50da010565"
+ },
+ "examples__chimera_banking_case_study": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea",
+  "load_guard_hash": "3817fc916bb862077924a798ce3604253e3e7142345571188236678f1b946fea"
+ },
+ "examples__community__api_budget_manager": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4",
+  "load_guard_hash": "929193e79a63c5157c9136771399873acd3da92c803b6c54f88778f2804e98e4"
+ },
+ "examples__community__construction_site_safety_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11",
+  "load_guard_hash": "df48558a9774ad0ec0fdaf8eb482472cc40e36b6ef35d543a8d551cc52b06e11"
+ },
+ "examples__community__defi_slippage_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "cc0432ac071d79d53714b71c35866b061af4e7f270ecf854e5fadc6c29a6f2ad",
+  "load_guard_hash": "cc0432ac071d79d53714b71c35866b061af4e7f270ecf854e5fadc6c29a6f2ad"
+ },
+ "examples__community__defi_trading_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83",
+  "load_guard_hash": "5fc0ae10061996fe73acc2c724ca7836b8a65454c81454ef7a30883fc5007f83"
+ },
+ "examples__community__devops_deploy_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7",
+  "load_guard_hash": "137c674f09abc82551bd08ad8c2972b3be9134975f6da1bc61f6721bea4645d7"
+ },
+ "examples__community__ecommerce_margin_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267",
+  "load_guard_hash": "8564ac57c8cdc31c815b93fb3fa152eb3c1563c85be2d57ad85c86f5c6243267"
+ },
+ "examples__community__game_npc_logic": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4",
+  "load_guard_hash": "1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4"
+ },
+ "examples__community__game_npc_resource": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf",
+  "load_guard_hash": "da413bcac88d9fc326e9e7195c594fa774182f253c4ef6a422908feecb03cacf"
+ },
+ "examples__community__ip_whitelist_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e",
+  "load_guard_hash": "7c404e0986f371e14ec140540c97ffc4aead06734acf033cdc2af1f367b3a04e"
+ },
+ "examples__community__mcp_tool_trust_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a",
+  "load_guard_hash": "5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a"
+ },
+ "examples__community__pediatric_safety_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959",
+  "load_guard_hash": "00f6acd8d3b722ac0c18224ecf1ec4eeb270e88f6e6e02858a18458d4dabd959"
+ },
+ "examples__community__pii_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d",
+  "load_guard_hash": "f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d"
+ },
+ "examples__community__supply_chain_provenance_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512",
+  "load_guard_hash": "018fd5b3c2553cc419dfd9ff127d273364be9c0a54641253c6c7b739acb5c512"
+ },
+ "examples__community__web3_bridge_transaction_limit": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e",
+  "load_guard_hash": "1f99049d2253f6c8fa2328a0943313398f6d7da78750230d14d14deca7ec465e"
+ },
+ "examples__dao_treasury_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e",
+  "load_guard_hash": "2b8d9790a9e22fa289fa9861f42309fb1d4d701d1715d6253b2d02c9ebdf3a5e"
+ },
+ "examples__openclaw_guard": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23",
+  "load_guard_hash": "9204f6d46afb5f21410bec9b0fcf18199a3c7c45453c91e862d12199e8abec23"
+ },
+ "examples__tla_demo": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983",
+  "load_guard_hash": "9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983"
+ },
+ "examples__tla_demo_violation": {
+  "error": "CompilationError"
+ },
+ "quickstart__01_hello_world": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4",
+  "load_guard_hash": "52eb79ee386723fa3e915788f25336a1cbb1b1c9adf5db245b8a7a39a54348c4"
+ },
+ "quickstart__02_age_verification": {
+  "config": {
+   "collect_all_violations": true,
+   "dry_run": false,
+   "evaluation_error_behavior": "block",
+   "missing_key_behavior": "block",
+   "raise_on_block": true
+  },
+  "from_string_hash": "8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b",
+  "load_guard_hash": "8b8d8faf93d41217d6b2032a54f28e03f2fb8992b416d58149a2b4b4c0e0388b"
+ }
+}

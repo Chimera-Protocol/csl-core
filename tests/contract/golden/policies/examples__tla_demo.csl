@@ -1,0 +1,36 @@
+// TLA+ Formal Verification Demo
+// ENABLE_FORMAL_VERIFICATION: TRUE -> CSL-Core spawns the TLA+ engine,
+// constructs the full state space, and proves all temporal properties hold.
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  ENABLE_FORMAL_VERIFICATION: TRUE
+}
+
+DOMAIN AIAgentSafetyDemo {
+  VARIABLES {
+    agent_tier:  {"STANDARD", "PREMIUM"}
+    task_type:   {"READ", "WRITE", "ANALYZE"}
+    environment: {"dev", "staging"}
+    approved:    BOOLEAN
+    risk_score:  0..5
+  }
+
+  // "DELETE" is not in task_type domain -> holds for all reachable states
+  STATE_CONSTRAINT no_destructive_ops {
+    ALWAYS True
+    THEN task_type MUST NOT BE "DELETE"
+  }
+
+  // "production" is not in environment domain -> trivially holds everywhere
+  STATE_CONSTRAINT no_production_access {
+    ALWAYS True
+    THEN environment MUST NOT BE "production"
+  }
+
+  // domain 0..5 means risk_score <= 10 is always true
+  STATE_CONSTRAINT bounded_risk {
+    ALWAYS True
+    THEN risk_score <= 10
+  }
+}

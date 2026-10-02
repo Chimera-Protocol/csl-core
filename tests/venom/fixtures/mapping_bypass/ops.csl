@@ -1,0 +1,31 @@
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+  ENABLE_FORMAL_VERIFICATION: FALSE
+  ENABLE_CAUSAL_INFERENCE: FALSE
+  INTEGRATION: "native"
+}
+
+DOMAIN OpsGuard {
+  VARIABLES {
+    tool: {"Bash", "Write", "Edit", "Read", "WebFetch"}
+    path_ok: {"YES", "NO"}
+    cmd_ok: {"YES", "NO"}
+    dest_ok: {"YES", "NO"}
+  }
+
+  STATE_CONSTRAINT writes_stay_in_workspace {
+    WHEN tool == "Write" OR tool == "Edit"
+    THEN path_ok MUST BE "YES"
+  }
+
+  STATE_CONSTRAINT only_known_commands {
+    WHEN tool == "Bash"
+    THEN cmd_ok MUST BE "YES"
+  }
+
+  STATE_CONSTRAINT fetch_only_known_hosts {
+    WHEN tool == "WebFetch"
+    THEN dest_ok MUST BE "YES"
+  }
+}

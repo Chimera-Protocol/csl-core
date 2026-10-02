@@ -1,0 +1,6 @@
+{
+  "mcpServers": {
+    "fs": {"command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "/"]},
+    "github": {"command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"], "env": {"GITHUB_TOKEN": "CSL_VENOM_SENTINEL_7f3a9c"}}
+  }
+}

@@ -1,0 +1,24 @@
+// =============================================================
+// policy: Ecommerce Margin Guard
+// Goal: Prevent the AI from setting a price below cost + minimum margin.
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN EcommerceMarginGuard {
+  VARIABLES {
+    unit_cost: 0.0..1000000.0
+    suggested_price: 0.0..1000000.0
+    min_margin_percent: 0.0..1.0
+  }
+
+  // MUST BLOCK if suggested_price is below minimum acceptable price.
+  // Minimum acceptable price = unit_cost * (1 + min_margin_percent)
+  STATE_CONSTRAINT enforce_minimum_margin {
+    ALWAYS True
+    THEN suggested_price >= unit_cost * (1 + min_margin_percent)
+  }
+}

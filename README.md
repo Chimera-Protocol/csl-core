@@ -93,6 +93,121 @@ print(result.allowed)  # False
 
 ---
 
+## Venom: discover, write, map, watch (0.6)
+
+Writing a policy assumes you already know which agents you run, what they can reach and how their
+real tool calls map onto policy variables. Venom makes that part of the tool.
+
+```bash
+pip install csl-core
+cslcore venom          # read-only discovery of every AI agent on this machine
+cslcore setup          # guided: findings, policies, mapping, enforcement mode, wiring
+cslcore studio         # write and verify policies in the terminal (Z3, TLA+), bind agents, go live
+cslcore watch          # live management panel
+```
+
+`cslcore venom` reads code (parsed, never run), assistant and MCP configs, cron / systemd / launchd,
+the process list, run history metadata and existing `.csl` policies. Credential values, prompt text
+and transcripts never reach any output. On a test host it looks like this:
+
+```
+╭─  CSL-Core Venom 0.6.0  ─────────────────────────────────────────────────────╮
+│ ops-01 · linux · 2026-10-01 14:22 · 0.4s · fixture host · read-only          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  Discovery   ✓ code  ✓ config  ✓ triggers  ✓ runtime  ✓ history  ✓ policies
+              5 files · 1 parse error · 0 paths not readable
+
+  AGENTS      6 total   ● 4 running   ○ 1 stopped   ◷ 1 scheduled
+
+  Agent               State         Runs 7d Tools   Top access     Guard     
+  claude-code:sandbox ● running         n/a     9   EXEC  Bash     none      
+  ingest-worker       ● running           7     4   EXEC  run_com… none      
+  publisher           ◷ daily 06:00     n/a     2   EXT   post_to… none      
+  claude-code:ops     ● running           3    29   EXEC  Bash     no rule   
+  membership-bot      ○ stopped         n/a     2   SPEND transfe… wrapper   
+  rogue/agent.py      ● running         n/a     0   -              none      
+
+  COVERAGE    █░░░░░░░░░░░░░░░    4%   2 of 46 tools guarded · 29 no rule
+
+  FINDINGS    ▲ 5 high   ■ 8 medium   ● 1 low
+   ▲ V01  ingest-worker runs as root
+   ▲ V02  claude-code:sandbox can execute commands without a guard (Bash)
+   ▲ V02  ingest-worker can execute commands without a guard (run_command)
+   ▲ V03  permission prompts are disabled for claude-code:sandbox
+   ▲ V04  publisher: inbound messaging (/webhooks/sms) reaches EXTERNAL tool p…
+          9 more in the report
+
+  NEXT        cslcore policy fix  apply drift suggestions, shown as a diff first
+```
+
+`cslcore setup` then walks through ten resumable steps:
+
+1. **Findings**: V01 to V16, from "agent runs as root" to "inbound webhook reaches a public posting tool".
+2. **Policies**: per agent, a deterministic draft from risk-class templates, or a draft written by
+   *your own* assistant through the MCP tools below. Every draft passes the same gate (parse,
+   validate, Z3, diff, your confirmation) before it becomes active.
+3. **Mapping**: generated mappings use the fail-closed helpers in `chimera_core.mapping`
+   (`to_enum`, `to_flag`, `to_range`), and a mapping test pushes case variants, unknown values,
+   missing keys, wrong types and range edges through mapping and guard. Any malformed input that
+   ends in ALLOW is reported as fail-open. Every derived check (path in scope, command
+   allowlisted, destination allowed) also gets bypass tricks: traversal, prefix folders, command
+   chaining and substitution, credentials and suffix hosts in URLs, and more, each built so the
+   right answer is known. It works on hand-written mappings too, with your red-team findings kept
+   as regression cases:
+   `cslcore map --agent NAME --test --mapping my_mapper.py:classify --classify path_ok=scope:file_path --allowed-root /srv/app`.
+   The hardened classifiers `in_scope`, `command_allowed` and `destination_allowed` pass every
+   trick family. Guide: [docs/venom/MAPPING.md](docs/venom/MAPPING.md).
+4. **Enforcement mode**: `log` (nothing blocked, every decision recorded as ALLOW or WOULD BLOCK)
+   or `block`, per agent.
+5. **Wiring**: a snippet per framework (Python, LangChain, Claude Code `PreToolUse` hook via
+   `cslcore hook`).
+
+`cslcore studio` is the policy editor, inside the terminal. It opens on its own, from setup's
+policy step (`w`), from the watch panel (`o` on a rule) and from the `cslcore studio --agent NAME`
+line the scan suggests. One policy per session (`Ctrl+O` switches, `Ctrl+N` starts a new one):
+
+- `F5` runs Z3 (contradictions between rules, rules that can never trigger) and `F8` runs TLA+
+  (real TLC when Java and `tla2tools.jar` are available, the built-in model checker otherwise),
+  each with its own animation of what the engine is checking. Nothing is verified on save.
+- Suggestions come from Z3, TLA+ and the agents themselves (tool names the policy does not know,
+  risky tools without a rule) and apply to the text with Enter.
+- The Agents tab shows the fit per bound agent (tools covered, mapping test, fail-open cases) and
+  replays the agent's recorded decisions against the edited text: how many calls would now be
+  blocked or allowed, before anything changes.
+- `Ctrl+B` binds agents to the policy, one or many at once (filter, then Enter selects every match).
+  One policy can guard many agents; each gets its own fail-closed mapping. Bindings live in
+  `.csl/venom/state.json` and running guards created with `venom_guard(agent)` follow them.
+- `Ctrl+L` goes live: it requires a current Z3 pass, keeps the previous version in
+  `.csl/venom/history/`, writes the policy, binds the selected agents, and running guards switch on
+  their next call. Editing a live policy works on a draft until you go live again.
+
+Already on 0.5.1? Upgrading changes nothing; `cslcore setup` recognises your integration, keeps
+your policies in place and tests your own mapper for fail-open cases. See
+[docs/venom/MIGRATION.md](docs/venom/MIGRATION.md). Try the whole flow on a sample host:
+`cslcore setup --root tests/venom/fixtures/host_ops --workspace /tmp/venom-demo`, then
+`python scripts/venom_demo_traffic.py --workspace /tmp/venom-demo` and `cslcore watch --workspace /tmp/venom-demo`.
+
+`cslcore watch` is the management panel: agents with their mode and block rate, the live decision
+stream, and rules ranked by how often they would block (the ones to tune before switching to
+block). Keys: `m` switches an agent between log and block, `d` disables an agent (kill switch,
+blocks every action in any mode), Enter opens its tools so single tools can be disabled or exempted,
+Tab moves to the rules so a rule that blocks too often can be relaxed for one agent (re-verified,
+previous version kept), `/` searches, Esc goes back, `M` switches every agent at once. Changes
+reach running agents on their next tool call, without a restart, and are recorded in
+`.csl/venom/audit.jsonl`. The same controls exist on the command line: `cslcore mode`.
+
+Other commands: `cslcore venom report --agent NAME`, `cslcore policy list|show|new|edit|extend|fix|verify|diff|activate`,
+`cslcore exempt add|list|approve|remove` (exemptions need a reason and an approver and are encoded in
+the verified policy), `cslcore venom --check` for CI (exit 3 on high findings or vocabulary drift),
+and `--probe` to ask configured MCP servers for their real tool lists. Optional: `pip install
+"csl-core[venom]"` adds psutil for process discovery.
+
+**0.5.1 behavior is unchanged.** A contract suite generated from the v0.5.1 tag (public API, CLI
+output, MCP tools and outputs, policy hashes, thousands of guard decisions) runs first in CI, together
+with the unmodified v0.5.1 test suite.
+
+---
+
 ## Benchmark: Adversarial Attack Resistance
 
 We tested prompt-based safety rules vs CSL-Core enforcement across 4 frontier LLMs with 22 adversarial attacks and 15 legitimate operations (run 2026-02-18, model versions as of that date — re-run pending against current models):
@@ -303,6 +418,10 @@ Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_deskt
 | `simulate_policy` | Test policies against JSON inputs — ALLOWED/BLOCKED |
 | `explain_policy` | Human-readable summary of any CSL policy |
 | `scaffold_policy` | Generate a CSL template from plain-English description |
+| `venom_inventory`, `venom_agent` | (0.6) The agents Venom discovered: tools, risk classes, guard status (redacted) |
+| `venom_policy_context` | (0.6) Active policy or a starting draft, findings and drift for one agent |
+| `venom_save_draft` | (0.6) Verifies a draft and saves it to `.csl/venom/drafts/`; never activates |
+| `venom_propose_exemption` | (0.6) Proposes an exemption; only the operator approves it in the CLI |
 
 > **You:** "Write me a safety policy that prevents transfers over $5000 without admin approval"
 >
@@ -398,7 +517,7 @@ Full docs: [**Getting Started**](docs/getting-started.md) · [**Syntax Spec**](d
 
 ## Roadmap
 
-**✅ Done:** Core language & parser · Z3 verification · Fail-closed runtime · LangChain integration · CLI (verify, simulate, repl, formal) · MCP Server · TLA⁺ model checking with real TLC · Predicate abstraction · Counterexample analysis · Production deployment in Chimera v1.7.0
+**✅ Done:** Core language & parser · Z3 verification · Fail-closed runtime · LangChain integration · CLI (verify, simulate, repl, formal) · MCP Server · TLA⁺ model checking with real TLC · Predicate abstraction · Counterexample analysis · Production deployment in Chimera v1.7.0 · Venom: agent discovery, policy workbench, fail-closed mapping test, live management panel (0.6)
 
 **🚧 In Progress:** Policy versioning · LangGraph integration
 

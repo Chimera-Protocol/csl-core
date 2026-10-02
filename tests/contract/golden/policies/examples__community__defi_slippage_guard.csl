@@ -1,0 +1,40 @@
+// =============================================================
+// policy: DeFi Slippage Guard
+// Goal: Protect DeFi trading bot from high slippage, sandwich
+//       attacks, and unverified token pools.
+// =============================================================
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+}
+
+DOMAIN DeFiSlippageGuard {
+  VARIABLES {
+    price_impact: 0.0..100.0
+    slippage_tolerance: 0.0..100.0
+    is_verified_pool: BOOLEAN
+  }
+
+  // -----------------------------------------------------------
+  // Rule 1: BLOCK if price_impact is greater than slippage_tolerance
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT enforce_user_slippage {
+    WHEN price_impact == price_impact
+    THEN price_impact <= slippage_tolerance
+  }
+
+  // -----------------------------------------------------------
+  // Rule 2: BLOCK if price_impact > 5.0 (Hard cap)
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT enforce_hard_cap {
+    WHEN price_impact == price_impact
+    THEN price_impact <= 5.0
+  }
+
+  // -----------------------------------------------------------
+  // Rule 3: BLOCK if is_verified_pool is False
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT require_verified_pool {
+    WHEN is_verified_pool == is_verified_pool
+    THEN is_verified_pool MUST BE TRUE
+  }
+}

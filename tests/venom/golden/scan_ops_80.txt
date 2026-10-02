@@ -1,0 +1,30 @@
+╭─  CSL-Core Venom 0.6.0  ─────────────────────────────────────────────────────╮
+│ ops-01 · linux · 2026-10-01 14:22 · 1.2s · fixture host · read-only          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  Discovery   ✓ code  ✓ config  ✓ triggers  ✓ runtime  ✓ history  ✓ policies
+              5 files · 1 parse error · 0 paths not readable
+
+  AGENTS      6 total   ● 4 running   ○ 1 stopped   ◷ 1 scheduled
+
+  Agent               State         Runs 7d Tools   Top access     Guard     
+  claude-code:sandbox ● running         n/a     9   EXEC  Bash     none      
+  ingest-worker       ● running           7     4   EXEC  run_com… none      
+  publisher           ◷ daily 06:00     n/a     2   EXT   post_to… none      
+  claude-code:ops     ● running           3    29   EXEC  Bash     no rule   
+  membership-bot      ○ stopped         n/a     2   SPEND transfe… no rule   
+  rogue/agent.py      ● running         n/a     0   -              none      
+
+  COVERAGE    ░░░░░░░░░░░░░░░░    0%   0 of 46 tools guarded · 31 no rule
+
+  FINDINGS    ▲ 5 high   ■ 9 medium   ● 1 low
+   ▲ V01  ingest-worker runs as root
+   ▲ V02  claude-code:sandbox can execute commands without a guard (Bash)
+   ▲ V02  ingest-worker can execute commands without a guard (run_command)
+   ▲ V03  permission prompts are disabled for claude-code:sandbox
+   ▲ V04  publisher: inbound messaging (/webhooks/sms) reaches EXTERNAL tool p…
+          10 more in .csl/venom/reports/latest.md
+
+  NEXT        cslcore setup  first install: 46 tools need a policy              
+              cslcore studio --agent claude-code-ops  write its policy, verify  
+              (Z3, TLA+), go live                                               
+  REPORT      .csl/venom/reports/latest.md  (and .json beside it)

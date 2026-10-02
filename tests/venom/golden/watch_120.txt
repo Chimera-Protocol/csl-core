@@ -1,0 +1,30 @@
+╭─  CSL-Core watch 0.6.0  ─────────────────────────────────────────────────────────────────────────────────────────────╮
+│ log mode · 2h 14m · 8/min · 240 checks · 36.7% flagged                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────╮╭──────────────────────────────────────────────────────────────────────╮
+│ AGENTS                   mode  checks block% ││ LIVE                                                                 │
+│   ● ingest-worker        LOG      171    43% ││ 14:27:53 ingest-worker       http_get                          ALLOW │
+│   ● claude-code          LOG       55     0% ││ 14:27:46 ingest-worker       run_command                 WOULD BLOCK │
+│   ● publisher            LOG       14   100% ││                              ↳ no_shell_outside_workspa…             │
+│                                              ││ 14:27:39 ingest-worker       run_command                 WOULD BLOCK │
+│                                              ││                              ↳ no_shell_outside_workspa…             │
+│                                              ││ 14:27:32 ingest-worker       run_command                 WOULD BLOCK │
+│                                              ││                              ↳ no_shell_outside_workspa…             │
+│                                              ││ 14:27:25 claude-code         write_file                        ALLOW │
+│                                              ││ 14:27:18 ingest-worker       http_get                          ALLOW │
+│                                              ││ 14:27:11 ingest-worker       run_command                 WOULD BLOCK │
+│                                              ││                              ↳ no_shell_outside_workspa…             │
+│                                              ││ 14:27:04 claude-code         write_file                        ALLOW │
+╰──────────────────────────────────────────────╯╰──────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│  TUNING  rules by would-block                                                                                        │
+│      57  no_shell_outside_workspace               ingest-worker              cslcore studio --agent ingest-worker    │
+│      22  no_live_service_writes                   ingest-worker, publisher   cslcore studio --agent ingest-worker    │
+│       9  no_public_page_edits                     publisher                  cslcore studio --agent publisher        │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ 240 checks · 88 flagged (36.7%) · 0 errors                                                                           │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯

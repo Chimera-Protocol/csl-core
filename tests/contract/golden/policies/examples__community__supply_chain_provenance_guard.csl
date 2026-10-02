@@ -1,0 +1,54 @@
+// =============================================================
+// CSL-Core Community Example: Supply Chain Provenance Guard
+// Goal: Block unsafe procurement/logistics actions when
+// provenance or compliance checks are incomplete.
+// =============================================================
+
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN SupplyChainProvenanceGuard {
+  VARIABLES {
+    // Requested inventory action
+    action: {"PURCHASE", "RECEIVE", "SHIP"}
+
+    // Supplier passed verification workflow
+    supplier_verified: BOOLEAN
+
+    // Batch can be traced to origin
+    batch_traceable: BOOLEAN
+
+    // Compliance/export documents are available
+    compliance_docs_present: BOOLEAN
+
+    // Source/destination country is allowed by policy
+    country_allowed: BOOLEAN
+  }
+
+  // BLOCK PURCHASE when supplier is not verified.
+  STATE_CONSTRAINT purchase_requires_supplier_verification {
+    WHEN action == "PURCHASE"
+    THEN supplier_verified == TRUE
+  }
+
+  // BLOCK RECEIVE when the batch is not traceable.
+  STATE_CONSTRAINT receive_requires_traceability {
+    WHEN action == "RECEIVE"
+    THEN batch_traceable == TRUE
+  }
+
+  // BLOCK SHIP when compliance docs are missing.
+  STATE_CONSTRAINT ship_requires_compliance_documents {
+    WHEN action == "SHIP"
+    THEN compliance_docs_present == TRUE
+  }
+
+  // BLOCK any action when country is not allowed.
+  STATE_CONSTRAINT country_must_be_allowed {
+    ALWAYS TRUE
+    THEN country_allowed == TRUE
+  }
+}
+

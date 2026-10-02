@@ -1,0 +1,118 @@
+// =============================================================
+// Community Policy: Construction Site Safety Guard
+// Goal: Block unsafe construction tasks before execution.
+//
+// Covered requirements:
+// 1) BLOCK any task if ppe_confirmed is False.
+// 2) BLOCK any high-risk task if hazard_level >= 4 and supervisor_approved is False.
+// 3) BLOCK HEIGHT work if fall_protection_ready is False.
+// 4) BLOCK HEIGHT work if worker_certified is False.
+// 5) BLOCK ELECTRICAL work if energy_isolated is False.
+// 6) BLOCK ELECTRICAL work if worker_certified is False.
+// 7) BLOCK EXCAVATION work if protective_system_ready is False.
+// 8) BLOCK EXCAVATION work if supervisor_approved is False.
+// 9) BLOCK LIFTING work if lift_plan_approved is False.
+// 10) BLOCK LIFTING work if worker_certified is False.
+// 11) BLOCK LIFTING work if supervisor_approved is False.
+// =============================================================
+
+CONFIG {
+  // BLOCK means every violation is enforced as denied action.
+  ENFORCEMENT_MODE: BLOCK
+
+  // Runs Z3 consistency checks at verification time.
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+}
+
+DOMAIN ConstructionSiteSafetyGuard {
+  VARIABLES {
+    // Task category requested by operations.
+    task_type: {"GENERAL", "HEIGHT", "ELECTRICAL", "EXCAVATION", "LIFTING"}
+
+    // Core worker/site readiness signals.
+    worker_certified: BOOLEAN
+    ppe_confirmed: BOOLEAN
+    hazard_level: 0..5
+    supervisor_approved: BOOLEAN
+
+    // Task-specific controls.
+    fall_protection_ready: BOOLEAN
+    energy_isolated: BOOLEAN
+    protective_system_ready: BOOLEAN
+    lift_plan_approved: BOOLEAN
+  }
+
+  // ---------------------------
+  // Global safety requirements
+  // ---------------------------
+  STATE_CONSTRAINT ppe_required_for_all_tasks {
+    WHEN TRUE
+    THEN ppe_confirmed MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT supervisor_required_for_high_risk {
+    WHEN hazard_level >= 4
+    THEN supervisor_approved MUST BE TRUE
+  }
+
+  // ---------------------------
+  // Height work controls
+  // ---------------------------
+  STATE_CONSTRAINT fall_protection_for_heights {
+    WHEN task_type == "HEIGHT"
+    THEN fall_protection_ready MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT height_worker_certification {
+    WHEN task_type == "HEIGHT"
+    THEN worker_certified MUST BE TRUE
+  }
+
+  // ---------------------------
+  // Electrical work controls
+  // ---------------------------
+  STATE_CONSTRAINT energy_isolation_for_electrical {
+    WHEN task_type == "ELECTRICAL"
+    THEN energy_isolated MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT energy_worker_certification {
+    WHEN task_type == "ELECTRICAL"
+    THEN worker_certified MUST BE TRUE
+  }
+
+  // ---------------------------
+  // Excavation work controls
+  // ---------------------------
+  STATE_CONSTRAINT protective_system_for_excavation {
+    WHEN task_type == "EXCAVATION"
+    THEN protective_system_ready MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT excavation_supervisor_approval {
+    WHEN task_type == "EXCAVATION"
+    THEN supervisor_approved MUST BE TRUE
+  }
+
+  // ---------------------------
+  // Lifting work controls
+  // ---------------------------
+  STATE_CONSTRAINT lift_plan_for_lifting {
+    WHEN task_type == "LIFTING"
+    THEN lift_plan_approved MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT lifting_worker_certification {
+    WHEN task_type == "LIFTING"
+    THEN worker_certified MUST BE TRUE
+  }
+
+  STATE_CONSTRAINT lifting_supervisor_approval {
+    WHEN task_type == "LIFTING"
+    THEN supervisor_approved MUST BE TRUE
+  }
+}
+
+// Quick checks from repo root:
+// cslcore verify examples/community/construction_site_safety_guard.csl
+// cslcore simulate examples/community/construction_site_safety_guard.csl --input '{"task_type":"HEIGHT","worker_certified":true,"ppe_confirmed":true,"hazard_level":3,"supervisor_approved":true,"fall_protection_ready":false,"energy_isolated":true,"protective_system_ready":true,"lift_plan_approved":true}'

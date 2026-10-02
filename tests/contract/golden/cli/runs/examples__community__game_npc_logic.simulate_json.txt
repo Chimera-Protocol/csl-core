@@ -1,0 +1,85 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: GameNpcROE
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"has_peace_treaty": "TRUE", "my_faction": "sample", 
+"target_faction": "sample"}, "violations": [{"message": "Violation 'no_friendly_fire': 
+target_faction='sample' must be != 'sample'."}, {"message": "Violation 'honor_ceasefire': 
+has_peace_treaty='TRUE' must be != 'TRUE'."}], "warnings": [], "triggered_rule_ids": 
+["no_friendly_fire", "honor_ceasefire"], "violated_rule_ids": ["no_friendly_fire", 
+"honor_ceasefire"]}
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"has_peace_treaty": "FALSE", "my_faction": "other", 
+"target_faction": "other"}, "violations": [{"message": "Violation 'no_friendly_fire': 
+target_faction='other' must be != 'other'."}], "warnings": [], "triggered_rule_ids": 
+["no_friendly_fire", "honor_ceasefire"], "violated_rule_ids": ["no_friendly_fire"]}
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"has_peace_treaty": "TRUE", "my_faction": "sample"}, 
+"violations": [{"message": "Missing required key 'target_faction' for rule 'no_friendly_fire'."}, 
+{"message": "Violation 'honor_ceasefire': has_peace_treaty='TRUE' must be != 'TRUE'."}], "warnings":
+[], "triggered_rule_ids": ["no_friendly_fire", "honor_ceasefire"], "violated_rule_ids": 
+["no_friendly_fire", "honor_ceasefire"]}
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"has_peace_treaty": "TRUE", "target_faction": "sample"}, 
+"violations": [{"message": "Violation 'honor_ceasefire': has_peace_treaty='TRUE' must be != 
+'TRUE'."}], "warnings": [], "triggered_rule_ids": ["no_friendly_fire", "honor_ceasefire"], 
+"violated_rule_ids": ["honor_ceasefire"]}
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"has_peace_treaty": "TRUE", "my_faction": "sample", 
+"target_faction": "sample"}, "violations": [{"message": "Violation 'no_friendly_fire': 
+target_faction='sample' must be != 'sample'."}, {"message": "Violation 'honor_ceasefire': 
+has_peace_treaty='TRUE' must be != 'TRUE'."}], "warnings": [], "triggered_rule_ids": 
+["no_friendly_fire", "honor_ceasefire"], "violated_rule_ids": ["no_friendly_fire", 
+"honor_ceasefire"]}
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"has_peace_treaty": "FALSE", "my_faction": "sample", 
+"target_faction": "sample"}, "violations": [{"message": "Violation 'no_friendly_fire': 
+target_faction='sample' must be != 'sample'."}], "warnings": [], "triggered_rule_ids": 
+["no_friendly_fire", "honor_ceasefire"], "violated_rule_ids": ["no_friendly_fire"]}
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"has_peace_treaty": "true", "my_faction": "sample", 
+"target_faction": "sample"}, "violations": [{"message": "Violation 'no_friendly_fire': 
+target_faction='sample' must be != 'sample'."}], "warnings": [], "triggered_rule_ids": 
+["no_friendly_fire", "honor_ceasefire"], "violated_rule_ids": ["no_friendly_fire"]}
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"has_peace_treaty": "__UNKNOWN_VALUE__", "my_faction": 
+"sample", "target_faction": "sample"}, "violations": [{"message": "Violation 'no_friendly_fire': 
+target_faction='sample' must be != 'sample'."}], "warnings": [], "triggered_rule_ids": 
+["no_friendly_fire", "honor_ceasefire"], "violated_rule_ids": ["no_friendly_fire"]}
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"has_peace_treaty": 1, "my_faction": "sample", 
+"target_faction": "sample"}, "violations": [{"message": "Violation 'no_friendly_fire': 
+target_faction='sample' must be != 'sample'."}], "warnings": [], "triggered_rule_ids": 
+["no_friendly_fire", "honor_ceasefire"], "violated_rule_ids": ["no_friendly_fire"]}
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"my_faction": "sample", "target_faction": "sample"}, 
+"violations": [{"message": "Violation 'no_friendly_fire': target_faction='sample' must be != 
+'sample'."}, {"message": "Missing required key 'has_peace_treaty' for rule 'honor_ceasefire'."}], 
+"warnings": [], "triggered_rule_ids": ["no_friendly_fire", "honor_ceasefire"], "violated_rule_ids": 
+["no_friendly_fire", "honor_ceasefire"]}
+{"allowed": false, "domain": "GameNpcROE", "policy_hash": 
+"1e2057b3b1c1eb3183a8aba745fa5e2cd43b299c46054dbc545c3dbea2410aa4", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {}, "violations": [{"message": "Missing required key 
+'target_faction' for rule 'no_friendly_fire'."}, {"message": "Missing required key 
+'has_peace_treaty' for rule 'honor_ceasefire'."}], "warnings": [], "triggered_rule_ids": 
+["no_friendly_fire", "honor_ceasefire"], "violated_rule_ids": ["no_friendly_fire", 
+"honor_ceasefire"]}

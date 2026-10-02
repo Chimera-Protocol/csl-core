@@ -1,0 +1,56 @@
+// Contract probe: every comparison operator in WHEN, every action operator in THEN.
+// Each rule constrains its own target variable so the rules never conflict.
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+  CHECK_LOGICAL_CONSISTENCY: TRUE
+  ENABLE_FORMAL_VERIFICATION: FALSE
+  ENABLE_CAUSAL_INFERENCE: FALSE
+  INTEGRATION: "native"
+}
+
+DOMAIN OperatorProbe {
+  VARIABLES {
+    a: 0..100
+    b: 0..100
+    c: 0..100
+    d: 0..100
+    mode: {"ONE", "TWO", "THREE"}
+    flag: {"YES", "NO"}
+    t1: {"YES", "NO"}
+    t2: {"ONE", "TWO", "THREE"}
+    t3: 0..100
+    t4: 0..100
+    t5: 0..100
+    t6: 0..100
+    t7: 0..100
+  }
+
+  STATE_CONSTRAINT when_lte {
+    WHEN a <= 10
+    THEN t1 MUST BE "YES"
+  }
+  STATE_CONSTRAINT when_lt {
+    WHEN b < 20
+    THEN t2 MUST NOT BE "THREE"
+  }
+  STATE_CONSTRAINT when_gte {
+    WHEN c >= 30
+    THEN t3 <= 40
+  }
+  STATE_CONSTRAINT when_gt {
+    WHEN d > 50
+    THEN t4 >= 60
+  }
+  STATE_CONSTRAINT when_eq_neq {
+    WHEN mode == "TWO" AND flag != "NO"
+    THEN t5 < 70
+  }
+  STATE_CONSTRAINT when_or {
+    WHEN a == 80 OR b == 90
+    THEN t6 > 5
+  }
+  STATE_CONSTRAINT when_arith {
+    WHEN a + b > 150
+    THEN t7 <= 75
+  }
+}

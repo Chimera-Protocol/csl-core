@@ -1,0 +1,87 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: PiiOutputGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": false, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 0.0, "output_text": "sample", 
+"pii_detected": false}, "violations": [{"message": "Violation 'minimum_confidence': 
+confidence_score=0.0 must be >= 0.7."}], "warnings": [], "triggered_rule_ids": ["no_pii_in_output", 
+"minimum_confidence"], "violated_rule_ids": ["minimum_confidence"]}
+{"allowed": false, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 1.0, "output_text": "other", 
+"pii_detected": true}, "violations": [{"message": "Violation 'no_pii_in_output': pii_detected=True 
+must be == False."}], "warnings": [], "triggered_rule_ids": ["no_pii_in_output", 
+"minimum_confidence"], "violated_rule_ids": ["no_pii_in_output"]}
+{"allowed": false, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 0.0, "pii_detected": false}, 
+"violations": [{"message": "Violation 'minimum_confidence': confidence_score=0.0 must be >= 0.7."}],
+"warnings": [], "triggered_rule_ids": ["no_pii_in_output", "minimum_confidence"], 
+"violated_rule_ids": ["minimum_confidence"]}
+{"allowed": false, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 0.0, "output_text": "sample", 
+"pii_detected": true}, "violations": [{"message": "Violation 'no_pii_in_output': pii_detected=True 
+must be == False."}, {"message": "Violation 'minimum_confidence': confidence_score=0.0 must be >= 
+0.7."}], "warnings": [], "triggered_rule_ids": ["no_pii_in_output", "minimum_confidence"], 
+"violated_rule_ids": ["no_pii_in_output", "minimum_confidence"]}
+{"allowed": false, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 0.0, "output_text": "sample", 
+"pii_detected": "YES"}, "violations": [{"message": "Violation 'no_pii_in_output': pii_detected='YES'
+must be == False."}, {"message": "Violation 'minimum_confidence': confidence_score=0.0 must be >= 
+0.7."}], "warnings": [], "triggered_rule_ids": ["no_pii_in_output", "minimum_confidence"], 
+"violated_rule_ids": ["no_pii_in_output", "minimum_confidence"]}
+{"allowed": false, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 0.0, "output_text": "sample"}, 
+"violations": [{"message": "Missing required key 'pii_detected' for rule 'no_pii_in_output'."}, 
+{"message": "Violation 'minimum_confidence': confidence_score=0.0 must be >= 0.7."}], "warnings": 
+[], "triggered_rule_ids": ["no_pii_in_output", "minimum_confidence"], "violated_rule_ids": 
+["no_pii_in_output", "minimum_confidence"]}
+{"allowed": false, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": -0.5, "output_text": "sample", 
+"pii_detected": false}, "violations": [{"message": "Violation 'minimum_confidence': 
+confidence_score=-0.5 must be >= 0.7."}], "warnings": [], "triggered_rule_ids": ["no_pii_in_output",
+"minimum_confidence"], "violated_rule_ids": ["minimum_confidence"]}
+{"allowed": true, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 1.0, "output_text": "sample", 
+"pii_detected": false}, "violations": [], "warnings": [], "triggered_rule_ids": ["no_pii_in_output",
+"minimum_confidence"], "violated_rule_ids": []}
+{"allowed": true, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 1.5, "output_text": "sample", 
+"pii_detected": false}, "violations": [], "warnings": [], "triggered_rule_ids": ["no_pii_in_output",
+"minimum_confidence"], "violated_rule_ids": []}
+{"allowed": false, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 0.5, "output_text": "sample", 
+"pii_detected": false}, "violations": [{"message": "Violation 'minimum_confidence': 
+confidence_score=0.5 must be >= 0.7."}], "warnings": [], "triggered_rule_ids": ["no_pii_in_output", 
+"minimum_confidence"], "violated_rule_ids": ["minimum_confidence"]}
+{"allowed": false, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 0.19999999999999996, "output_text": 
+"sample", "pii_detected": false}, "violations": [{"message": "Violation 'minimum_confidence': 
+confidence_score=0.19999999999999996 must be >= 0.7."}], "warnings": [], "triggered_rule_ids": 
+["no_pii_in_output", "minimum_confidence"], "violated_rule_ids": ["minimum_confidence"]}
+{"allowed": false, "domain": "PiiOutputGuard", "policy_hash": 
+"f7ebcfb35dc9afcb6d5b3b02cc112defcb33dfbe9c4f5bb257601aded778db9d", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"confidence_score": 0.19999999999999996, "output_text": 
+"other", "pii_detected": true}, "violations": [{"message": "Violation 'no_pii_in_output': 
+pii_detected=True must be == False."}, {"message": "Violation 'minimum_confidence': 
+confidence_score=0.19999999999999996 must be >= 0.7."}], "warnings": [], "triggered_rule_ids": 
+["no_pii_in_output", "minimum_confidence"], "violated_rule_ids": ["no_pii_in_output", 
+"minimum_confidence"]}

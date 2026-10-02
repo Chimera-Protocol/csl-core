@@ -1,0 +1,139 @@
+exit_code: 0
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: AIAgentSafetyDemo
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   ├── Running TLA⁺ Model Checker (Temporal Logic of Actions)…
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                 TLA⁺ FORMAL VERIFICATION ENGINE                                  ║
+║                    Chimera Specification Language · Temporal Logic of Actions                    ║
+║                                                                                                  ║
+║             ⚙  BFS Mock Engine  ·  Python State-Space Explorer  ·  (TLC unavailable)             ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   ◉  Constructing Universe: "AIAgentSafetyDemo"                                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+                     Universe Variables                     
+                                                            
+  Variable      Domain                         Cardinality  
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 
+  agent_tier    {"STANDARD", "PREMIUM"}                  2  
+  task_type     {"READ", "WRITE", "ANALYZE"}             3  
+  environment   {"dev", "staging"}                       2  
+  approved      BOOLEAN                                  2  
+  risk_score    0..5                                     6  
+                                                            
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   ◉  Expanding State Space  (BFS / Breadth-First Search)                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 144 / 144 states depth=48 frontier=0 <T>
+  └─ 144 states reachable · depth 48 · universe fully mapped
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   ◉  Verifying Temporal Properties  □(WHEN … THEN …)                                             │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ ├─ □(no_destructive_ops) ✅ HOLDS [12 states <T>]
+
+ ├─ □(no_production_access) ✅ HOLDS [12 states <T>]
+
+ ├─ □(bounded_risk) ✅ HOLDS [12 states <T>]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   ◉  Generating Proof Certificate (SHA-256 signed)                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+  └─ Proof hash: 5a3a9196488fdaadda04f19cdde1317c… ✅
+
+
+╔════════════════════════ TLA⁺ VERIFICATION COMPLETE — ALL PROPERTIES HOLD ════════════════════════╗
+║                                                                                                  ║
+║    ✅  Domain     : AIAgentSafetyDemo                                                            ║
+║    ⬡  States     : 144                                                                           ║
+║ ⏱ Total time : <T> ║
+║    🔐 Proof hash : 5a3a9196488fdaad…                                                             ║
+║                                                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+   └── ✅ TLA⁺ Verification passed — all temporal properties hold
+   • Generating IR... ✅ OK
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": "STANDARD", "approved": false, "environment": 
+"dev", "risk_score": 0, "task_type": "READ"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_destructive_ops", "no_production_access", "bounded_risk"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": "PREMIUM", "approved": true, "environment": 
+"staging", "risk_score": 5, "task_type": "ANALYZE"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_destructive_ops", "no_production_access", "bounded_risk"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": "STANDARD", "approved": false, "environment": 
+"dev", "risk_score": 0, "task_type": "READ"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_destructive_ops", "no_production_access", "bounded_risk"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": "PREMIUM", "approved": false, "environment": 
+"dev", "risk_score": 0, "task_type": "READ"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_destructive_ops", "no_production_access", "bounded_risk"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": "standard", "approved": false, "environment": 
+"dev", "risk_score": 0, "task_type": "READ"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_destructive_ops", "no_production_access", "bounded_risk"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": "__UNKNOWN_VALUE__", "approved": false, 
+"environment": "dev", "risk_score": 0, "task_type": "READ"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_destructive_ops", "no_production_access", "bounded_risk"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": 1, "approved": false, "environment": "dev", 
+"risk_score": 0, "task_type": "READ"}, "violations": [], "warnings": [], "triggered_rule_ids": 
+["no_destructive_ops", "no_production_access", "bounded_risk"], "violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"approved": false, "environment": "dev", "risk_score": 0, 
+"task_type": "READ"}, "violations": [], "warnings": [], "triggered_rule_ids": ["no_destructive_ops",
+"no_production_access", "bounded_risk"], "violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": "STANDARD", "approved": false, "environment": 
+"dev", "risk_score": 0, "task_type": "READ"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_destructive_ops", "no_production_access", "bounded_risk"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": "STANDARD", "approved": false, "environment": 
+"dev", "risk_score": 0, "task_type": "WRITE"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_destructive_ops", "no_production_access", "bounded_risk"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": "STANDARD", "approved": false, "environment": 
+"dev", "risk_score": 0, "task_type": "ANALYZE"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_destructive_ops", "no_production_access", "bounded_risk"], 
+"violated_rule_ids": []}
+{"allowed": true, "domain": "AIAgentSafetyDemo", "policy_hash": 
+"9db4a2b55896653b7d3aa9cdf8f9a8d979cf3f0796c160350c1b9dca8201f983", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"agent_tier": "STANDARD", "approved": false, "environment": 
+"dev", "risk_score": 0, "task_type": "read"}, "violations": [], "warnings": [], 
+"triggered_rule_ids": ["no_destructive_ops", "no_production_access", "bounded_risk"], 
+"violated_rule_ids": []}

@@ -1,0 +1,13 @@
+{
+  "hostname": "ops-01",
+  "os": "linux",
+  "home": "/home/operator",
+  "user": "operator",
+  "now": "2026-10-01T14:22:00+00:00",
+  "code_roots": ["/srv"],
+  "mtimes": {
+    "/home/operator/.claude/projects/-srv-ops/a1.jsonl": "2026-09-29T09:00:00+00:00",
+    "/home/operator/.claude/projects/-srv-ops/a2.jsonl": "2026-09-30T10:00:00+00:00",
+    "/home/operator/.claude/projects/-srv-ops/a3.jsonl": "2026-10-01T08:30:00+00:00"
+  }
+}

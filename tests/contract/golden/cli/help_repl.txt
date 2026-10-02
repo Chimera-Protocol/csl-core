@@ -1,0 +1,17 @@
+usage: cslcore repl [-h] [--dashboard] [--dry-run] [--missing-key-behavior {block,warn,ignore}]
+                    [--evaluation-error-behavior {block,warn,ignore}] [--skip-verify]
+                    [--skip-validate] [--debug-z3]
+                    policy
+
+positional arguments:
+  policy                Path to .csl policy file
+
+options:
+  -h, --help            show this help message and exit
+  --dashboard           Show rich audit dashboard per input
+  --dry-run             Do not block; report what WOULD be blocked
+  --missing-key-behavior {block,warn,ignore}
+  --evaluation-error-behavior {block,warn,ignore}
+  --skip-verify
+  --skip-validate
+  --debug-z3            On compile failure, print Z3 encoding trace (tail).

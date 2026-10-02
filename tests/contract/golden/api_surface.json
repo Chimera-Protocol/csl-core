@@ -1,0 +1,2868 @@
+{
+ "chimera_core": {
+  "CSLCompiler": {
+   "bases": [
+    "object"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      }
+     ],
+     "type": "method"
+    },
+    "compile": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Constitution",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constitution"
+      }
+     ],
+     "type": "method"
+    },
+    "load": {
+     "params": [
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "filepath"
+      }
+     ],
+     "type": "staticmethod"
+    }
+   },
+   "type": "class"
+  },
+  "ChimeraError": {
+   "bases": [
+    "Exception"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "message"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constraint_name"
+      },
+      {
+       "annotation": "Dict[str, Any]",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "context"
+      },
+      {
+       "annotation": "Optional['GuardResult']",
+       "default": "None",
+       "has_default": true,
+       "kind": "KEYWORD_ONLY",
+       "name": "result"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "ChimeraGuard": {
+   "bases": [
+    "object"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "CompiledConstitution",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constitution"
+      },
+      {
+       "annotation": "Optional[RuntimeConfig]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "config"
+      }
+     ],
+     "type": "method"
+    },
+    "verify": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Dict[str, Any]",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "context"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "ChimeraLCEL": {
+   "type": "None"
+  },
+  "CompilationError": {
+   "bases": [
+    "Exception"
+   ],
+   "members": {},
+   "type": "class"
+  },
+  "GuardResult": {
+   "bases": [
+    "object"
+   ],
+   "dataclass_fields": [
+    {
+     "default": null,
+     "name": "allowed",
+     "type": "bool"
+    },
+    {
+     "default": "factory:[]",
+     "name": "violations",
+     "type": "List[str]"
+    },
+    {
+     "default": "factory:[]",
+     "name": "warnings",
+     "type": "List[str]"
+    },
+    {
+     "default": "factory:[]",
+     "name": "triggered_rule_ids",
+     "type": "List[str]"
+    },
+    {
+     "default": "factory:[]",
+     "name": "violated_rule_ids",
+     "type": "List[str]"
+    },
+    {
+     "default": "0.0",
+     "name": "latency_ms",
+     "type": "float"
+    },
+    {
+     "default": "None",
+     "name": "domain_name",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_name",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_id",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_version",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_hash",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "engine_version",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "'ACTIVE'",
+     "name": "enforcement",
+     "type": "str"
+    }
+   ],
+   "frozen": false,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "bool",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "allowed"
+      },
+      {
+       "annotation": "List[str]",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "violations"
+      },
+      {
+       "annotation": "List[str]",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "warnings"
+      },
+      {
+       "annotation": "List[str]",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "triggered_rule_ids"
+      },
+      {
+       "annotation": "List[str]",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "violated_rule_ids"
+      },
+      {
+       "annotation": "float",
+       "default": "0.0",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "latency_ms"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "domain_name"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_name"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_id"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_version"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_hash"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "engine_version"
+      },
+      {
+       "annotation": "str",
+       "default": "'ACTIVE'",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "enforcement"
+      }
+     ],
+     "type": "method"
+    },
+    "is_clean": {
+     "type": "property"
+    }
+   },
+   "type": "class"
+  },
+  "RuntimeConfig": {
+   "bases": [
+    "object"
+   ],
+   "dataclass_fields": [
+    {
+     "default": "True",
+     "name": "raise_on_block",
+     "type": "bool"
+    },
+    {
+     "default": "True",
+     "name": "collect_all_violations",
+     "type": "bool"
+    },
+    {
+     "default": "'block'",
+     "name": "missing_key_behavior",
+     "type": "MissingKeyBehavior"
+    },
+    {
+     "default": "'block'",
+     "name": "evaluation_error_behavior",
+     "type": "EvaluationErrorBehavior"
+    },
+    {
+     "default": "False",
+     "name": "dry_run",
+     "type": "bool"
+    }
+   ],
+   "frozen": true,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "bool",
+       "default": "True",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "raise_on_block"
+      },
+      {
+       "annotation": "bool",
+       "default": "True",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "collect_all_violations"
+      },
+      {
+       "annotation": "MissingKeyBehavior",
+       "default": "'block'",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "missing_key_behavior"
+      },
+      {
+       "annotation": "EvaluationErrorBehavior",
+       "default": "'block'",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "evaluation_error_behavior"
+      },
+      {
+       "annotation": "bool",
+       "default": "False",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "dry_run"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "__all__": [
+   "CSLCompiler",
+   "ChimeraError",
+   "ChimeraGuard",
+   "ChimeraLCEL",
+   "CompilationError",
+   "GuardResult",
+   "RuntimeConfig",
+   "__version__",
+   "create_guard_from_string",
+   "load_guard"
+  ],
+  "__version__": {
+   "type": "str",
+   "value": "'<VERSION>'"
+  },
+  "create_guard_from_string": {
+   "params": [
+    {
+     "annotation": "str",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "policy_content"
+    },
+    {
+     "annotation": "Optional",
+     "default": "None",
+     "has_default": true,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "config"
+    }
+   ],
+   "type": "function"
+  },
+  "load_guard": {
+   "params": [
+    {
+     "annotation": "Union",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "policy_path"
+    },
+    {
+     "annotation": "Optional",
+     "default": "None",
+     "has_default": true,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "config"
+    }
+   ],
+   "type": "function"
+  }
+ },
+ "chimera_core.cli": {
+  "build_parser": {
+   "params": [],
+   "type": "function"
+  },
+  "main": {
+   "params": [
+    {
+     "annotation": "Optional[List[str]]",
+     "default": "None",
+     "has_default": true,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "argv"
+    }
+   ],
+   "type": "function"
+  }
+ },
+ "chimera_core.engines": {
+  "LogicVerifier": {
+   "bases": [
+    "object"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      }
+     ],
+     "type": "method"
+    },
+    "verify": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Constitution",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constitution"
+      },
+      {
+       "annotation": "bool",
+       "default": "False",
+       "has_default": true,
+       "kind": "KEYWORD_ONLY",
+       "name": "debug"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "SuggestionEngine": {
+   "bases": [
+    "object"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      }
+     ],
+     "type": "method"
+    },
+    "report_issues": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "List",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "issues"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "__all__": [
+   "LogicVerifier",
+   "SuggestionEngine"
+  ]
+ },
+ "chimera_core.factory": {
+  "create_guard_from_string": {
+   "params": [
+    {
+     "annotation": "str",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "policy_content"
+    },
+    {
+     "annotation": "Optional",
+     "default": "None",
+     "has_default": true,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "config"
+    }
+   ],
+   "type": "function"
+  },
+  "load_guard": {
+   "params": [
+    {
+     "annotation": "Union",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "policy_path"
+    },
+    {
+     "annotation": "Optional",
+     "default": "None",
+     "has_default": true,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "config"
+    }
+   ],
+   "type": "function"
+  }
+ },
+ "chimera_core.language": {
+  "CSLCompiler": {
+   "bases": [
+    "object"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      }
+     ],
+     "type": "method"
+    },
+    "compile": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Constitution",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constitution"
+      }
+     ],
+     "type": "method"
+    },
+    "load": {
+     "params": [
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "filepath"
+      }
+     ],
+     "type": "staticmethod"
+    }
+   },
+   "type": "class"
+  },
+  "CSLValidator": {
+   "bases": [
+    "object"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "bool",
+       "default": "True",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "allow_implicit_action_var"
+      }
+     ],
+     "type": "method"
+    },
+    "validate": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Constitution",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constitution"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "CompilationError": {
+   "bases": [
+    "Exception"
+   ],
+   "members": {},
+   "type": "class"
+  },
+  "CompiledConstitution": {
+   "bases": [
+    "object"
+   ],
+   "dataclass_fields": [
+    {
+     "default": null,
+     "name": "domain_name",
+     "type": "<class 'str'>"
+    },
+    {
+     "default": null,
+     "name": "constraints",
+     "type": "typing.List[chimera_core.language.compiler.CompiledConstraint]"
+    },
+    {
+     "default": "None",
+     "name": "config",
+     "type": "typing.Any"
+    },
+    {
+     "default": "factory:{}",
+     "name": "variable_domains",
+     "type": "typing.Dict[str, str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_name",
+     "type": "typing.Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_hash",
+     "type": "typing.Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_id",
+     "type": "typing.Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_version",
+     "type": "typing.Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "engine_version",
+     "type": "typing.Optional[str]"
+    }
+   ],
+   "frozen": false,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "domain_name"
+      },
+      {
+       "annotation": "List",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constraints"
+      },
+      {
+       "annotation": "Any",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "config"
+      },
+      {
+       "annotation": "Dict",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "variable_domains"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_name"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_hash"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_id"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_version"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "engine_version"
+      }
+     ],
+     "type": "method"
+    },
+    "load": {
+     "params": [
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "filepath"
+      }
+     ],
+     "type": "staticmethod"
+    },
+    "save": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "filepath"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "Constitution": {
+   "bases": [
+    "ASTNode"
+   ],
+   "dataclass_fields": [
+    {
+     "default": "None",
+     "name": "location",
+     "type": "typing.Optional[tuple]"
+    },
+    {
+     "default": "None",
+     "name": "domain",
+     "type": "typing.Optional[chimera_core.language.ast.Domain]"
+    },
+    {
+     "default": "None",
+     "name": "config",
+     "type": "typing.Optional[chimera_core.language.ast.Configuration]"
+    },
+    {
+     "default": "factory:[]",
+     "name": "constraints",
+     "type": "typing.List[chimera_core.language.ast.Constraint]"
+    },
+    {
+     "default": "None",
+     "name": "causal_graph",
+     "type": "typing.Optional[chimera_core.language.ast.CausalGraph]"
+    },
+    {
+     "default": "None",
+     "name": "source_hash",
+     "type": "typing.Optional[str]"
+    }
+   ],
+   "frozen": false,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "domain"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "config"
+      },
+      {
+       "annotation": "List",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constraints"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "causal_graph"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "source_hash"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "KEYWORD_ONLY",
+       "name": "location"
+      }
+     ],
+     "type": "method"
+    },
+    "get_constraint": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "name"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "Constraint": {
+   "bases": [
+    "ASTNode"
+   ],
+   "dataclass_fields": [
+    {
+     "default": "None",
+     "name": "location",
+     "type": "typing.Optional[tuple]"
+    },
+    {
+     "default": null,
+     "name": "name",
+     "type": "<class 'str'>"
+    },
+    {
+     "default": null,
+     "name": "constraint_type",
+     "type": "<enum 'ConstraintType'>"
+    },
+    {
+     "default": null,
+     "name": "condition",
+     "type": "<class 'chimera_core.language.ast.ConditionClause'>"
+    },
+    {
+     "default": null,
+     "name": "action",
+     "type": "<class 'chimera_core.language.ast.ActionClause'>"
+    },
+    {
+     "default": "None",
+     "name": "causal_proof",
+     "type": "typing.Optional[chimera_core.language.ast.CausalProof]"
+    },
+    {
+     "default": "None",
+     "name": "formal_proof",
+     "type": "typing.Optional[chimera_core.language.ast.FormalProof]"
+    },
+    {
+     "default": "None",
+     "name": "enforcement",
+     "type": "typing.Optional[chimera_core.language.ast.EnforcementClause]"
+    }
+   ],
+   "frozen": false,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "name"
+      },
+      {
+       "annotation": "ConstraintType",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constraint_type"
+      },
+      {
+       "annotation": "ConditionClause",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "condition"
+      },
+      {
+       "annotation": "ActionClause",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "action"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "causal_proof"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "formal_proof"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "enforcement"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "KEYWORD_ONLY",
+       "name": "location"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "Domain": {
+   "bases": [
+    "ASTNode"
+   ],
+   "dataclass_fields": [
+    {
+     "default": "None",
+     "name": "location",
+     "type": "typing.Optional[tuple]"
+    },
+    {
+     "default": null,
+     "name": "name",
+     "type": "<class 'str'>"
+    },
+    {
+     "default": "factory:[]",
+     "name": "variable_declarations",
+     "type": "typing.List[chimera_core.language.ast.VariableDeclaration]"
+    },
+    {
+     "default": "None",
+     "name": "causal_graph",
+     "type": "typing.Optional[chimera_core.language.ast.CausalGraph]"
+    },
+    {
+     "default": "factory:[]",
+     "name": "structural_equations",
+     "type": "typing.List[chimera_core.language.ast.StructuralEquation]"
+    },
+    {
+     "default": "factory:[]",
+     "name": "invariants",
+     "type": "typing.List[chimera_core.language.ast.Invariant]"
+    },
+    {
+     "default": "factory:[]",
+     "name": "liveness_properties",
+     "type": "typing.List[chimera_core.language.ast.LivenessProperty]"
+    }
+   ],
+   "frozen": false,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "name"
+      },
+      {
+       "annotation": "List",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "variable_declarations"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "causal_graph"
+      },
+      {
+       "annotation": "List",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "structural_equations"
+      },
+      {
+       "annotation": "List",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "invariants"
+      },
+      {
+       "annotation": "List",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "liveness_properties"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "KEYWORD_ONLY",
+       "name": "location"
+      }
+     ],
+     "type": "method"
+    },
+    "get_variable_domain": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "var_name"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "EnforcementMode": {
+   "bases": [
+    "Enum"
+   ],
+   "members": {},
+   "type": "class"
+  },
+  "ValidationError": {
+   "bases": [
+    "Exception"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "message"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "location"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "__all__": [
+   "CSLCompiler",
+   "CSLValidator",
+   "CompilationError",
+   "CompiledConstitution",
+   "Constitution",
+   "Constraint",
+   "Domain",
+   "EnforcementMode",
+   "ValidationError",
+   "parse_csl_file"
+  ],
+  "parse_csl_file": {
+   "params": [
+    {
+     "annotation": "str",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "filepath"
+    }
+   ],
+   "type": "function"
+  }
+ },
+ "chimera_core.language.compiler": {
+  "CSLCompiler": {
+   "bases": [
+    "object"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      }
+     ],
+     "type": "method"
+    },
+    "compile": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Constitution",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constitution"
+      }
+     ],
+     "type": "method"
+    },
+    "load": {
+     "params": [
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "filepath"
+      }
+     ],
+     "type": "staticmethod"
+    }
+   },
+   "type": "class"
+  },
+  "CompilationError": {
+   "bases": [
+    "Exception"
+   ],
+   "members": {},
+   "type": "class"
+  },
+  "CompiledConstitution": {
+   "bases": [
+    "object"
+   ],
+   "dataclass_fields": [
+    {
+     "default": null,
+     "name": "domain_name",
+     "type": "<class 'str'>"
+    },
+    {
+     "default": null,
+     "name": "constraints",
+     "type": "typing.List[chimera_core.language.compiler.CompiledConstraint]"
+    },
+    {
+     "default": "None",
+     "name": "config",
+     "type": "typing.Any"
+    },
+    {
+     "default": "factory:{}",
+     "name": "variable_domains",
+     "type": "typing.Dict[str, str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_name",
+     "type": "typing.Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_hash",
+     "type": "typing.Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_id",
+     "type": "typing.Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_version",
+     "type": "typing.Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "engine_version",
+     "type": "typing.Optional[str]"
+    }
+   ],
+   "frozen": false,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "domain_name"
+      },
+      {
+       "annotation": "List",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constraints"
+      },
+      {
+       "annotation": "Any",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "config"
+      },
+      {
+       "annotation": "Dict",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "variable_domains"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_name"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_hash"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_id"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_version"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "engine_version"
+      }
+     ],
+     "type": "method"
+    },
+    "load": {
+     "params": [
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "filepath"
+      }
+     ],
+     "type": "staticmethod"
+    },
+    "save": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "filepath"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "CompiledConstraint": {
+   "bases": [
+    "object"
+   ],
+   "dataclass_fields": [
+    {
+     "default": null,
+     "name": "name",
+     "type": "<class 'str'>"
+    },
+    {
+     "default": null,
+     "name": "temporal_operator",
+     "type": "<enum 'TemporalOperator'>"
+    },
+    {
+     "default": null,
+     "name": "condition_expr",
+     "type": "<class 'chimera_core.language.compiler.CompiledExpression'>"
+    },
+    {
+     "default": null,
+     "name": "action_variable",
+     "type": "<class 'str'>"
+    },
+    {
+     "default": null,
+     "name": "modal_operator",
+     "type": "<enum 'ModalOperator'>"
+    },
+    {
+     "default": null,
+     "name": "action_value_expr",
+     "type": "<class 'chimera_core.language.compiler.CompiledExpression'>"
+    },
+    {
+     "default": "<EnforcementMode.BLOCK: 'BLOCK'>",
+     "name": "enforcement_mode",
+     "type": "<enum 'EnforcementMode'>"
+    },
+    {
+     "default": "''",
+     "name": "failure_message",
+     "type": "<class 'str'>"
+    },
+    {
+     "default": "None",
+     "name": "location",
+     "type": "typing.Optional[tuple]"
+    }
+   ],
+   "frozen": false,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "name"
+      },
+      {
+       "annotation": "TemporalOperator",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "temporal_operator"
+      },
+      {
+       "annotation": "CompiledExpression",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "condition_expr"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "action_variable"
+      },
+      {
+       "annotation": "ModalOperator",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "modal_operator"
+      },
+      {
+       "annotation": "CompiledExpression",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "action_value_expr"
+      },
+      {
+       "annotation": "EnforcementMode",
+       "default": "<EnforcementMode.BLOCK: 'BLOCK'>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "enforcement_mode"
+      },
+      {
+       "annotation": "str",
+       "default": "''",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "failure_message"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "location"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  }
+ },
+ "chimera_core.language.parser": {
+  "parse_csl": {
+   "params": [
+    {
+     "annotation": "str",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "text"
+    }
+   ],
+   "type": "function"
+  },
+  "parse_csl_file": {
+   "params": [
+    {
+     "annotation": "str",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "filepath"
+    }
+   ],
+   "type": "function"
+  }
+ },
+ "chimera_core.plugins.base": {
+  "ChimeraPlugin": {
+   "bases": [
+    "ABC"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "CompiledConstitution",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constitution"
+      },
+      {
+       "annotation": "bool",
+       "default": "False",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "enable_dashboard"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "title"
+      },
+      {
+       "annotation": "Optional[ContextMapper]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "context_mapper"
+      }
+     ],
+     "type": "method"
+    },
+    "normalize_input": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Any",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "input_data"
+      }
+     ],
+     "type": "method"
+    },
+    "process": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Any",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "input_data"
+      }
+     ],
+     "type": "method"
+    },
+    "run_guard": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Any",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "input_data"
+      },
+      {
+       "annotation": "Optional[Dict]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "extra_context"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "default_context_mapper": {
+   "params": [
+    {
+     "annotation": "Any",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "input_data"
+    }
+   ],
+   "type": "function"
+  },
+  "safe_model_dump": {
+   "params": [
+    {
+     "annotation": "Any",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "obj"
+    }
+   ],
+   "type": "function"
+  }
+ },
+ "chimera_core.plugins.langchain": {
+  "ChimeraRunnableGate": {
+   "bases": [
+    "Runnable",
+    "ChimeraPlugin"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Any",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "guard_or_constitution"
+      },
+      {
+       "annotation": "Optional[ContextMapper]",
+       "default": "None",
+       "has_default": true,
+       "kind": "KEYWORD_ONLY",
+       "name": "context_mapper"
+      },
+      {
+       "annotation": "Optional[Dict[str, Any]]",
+       "default": "None",
+       "has_default": true,
+       "kind": "KEYWORD_ONLY",
+       "name": "inject"
+      },
+      {
+       "annotation": "bool",
+       "default": "False",
+       "has_default": true,
+       "kind": "KEYWORD_ONLY",
+       "name": "enable_dashboard"
+      }
+     ],
+     "type": "method"
+    },
+    "invoke": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Any",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "input"
+      },
+      {
+       "annotation": "Optional[RunnableConfig]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "config"
+      }
+     ],
+     "type": "method"
+    },
+    "process": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Any",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "input_data"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "GuardedTool": {
+   "bases": [
+    "BaseTool"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "VAR_KEYWORD",
+       "name": "kwargs"
+      }
+     ],
+     "type": "method"
+    },
+    "model_post_init": {
+     "params": [
+      {
+       "annotation": "BaseModel",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_ONLY",
+       "name": "self"
+      },
+      {
+       "annotation": "Any",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_ONLY",
+       "name": "context"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "gate": {
+   "params": [
+    {
+     "annotation": "Any",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "guard"
+    },
+    {
+     "annotation": "Optional[ContextMapper]",
+     "default": "None",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "context_mapper"
+    },
+    {
+     "annotation": "Optional[Dict[str, Any]]",
+     "default": "None",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "inject"
+    },
+    {
+     "annotation": "bool",
+     "default": "False",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "enable_dashboard"
+    }
+   ],
+   "type": "function"
+  },
+  "guard_tools": {
+   "params": [
+    {
+     "annotation": "Iterable[BaseTool]",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "tools"
+    },
+    {
+     "annotation": "ChimeraGuard",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "guard"
+    },
+    {
+     "annotation": "Optional[ContextMapper]",
+     "default": "None",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "context_mapper"
+    },
+    {
+     "annotation": "Optional[Dict[str, Any]]",
+     "default": "None",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "inject"
+    },
+    {
+     "annotation": "Optional[str]",
+     "default": "None",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "tool_field"
+    },
+    {
+     "annotation": "bool",
+     "default": "False",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "enable_dashboard"
+    }
+   ],
+   "type": "function"
+  },
+  "wrap_tool": {
+   "params": [
+    {
+     "annotation": "BaseTool",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "tool"
+    },
+    {
+     "annotation": "ChimeraGuard",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "guard"
+    },
+    {
+     "annotation": "Optional[ContextMapper]",
+     "default": "None",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "context_mapper"
+    },
+    {
+     "annotation": "Optional[Dict[str, Any]]",
+     "default": "None",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "inject"
+    },
+    {
+     "annotation": "Optional[str]",
+     "default": "None",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "tool_field"
+    },
+    {
+     "annotation": "bool",
+     "default": "False",
+     "has_default": true,
+     "kind": "KEYWORD_ONLY",
+     "name": "enable_dashboard"
+    }
+   ],
+   "type": "function"
+  }
+ },
+ "chimera_core.plugins.openclaw": {
+  "EvalResult": {
+   "bases": [
+    "object"
+   ],
+   "dataclass_fields": [
+    {
+     "default": null,
+     "name": "allowed",
+     "type": "<class 'bool'>"
+    },
+    {
+     "default": "factory:[]",
+     "name": "violations",
+     "type": "typing.List[str]"
+    },
+    {
+     "default": "factory:{}",
+     "name": "context",
+     "type": "typing.Dict[str, typing.Any]"
+    },
+    {
+     "default": "0.0",
+     "name": "latency_us",
+     "type": "<class 'float'>"
+    }
+   ],
+   "frozen": false,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "bool",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "allowed"
+      },
+      {
+       "annotation": "List",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "violations"
+      },
+      {
+       "annotation": "Dict",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "context"
+      },
+      {
+       "annotation": "float",
+       "default": "0.0",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "latency_us"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "OpenClawConfig": {
+   "bases": [
+    "object"
+   ],
+   "dataclass_fields": [
+    {
+     "default": "''",
+     "name": "policy_path",
+     "type": "<class 'str'>"
+    },
+    {
+     "default": "'DESKTOP'",
+     "name": "deployment_mode",
+     "type": "<class 'str'>"
+    },
+    {
+     "default": "''",
+     "name": "workspace_root",
+     "type": "<class 'str'>"
+    },
+    {
+     "default": "False",
+     "name": "sandbox_active",
+     "type": "<class 'bool'>"
+    },
+    {
+     "default": "factory:{'aws.amazon.com', 'calendar.google.com', 'console.cloud.google.com', 'discord.com', 'docs.google.com', 'docs.openclaw.ai', 'drive.google.com', 'github.com', 'gitlab.com', 'gmail.com', 'google.com', 'npmjs.com', 'openclaw.ai', 'portal.azure.com', 'pypi.org', 'slack.com', 'stackoverflow.com', 'telegram.org'}",
+     "name": "domain_allowlist",
+     "type": "typing.Set[str]"
+    },
+    {
+     "default": "True",
+     "name": "pii_scanning_enabled",
+     "type": "<class 'bool'>"
+    },
+    {
+     "default": "True",
+     "name": "log_blocks",
+     "type": "<class 'bool'>"
+    },
+    {
+     "default": "True",
+     "name": "strict_unrecognized_fields",
+     "type": "<class 'bool'>"
+    }
+   ],
+   "frozen": false,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": "''",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_path"
+      },
+      {
+       "annotation": "str",
+       "default": "'DESKTOP'",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "deployment_mode"
+      },
+      {
+       "annotation": "str",
+       "default": "''",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "workspace_root"
+      },
+      {
+       "annotation": "bool",
+       "default": "False",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "sandbox_active"
+      },
+      {
+       "annotation": "Set",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "domain_allowlist"
+      },
+      {
+       "annotation": "bool",
+       "default": "True",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "pii_scanning_enabled"
+      },
+      {
+       "annotation": "bool",
+       "default": "True",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "log_blocks"
+      },
+      {
+       "annotation": "bool",
+       "default": "True",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "strict_unrecognized_fields"
+      }
+     ],
+     "type": "method"
+    },
+    "is_domain_allowed": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "url"
+      }
+     ],
+     "type": "method"
+    },
+    "is_path_in_workspace": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "file_path"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "OpenClawGuard": {
+   "bases": [
+    "ChimeraPlugin"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_path"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "config"
+      },
+      {
+       "annotation": "bool",
+       "default": "False",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "enable_dashboard"
+      }
+     ],
+     "type": "method"
+    },
+    "evaluate": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "tool_name"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "tool_params"
+      },
+      {
+       "annotation": "Optional",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "metadata"
+      }
+     ],
+     "type": "method"
+    },
+    "normalize_input": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Any",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "input_data"
+      }
+     ],
+     "type": "method"
+    },
+    "process": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Any",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "input_data"
+      }
+     ],
+     "type": "method"
+    },
+    "stats": {
+     "type": "property"
+    }
+   },
+   "type": "class"
+  },
+  "__all__": [
+   "EvalResult",
+   "OpenClawConfig",
+   "OpenClawGuard",
+   "map_context",
+   "pii_detector"
+  ],
+  "map_context": {
+   "params": [
+    {
+     "annotation": "str",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "tool_name"
+    },
+    {
+     "annotation": "Dict",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "tool_params"
+    },
+    {
+     "annotation": "Dict",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "metadata"
+    },
+    {
+     "annotation": "OpenClawConfig",
+     "default": null,
+     "has_default": false,
+     "kind": "POSITIONAL_OR_KEYWORD",
+     "name": "config"
+    }
+   ],
+   "type": "function"
+  },
+  "pii_detector": {
+   "type": "module"
+  }
+ },
+ "chimera_core.runtime": {
+  "ChimeraError": {
+   "bases": [
+    "Exception"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "message"
+      },
+      {
+       "annotation": "str",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constraint_name"
+      },
+      {
+       "annotation": "Dict[str, Any]",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "context"
+      },
+      {
+       "annotation": "Optional['GuardResult']",
+       "default": "None",
+       "has_default": true,
+       "kind": "KEYWORD_ONLY",
+       "name": "result"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "ChimeraGuard": {
+   "bases": [
+    "object"
+   ],
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "CompiledConstitution",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "constitution"
+      },
+      {
+       "annotation": "Optional[RuntimeConfig]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "config"
+      }
+     ],
+     "type": "method"
+    },
+    "verify": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "Dict[str, Any]",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "context"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  },
+  "GuardResult": {
+   "bases": [
+    "object"
+   ],
+   "dataclass_fields": [
+    {
+     "default": null,
+     "name": "allowed",
+     "type": "bool"
+    },
+    {
+     "default": "factory:[]",
+     "name": "violations",
+     "type": "List[str]"
+    },
+    {
+     "default": "factory:[]",
+     "name": "warnings",
+     "type": "List[str]"
+    },
+    {
+     "default": "factory:[]",
+     "name": "triggered_rule_ids",
+     "type": "List[str]"
+    },
+    {
+     "default": "factory:[]",
+     "name": "violated_rule_ids",
+     "type": "List[str]"
+    },
+    {
+     "default": "0.0",
+     "name": "latency_ms",
+     "type": "float"
+    },
+    {
+     "default": "None",
+     "name": "domain_name",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_name",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_id",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_version",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "policy_hash",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "None",
+     "name": "engine_version",
+     "type": "Optional[str]"
+    },
+    {
+     "default": "'ACTIVE'",
+     "name": "enforcement",
+     "type": "str"
+    }
+   ],
+   "frozen": false,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "bool",
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "allowed"
+      },
+      {
+       "annotation": "List[str]",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "violations"
+      },
+      {
+       "annotation": "List[str]",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "warnings"
+      },
+      {
+       "annotation": "List[str]",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "triggered_rule_ids"
+      },
+      {
+       "annotation": "List[str]",
+       "default": "<factory>",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "violated_rule_ids"
+      },
+      {
+       "annotation": "float",
+       "default": "0.0",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "latency_ms"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "domain_name"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_name"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_id"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_version"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "policy_hash"
+      },
+      {
+       "annotation": "Optional[str]",
+       "default": "None",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "engine_version"
+      },
+      {
+       "annotation": "str",
+       "default": "'ACTIVE'",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "enforcement"
+      }
+     ],
+     "type": "method"
+    },
+    "is_clean": {
+     "type": "property"
+    }
+   },
+   "type": "class"
+  },
+  "RuntimeConfig": {
+   "bases": [
+    "object"
+   ],
+   "dataclass_fields": [
+    {
+     "default": "True",
+     "name": "raise_on_block",
+     "type": "bool"
+    },
+    {
+     "default": "True",
+     "name": "collect_all_violations",
+     "type": "bool"
+    },
+    {
+     "default": "'block'",
+     "name": "missing_key_behavior",
+     "type": "MissingKeyBehavior"
+    },
+    {
+     "default": "'block'",
+     "name": "evaluation_error_behavior",
+     "type": "EvaluationErrorBehavior"
+    },
+    {
+     "default": "False",
+     "name": "dry_run",
+     "type": "bool"
+    }
+   ],
+   "frozen": true,
+   "members": {
+    "__init__": {
+     "params": [
+      {
+       "annotation": null,
+       "default": null,
+       "has_default": false,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "self"
+      },
+      {
+       "annotation": "bool",
+       "default": "True",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "raise_on_block"
+      },
+      {
+       "annotation": "bool",
+       "default": "True",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "collect_all_violations"
+      },
+      {
+       "annotation": "MissingKeyBehavior",
+       "default": "'block'",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "missing_key_behavior"
+      },
+      {
+       "annotation": "EvaluationErrorBehavior",
+       "default": "'block'",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "evaluation_error_behavior"
+      },
+      {
+       "annotation": "bool",
+       "default": "False",
+       "has_default": true,
+       "kind": "POSITIONAL_OR_KEYWORD",
+       "name": "dry_run"
+      }
+     ],
+     "type": "method"
+    }
+   },
+   "type": "class"
+  }
+ }
+}

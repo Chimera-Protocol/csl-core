@@ -1,0 +1,23 @@
+// =============================================================
+// policy: DevOps Deploy Guard
+// Goal: Block risky deployments to PROD on Fridays after 4 PM
+// =============================================================
+CONFIG {
+  ENFORCEMENT_MODE: BLOCK
+}
+
+DOMAIN DevOpsGuard {
+  VARIABLES {
+    target_env: {"STAGING", "PROD", "DEV"}
+    day_of_week: {"MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"}
+    current_hour: 0..23
+  }
+
+  // -----------------------------------------------------------
+  // Rule: No deployments to PROD on Fridays at or after 16:00
+  // -----------------------------------------------------------
+  STATE_CONSTRAINT prevent_friday_late_deploys {
+    WHEN day_of_week == "FRIDAY" AND current_hour >= 16
+    THEN target_env MUST NOT BE "PROD"
+  }
+}

@@ -717,6 +717,10 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--debug-z3", action="store_true", help="On compile failure, print Z3 encoding trace (tail).")
     r.set_defaults(func=cmd_repl)
 
+    # setup / venom (0.6): arguments only; the venom package is imported by the handlers
+    from .cli_venom import register as _register_venom
+    _register_venom(sub)
+
     return p
 
 

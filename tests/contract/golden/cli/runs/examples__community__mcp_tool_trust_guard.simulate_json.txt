@@ -1,0 +1,160 @@
+exit_code: 10
+---
+
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│ CSL-Core  v<VERSION>                                                                         │
+│ Deterministic Safety Layer for Probabilistic AI Systems                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+
+⚙️  Compiling Domain: MCPToolTrustGuard
+   • Validating Syntax... ✅ OK
+   ├── Verifying Logic Model (Z3 Engine)... ✅ Mathematically Consistent
+   • Generating IR... ✅ OK
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "server_trusted": false, 
+"session_mode": "READ_ONLY", "tool_registered": false, "tool_risk_level": "LOW"}, "violations": 
+[{"message": "Violation 'tool_must_be_registered': tool_registered=False must be MUST BE True."}, 
+{"message": "Violation 'resource_must_be_in_scope': resource_in_scope=False must be MUST BE 
+True."}], "warnings": [], "triggered_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"], "violated_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"]}
+{"allowed": true, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": true, "contains_secrets": true, 
+"data_sensitivity": "RESTRICTED", "destination_trusted": true, "human_approved": true, 
+"is_destructive": true, "operation_size": 1000000, "requires_network": true, 
+"requires_secret_access": true, "requires_write_access": true, "resource_in_scope": true, 
+"server_trusted": true, "session_mode": "ELEVATED", "tool_registered": true, "tool_risk_level": 
+"CRITICAL"}, "violations": [], "warnings": [], "triggered_rule_ids": ["tool_must_be_registered", 
+"critical_risk_requires_trusted_server", "read_only_blocks_writes", "resource_must_be_in_scope", 
+"destructive_ops_require_human_approval", "secret_access_requires_human_approval", 
+"critical_risk_requires_human_approval", "untrusted_network_requires_human_approval", 
+"restricted_data_requires_trusted_destination", "pii_requires_trusted_destination", 
+"secrets_require_trusted_destination", "networked_secret_ops_require_human_approval", 
+"large_operations_require_human_approval", "very_large_operations_require_elevated_session"], 
+"violated_rule_ids": []}
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "server_trusted": true, 
+"session_mode": "READ_ONLY", "tool_registered": false, "tool_risk_level": "LOW"}, "violations": 
+[{"message": "Violation 'tool_must_be_registered': tool_registered=False must be MUST BE True."}, 
+{"message": "Violation 'resource_must_be_in_scope': resource_in_scope=False must be MUST BE 
+True."}], "warnings": [], "triggered_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"], "violated_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"]}
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "server_trusted": "YES", 
+"session_mode": "READ_ONLY", "tool_registered": false, "tool_risk_level": "LOW"}, "violations": 
+[{"message": "Violation 'tool_must_be_registered': tool_registered=False must be MUST BE True."}, 
+{"message": "Violation 'resource_must_be_in_scope': resource_in_scope=False must be MUST BE 
+True."}], "warnings": [], "triggered_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"], "violated_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"]}
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "session_mode": "READ_ONLY", 
+"tool_registered": false, "tool_risk_level": "LOW"}, "violations": [{"message": "Violation 
+'tool_must_be_registered': tool_registered=False must be MUST BE True."}, {"message": "Violation 
+'resource_must_be_in_scope': resource_in_scope=False must be MUST BE True."}], "warnings": [], 
+"triggered_rule_ids": ["tool_must_be_registered", "resource_must_be_in_scope"], "violated_rule_ids":
+["tool_must_be_registered", "resource_must_be_in_scope"]}
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "server_trusted": false, 
+"session_mode": "READ_ONLY", "tool_registered": true, "tool_risk_level": "LOW"}, "violations": 
+[{"message": "Violation 'resource_must_be_in_scope': resource_in_scope=False must be MUST BE 
+True."}], "warnings": [], "triggered_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"], "violated_rule_ids": ["resource_must_be_in_scope"]}
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "server_trusted": false, 
+"session_mode": "READ_ONLY", "tool_registered": "YES", "tool_risk_level": "LOW"}, "violations": 
+[{"message": "Violation 'tool_must_be_registered': tool_registered='YES' must be MUST BE True."}, 
+{"message": "Violation 'resource_must_be_in_scope': resource_in_scope=False must be MUST BE 
+True."}], "warnings": [], "triggered_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"], "violated_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"]}
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "server_trusted": false, 
+"session_mode": "READ_ONLY", "tool_risk_level": "LOW"}, "violations": [{"message": "Missing required
+key 'tool_registered' for rule 'tool_must_be_registered'."}, {"message": "Violation 
+'resource_must_be_in_scope': resource_in_scope=False must be MUST BE True."}], "warnings": [], 
+"triggered_rule_ids": ["tool_must_be_registered", "resource_must_be_in_scope"], "violated_rule_ids":
+["tool_must_be_registered", "resource_must_be_in_scope"]}
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "server_trusted": false, 
+"session_mode": "READ_ONLY", "tool_registered": false, "tool_risk_level": "LOW"}, "violations": 
+[{"message": "Violation 'tool_must_be_registered': tool_registered=False must be MUST BE True."}, 
+{"message": "Violation 'resource_must_be_in_scope': resource_in_scope=False must be MUST BE 
+True."}], "warnings": [], "triggered_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"], "violated_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"]}
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "server_trusted": false, 
+"session_mode": "READ_ONLY", "tool_registered": false, "tool_risk_level": "MEDIUM"}, "violations": 
+[{"message": "Violation 'tool_must_be_registered': tool_registered=False must be MUST BE True."}, 
+{"message": "Violation 'resource_must_be_in_scope': resource_in_scope=False must be MUST BE 
+True."}], "warnings": [], "triggered_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"], "violated_rule_ids": ["tool_must_be_registered", 
+"resource_must_be_in_scope"]}
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "server_trusted": false, 
+"session_mode": "READ_ONLY", "tool_registered": false, "tool_risk_level": "HIGH"}, "violations": 
+[{"message": "Violation 'tool_must_be_registered': tool_registered=False must be MUST BE True."}, 
+{"message": "Violation 'high_risk_requires_trusted_server': server_trusted=False must be MUST BE 
+True."}, {"message": "Violation 'resource_must_be_in_scope': resource_in_scope=False must be MUST BE
+True."}], "warnings": [], "triggered_rule_ids": ["tool_must_be_registered", 
+"high_risk_requires_trusted_server", "resource_must_be_in_scope"], "violated_rule_ids": 
+["tool_must_be_registered", "high_risk_requires_trusted_server", "resource_must_be_in_scope"]}
+{"allowed": false, "domain": "MCPToolTrustGuard", "policy_hash": 
+"5755d7aa349f61ff7d941321b4ebb0b99dd96295274b9c784eb161cc9b7c7b6a", "policy_version": null, 
+"engine_version": "<VERSION>", "context": {"contains_pii": false, "contains_secrets": false, 
+"data_sensitivity": "PUBLIC", "destination_trusted": false, "human_approved": false, 
+"is_destructive": false, "operation_size": 0, "requires_network": false, "requires_secret_access": 
+false, "requires_write_access": false, "resource_in_scope": false, "server_trusted": false, 
+"session_mode": "READ_ONLY", "tool_registered": false, "tool_risk_level": "CRITICAL"}, "violations":
+[{"message": "Violation 'tool_must_be_registered': tool_registered=False must be MUST BE True."}, 
+{"message": "Violation 'critical_risk_requires_trusted_server': server_trusted=False must be MUST BE
+True."}, {"message": "Violation 'resource_must_be_in_scope': resource_in_scope=False must be MUST BE
+True."}, {"message": "Violation 'critical_risk_requires_human_approval': human_approved=False must 
+be MUST BE True."}], "warnings": [], "triggered_rule_ids": ["tool_must_be_registered", 
+"critical_risk_requires_trusted_server", "resource_must_be_in_scope", 
+"critical_risk_requires_human_approval"], "violated_rule_ids": ["tool_must_be_registered", 
+"critical_risk_requires_trusted_server", "resource_must_be_in_scope", 
+"critical_risk_requires_human_approval"]}

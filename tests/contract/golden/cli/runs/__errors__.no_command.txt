@@ -1,0 +1,4 @@
+exit_code: 2
+---
+usage: cslcore [-h] [--version] {verify,simulate,formal,repl} ...
+cslcore: error: the following arguments are required: cmd
