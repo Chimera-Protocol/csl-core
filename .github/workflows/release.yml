@@ -1,7 +1,8 @@
 name: Release
 
-# Publishes to PyPI when a version tag (v1.2.3) is pushed. Uses PyPI Trusted Publishing: no token is
-# stored here; PyPI trusts this workflow from this repository (configured once on pypi.org).
+# Publishes to PyPI when a version tag (v1.2.3) is pushed, then creates the GitHub release from
+# CHANGELOG.md. Uses PyPI Trusted Publishing: no token is stored here; PyPI trusts this workflow
+# from this repository (configured once on pypi.org).
 
 on:
   push:
@@ -75,3 +76,28 @@ jobs:
           path: dist/
 
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: GitHub release
+    runs-on: ubuntu-latest
+    needs: [publish]
+    permissions:
+      contents: write  # create the release for this tag
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="${GITHUB_REF_NAME#v}" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > notes.md
+          printf '\n```bash\npip install -U csl-core\nuvx --refresh csl-core venom\n```\n' >> notes.md
+          cat notes.md
+
+      - name: Create the release (marked latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "CSL-Core ${GITHUB_REF_NAME#v}" --notes-file notes.md --latest
