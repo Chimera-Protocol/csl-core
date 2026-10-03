@@ -66,6 +66,7 @@ Issues = "https://github.com/Chimera-Protocol/csl-core/issues"
 
 [project.scripts]
 cslcore = "chimera_core.cli:main"
+csl-core = "chimera_core.cli:main"  # the same CLI under the package name: `uvx csl-core venom` works without installing
 csl-core-mcp = "chimera_core.mcp.server:main"
 
 # --- SETUPTOOLS CONFIGURATION ---

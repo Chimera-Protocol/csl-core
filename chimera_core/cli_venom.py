@@ -70,6 +70,10 @@ def _scan_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--no-save", action="store_true", help="do not write the report into the workspace")
     p.add_argument("--budget", type=float, default=120.0, metavar="SECONDS", help="time budget; results are marked partial when exceeded")
     p.add_argument("--yes", action="store_true", help="confirm --probe without asking")
+    p.add_argument("--share", action="store_true",
+                   help="also write a card of the reach map to post (SVG, and PNG when a converter is installed); "
+                        "no host name, user names or paths on it")
+    p.add_argument("--anonymize", action="store_true", help="with --share: agent names replaced by their kind")
 
 
 def register(sub) -> None:

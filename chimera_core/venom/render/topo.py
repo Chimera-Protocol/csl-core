@@ -411,7 +411,7 @@ class Topo:
             return
         text = p.label if len(p.label) <= 18 else p.label[:17] + "…"
         right = X + 4 + 2 * len(text) < self.W
-        x0 = X + (4.2 if p.number is not None else 2.6) if right else X - 2.6 - 2 * len(text)
+        x0 = X + (6.2 if p.number is not None else 2.6) if right else X - 2.6 - 2 * len(text)
         for i, ch in enumerate(text):
             Canvas.put(c, x0 + 2 * i, Y, ch, style)
 

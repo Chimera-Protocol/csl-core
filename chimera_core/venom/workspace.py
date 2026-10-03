@@ -217,6 +217,31 @@ class Workspace:
     def editor(self) -> str:
         return os.environ.get("VISUAL") or os.environ.get("EDITOR") or "vi"
 
+    def svg_to_png(self, svg: Path, width: int = 2000) -> Optional[Path]:
+        """Convert a workspace SVG to PNG with cairosvg or rsvg-convert when one is installed."""
+        import shutil
+        import subprocess
+
+        svg = Path(svg)
+        if not svg.resolve().is_relative_to(self.root):
+            raise PermissionError(f"refusing to write outside the workspace: {svg}")
+        png = svg.with_suffix(".png")
+        try:
+            import cairosvg  # type: ignore
+
+            cairosvg.svg2png(url=str(svg), write_to=str(png), output_width=width)
+            return png
+        except Exception:
+            pass
+        tool = shutil.which("rsvg-convert")
+        if tool:
+            try:
+                subprocess.run([tool, "-w", str(width), "-o", str(png), str(svg)], check=True, capture_output=True, timeout=60)
+                return png
+            except Exception:
+                return None
+        return None
+
     def open_in_editor(self, path: Path) -> int:
         """Open a workspace file in the operator's own editor (edit is always explicit)."""
         import shlex

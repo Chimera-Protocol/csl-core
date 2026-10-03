@@ -113,6 +113,8 @@ def cmd_scan(args) -> int:
     else:
         console.print(scan_screen(inv, VENOM_VERSION, console.width, compact=args.compact, report_hint=hint))
         console.print()
+    if getattr(args, "share", False) and not as_json:
+        _share(console, ws, inv, bool(getattr(args, "anonymize", False)))
     if args.check:
         failed = check_failed(inv, args.fail_on)
         if not as_json:
@@ -121,6 +123,24 @@ def cmd_scan(args) -> int:
                           f"[muted](fail on {args.fail_on} findings or vocabulary drift)[/muted]")
         return EXIT_CHECK_FAILED if failed else EXIT_OK
     return EXIT_OK
+
+
+def _share(console, ws, inv: Inventory, anonymize: bool) -> None:
+    from rich.text import Text
+
+    from .render import share
+
+    if ws.plan_only:
+        console.print("  [muted]--plan-only: no share card written[/muted]")
+        return
+    svg, png = share.export(inv, VENOM_VERSION, ws, anonymize=anonymize)
+    line = Text.assemble(("  SHARE       ", "label"), (ws.rel(png or svg), "text"))
+    if png is None:
+        line.append("  (SVG; for a PNG: pip install cairosvg, or open it and take a screenshot)", style="muted")
+    console.print(line)
+    console.print(Text("              no host name, user names or paths on it"
+                       + ("; agent names replaced" if anonymize else "; --anonymize also hides agent names"),
+                       style="muted"))
 
 
 def _load_inventory(args, console) -> Inventory:
