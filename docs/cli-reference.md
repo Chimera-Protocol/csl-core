@@ -1,6 +1,23 @@
 # CLI Reference
 
-CSL-Core provides a robust Command Line Interface (CLI) for compiling policies, verifying logic, and simulating runtime behavior.
+CSL-Core provides a robust Command Line Interface (CLI) for compiling policies, verifying logic, and simulating runtime behavior, and (since 0.6) for discovering the agents on a host, setting them up, and running them.
+
+## Commands at a glance
+
+| Command | What it does |
+|---|---|
+| `cslcore setup` | Guided first install: discovery, findings, policies, mapping, mode, wiring, activation |
+| `cslcore venom` | Read-only discovery of the AI agents on this host |
+| `cslcore venom report` | The latest report, or one agent in detail |
+| `cslcore venom map` | The reach map, full screen: chains, dive into an agent, 3D globe |
+| `cslcore studio` | Write and prove a policy in the terminal (Z3, TLA+), bind agents, go live |
+| `cslcore watch` | Live management panel: decisions, modes, kill switches, exemptions, live reach map |
+| `cslcore map` | Generate mappings and test them, including bypass tricks and regression cases |
+| `cslcore policy` | Policy workbench: list, show, new, edit, extend, fix, verify, diff, activate, bind |
+| `cslcore mode` | Log or block per agent, kill switches per agent or tool |
+| `cslcore exempt` | Exemptions with a reason and an approver |
+| `cslcore hook` | Claude Code `PreToolUse` hook backed by a verified policy |
+| `cslcore verify`, `simulate`, `repl`, `formal` | Work on a single policy file (sections 1 to 3 below) |
 
 The CLI is built with **fail-safe defaults** and rich visualization tools.
 
@@ -122,6 +139,141 @@ ALLOWED
 
 ---
 
+## 4. Venom commands (0.6)
+
+All Venom commands share these options:
+
+| Option | Meaning |
+|---|---|
+| `--root PATH` | scan this folder only (default: this host) |
+| `--since WINDOW` | run history window, e.g. `7d`, `30d` (default: `7d`) |
+| `--probe` | ask configured MCP servers for their real tool lists (starts stdio servers; asks first) |
+| `--workspace PATH` | Venom workspace folder (default: current folder) |
+| `--no-color` | plain output (also honours `NO_COLOR`) |
+| `--no-anim` | no discovery animation (also `CSL_NO_ANIM`, CI) |
+| `--plan-only` | show what would be written, write nothing |
+
+Everything Venom writes stays in the workspace: `.csl/venom/` (reports, state, decision logs,
+audit log, drafts, kept regression cases) and `policies/`.
+
+### `cslcore setup`
+
+The guided, resumable first install. Read-only until you confirm.
+
+| Option | Meaning |
+|---|---|
+| `--yes` | non-interactive: accept defaults (never approves exemptions or activates policies) |
+| `--activate` | activate drafts that pass the gate (explicit; `--yes` alone never activates) |
+| `--mode {log,block}` | default enforcement mode for all agents (default: ask; `log` with `--yes`) |
+| `--strategy {recommended,choose,templates}` | how to get a policy per agent (default: ask; `templates` with `--yes`) |
+| `--restart` | start the flow from step 1 |
+| `--agent ID` | limit the policy and mapping steps to one agent |
+
+### `cslcore venom`
+
+Read-only discovery: agents, their tools and risk classes, guard coverage, findings V01 to V16,
+and the strongest reach chain.
+
+| Option | Meaning |
+|---|---|
+| `--json` | print the inventory as JSON |
+| `--check` | CI mode: exit 3 on findings at `--fail-on` level or vocabulary drift |
+| `--fail-on {high,medium,low}` | finding level that fails `--check` (default: `high`) |
+| `--compact` | header, agent counts, coverage and finding counts only |
+| `--no-save` | do not write the report into the workspace |
+| `--budget SECONDS` | time budget; results are marked partial when exceeded |
+| `--yes` | confirm `--probe` without asking |
+
+`cslcore venom report [--agent ID] [--format screen|md|json] [--rescan]` shows the latest report,
+or one agent in detail.
+
+### `cslcore venom map`
+
+The reach map full screen. `--rescan` scans again first; `--once` prints one frame (scripts, CI).
+
+| Key | Action |
+|---|---|
+| arrows, Tab, `1` to `9` | select a node; the panel shows what reaches it and what it reaches |
+| Enter | dive into the selected agent: its tools, and what each tool reaches |
+| Esc | back out |
+| `s` | the 3D globe; it turns the selected node to the front |
+| `n` | names on the map on or off |
+| `r` | replay the spread |
+| `q` | quit |
+
+### `cslcore studio [policy]`
+
+A full CSL editor in the terminal. `--agent ID` opens (or starts) that agent's policy, `--new`
+starts a new one, `--mock` runs TLA+ with the Python model checker even when TLC is available.
+
+| Key | Action |
+|---|---|
+| `F5` / `Ctrl+R` | Z3: contradictions, rules that can never trigger |
+| `F8` / `Ctrl+T` | TLA+: which states each rule blocks, read as a guard |
+| `Ctrl+S` | save the draft |
+| `Ctrl+L` | go live (needs a current Z3 pass; the previous version is kept) |
+| `Ctrl+B` | bind agents, one or many |
+| `Ctrl+O` / `Ctrl+N` | open another policy / start a new one |
+| `Ctrl+Q` | quit (unsaved edits are kept as a draft) |
+
+### `cslcore watch`
+
+The live management panel. `--refresh SECONDS` sets the table refresh, `--once` prints one frame.
+
+| Key | Action |
+|---|---|
+| arrows, `/` | select and search agents |
+| `m` / `M` | log or block for the agent / for every agent |
+| `d` | disable the agent (kill switch) |
+| `e` | exempt the agent, with a reason |
+| Enter | the agent's tools: disable or exempt one |
+| Tab | rules ranked by would-block: exempt an agent from a rule, or `o` to open it in the studio |
+| `g` | the live reach map (decisions flow over it) |
+| `?` / `q` | help / quit |
+
+### `cslcore map`
+
+Generate a fail-closed mapping for an agent and test it; also tests your own mapper. See
+[MAPPING.md](venom/MAPPING.md).
+
+| Option | Meaning |
+|---|---|
+| `--agent ID` | agent to map |
+| `--policy PATH` | policy to map against (default: the agent's active policy) |
+| `--mapping PATH[:FUNC]` | your own mapping: a module with `map_call`, `path.py:function`, or `openclaw` |
+| `--test` | run the mapping test (exit 3 on any fail-open) |
+| `--import-module` | with `path.py:function`, load the whole file instead of only the function |
+| `--allowed-root PATH`, `--allowed-command CMD`, `--allowed-destination URL` | values your mapping accepts; the bypass tricks start from them (repeatable) |
+| `--classify VAR=KIND[:PARAM]` | your own variable names: `KIND` is `scope`, `command` or `destination` |
+| `--cases FILE` / `--keep-cases` | regression cases (JSON lines), and keep them for every later test |
+| `--yes` | write the generated mapping without asking |
+
+### `cslcore policy <action> [target]`
+
+`list`, `show`, `new`, `edit`, `extend`, `fix`, `verify`, `diff`, `activate`, `bind`, `unbind`.
+Every draft passes the same gate (parse, validate, Z3, diff, confirmation) before it becomes active.
+`--agent ID` (repeatable for `bind`), `--match PATTERN`, `--unbound`, `--exec-mode {allowlist,block}`,
+`--all` (draft for every agent that needs one), `--yes`.
+
+### `cslcore mode [log|block]`
+
+Without a mode it shows the current state. `--agent ID` or `--all` / `--match PATTERN` choose the
+agents; `--disable` / `--enable` is the kill switch for an agent; `--disable-tool TOOL` /
+`--enable-tool TOOL` for one tool. Changes reach running agents on their next call.
+
+### `cslcore exempt <add|list|approve|remove> [target]`
+
+Exemptions need `--reason` and `--approved-by`; `--scope {agent,tool}` with `--tool NAME`,
+`--expires YYYY-MM-DD`, and `--propose` to record one for approval later.
+
+### `cslcore hook`
+
+The Claude Code `PreToolUse` hook: reads the event on stdin and answers allow or deny from a
+verified policy. `--agent ID`, `--policy PATH` and `--mapping PATH` (default: the agent's binding),
+`--mode {log,block}` to override the mode.
+
+---
+
 ## Advanced Debugging
 
 ### Z3 Trace (`--debug-z3`)
@@ -152,3 +304,7 @@ The CLI returns standard exit codes for CI/CD integration:
 | `2` | Compilation/Verification Failed |
 | `3` | Unexpected System Error |
 | `10` | Runtime Blocked (Policy Violation) |
+
+Venom commands (`setup`, `venom`, `map`, ...) use `0` for success, `2` for a usage error, and `3`
+when a check fails: `cslcore venom --check` with findings or drift, `cslcore map --test` with a
+fail-open case.
