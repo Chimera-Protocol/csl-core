@@ -66,6 +66,8 @@ def _scan_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--json", action="store_true", help="print the inventory as JSON")
     p.add_argument("--check", action="store_true", help="CI mode: exit 3 on findings at --fail-on level or vocabulary drift")
     p.add_argument("--fail-on", choices=["high", "medium", "low"], default="high", help="finding level that fails --check (default: high)")
+    p.add_argument("--fail-on-new-reach", action="store_true",
+                   help="with --check: also fail when a path opened since the last scan in this workspace")
     p.add_argument("--compact", action="store_true", help="header, agent counts, coverage and finding counts only")
     p.add_argument("--no-save", action="store_true", help="do not write the report into the workspace")
     p.add_argument("--budget", type=float, default=120.0, metavar="SECONDS", help="time budget; results are marked partial when exceeded")

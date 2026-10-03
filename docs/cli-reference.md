@@ -172,13 +172,16 @@ The guided, resumable first install. Read-only until you confirm.
 ### `cslcore venom`
 
 Read-only discovery: agents, their tools and risk classes, guard coverage, findings V01 to V16,
-and the strongest reach chain.
+and the strongest reach chain. From the second scan in a workspace on, a SINCE section names every
+path that opened or closed since the last scan (a plugin installed, a credential added, a new
+agent), and the report and JSON carry the full list (`reach.since_last_scan`).
 
 | Option | Meaning |
 |---|---|
 | `--json` | print the inventory as JSON |
 | `--check` | CI mode: exit 3 on findings at `--fail-on` level or vocabulary drift |
 | `--fail-on {high,medium,low}` | finding level that fails `--check` (default: `high`) |
+| `--fail-on-new-reach` | with `--check`: also fail when a path opened since the last scan in this workspace |
 | `--compact` | header, agent counts, coverage and finding counts only |
 | `--no-save` | do not write the report into the workspace |
 | `--budget SECONDS` | time budget; results are marked partial when exceeded |

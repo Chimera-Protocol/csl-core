@@ -344,3 +344,86 @@ def summary(g: ReachGraph) -> Dict[str, object]:
 
 def agents_by_reach(g: ReachGraph) -> Sequence[Node]:
     return sorted((n for n in g.nodes.values() if n.kind == "agent"), key=lambda n: (-n.weight, n.label))
+
+
+# ---------------------------------------------------------------------------
+# since the last scan
+# ---------------------------------------------------------------------------
+
+@dataclass
+class ReachDiff:
+    """What changed in the reach graph between two scans of the same scope. A scan is a snapshot:
+    a plugin installed or a credential added afterwards opens a path the last map does not show."""
+    since: str  # when the earlier scan ran
+    opened: List[Edge]  # edges of the new graph that were not there
+    closed: List[Edge]  # edges of the old graph that are gone (or now decided by a rule)
+    labels: Dict[str, str]  # node labels from both graphs
+    new_chains: List[Chain]  # chains of the new graph whose (input, holder, impact) is new
+    closed_chains: int
+    new_agents: List[str]
+    gone_agents: List[str]
+
+    @property
+    def changed(self) -> bool:
+        return bool(self.opened or self.closed or self.new_agents or self.gone_agents)
+
+    def step(self, e: Edge) -> str:
+        return f"{self.labels.get(e.src, e.src)} -> {self.labels.get(e.dst, e.dst)}"
+
+
+def _paths(g: ReachGraph) -> Dict[Tuple[str, str], Edge]:
+    return {(e.src, e.dst): e for e in g.edges if not e.guarded}
+
+
+def _chain_key(c: Chain) -> Tuple[str, str, str]:
+    return c.nodes[0], c.nodes[-2], c.nodes[-1]
+
+
+def diff(old: ReachGraph, new: ReachGraph, since: str = "") -> ReachDiff:
+    """Paths that opened or closed since `old`. The most serious first: what an agent can do on
+    its own, then one agent reaching another, then a new way in."""
+    before, after = _paths(old), _paths(new)
+    labels = {n.id: n.label for n in old.nodes.values()}
+    labels.update({n.id: n.label for n in new.nodes.values()})
+
+    def rank(g: ReachGraph, e: Edge):
+        kind = g.nodes[e.dst].kind if e.dst in g.nodes else ""
+        order = {"impact": 0, "agent": 1}.get(kind, 2)
+        return order, -(g.nodes[e.dst].weight if kind == "impact" else 0), labels.get(e.src, ""), labels.get(e.dst, "")
+
+    opened = sorted((e for k, e in after.items() if k not in before), key=lambda e: rank(new, e))
+    closed = sorted((e for k, e in before.items() if k not in after), key=lambda e: rank(old, e))
+    old_chains = {_chain_key(c) for c in old.chains}
+    new_keys = {_chain_key(c) for c in new.chains}
+    agents_before = {n.id for n in old.nodes.values() if n.kind == "agent"}
+    agents_after = {n.id for n in new.nodes.values() if n.kind == "agent"}
+    return ReachDiff(
+        since=since, opened=opened, closed=closed, labels=labels,
+        new_chains=[c for c in new.chains if _chain_key(c) not in old_chains],
+        closed_chains=len(old_chains - new_keys),
+        new_agents=sorted(labels[a] for a in agents_after - agents_before),
+        gone_agents=sorted(labels[a] for a in agents_before - agents_after),
+    )
+
+
+def since_last(previous: Optional[Inventory], current: Inventory) -> Optional[ReachDiff]:
+    """The diff against the previous scan, or None when there is none or it covered another scope."""
+    if previous is None or previous.host.scope != current.host.scope or previous.host.name != current.host.name:
+        return None
+    return diff(build(previous), build(current), since=previous.host.scanned_at)
+
+
+def diff_summary(d: ReachDiff) -> Dict[str, object]:
+    """The JSON form: every opened and closed path with its evidence, and the strongest new chain
+    in full (the open core shows one chain in full, as for the scan itself)."""
+    top = d.new_chains[0] if d.new_chains else None
+    return {
+        "since": d.since,
+        "opened": [{"path": d.step(e), "evidence": e.evidence, "confidence": e.confidence} for e in d.opened],
+        "closed": [{"path": d.step(e), "evidence": e.evidence} for e in d.closed],
+        "new_chains": len(d.new_chains),
+        "closed_chains": d.closed_chains,
+        "new_agents": d.new_agents,
+        "gone_agents": d.gone_agents,
+        "top_new_chain": None if top is None else [d.labels[n] for n in top.nodes],
+    }

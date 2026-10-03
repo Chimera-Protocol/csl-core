@@ -311,6 +311,48 @@ def reach_block(inv: Inventory) -> Optional[Group]:
     return Group(*lines)
 
 
+SINCE_LINES = 4
+
+
+def since_block(d) -> Group:
+    """What opened or closed since the last scan: a scan is a snapshot, this is what moved."""
+    from .report import _when
+
+    head = _section("SINCE")
+    head.append(f"last scan {_when(d.since)}", style="text")
+    if not d.changed:
+        head.append(" · no path opened or closed", style="ok")
+        return Group(labeled(head))
+    parts = []
+    if d.opened:
+        parts.append((f"{len(d.opened)} path{'s' if len(d.opened) != 1 else ''} opened", "high"))
+    if d.closed:
+        parts.append((f"{len(d.closed)} closed", "ok"))
+    if d.new_chains:
+        parts.append((f"{len(d.new_chains)} new reach chain{'s' if len(d.new_chains) != 1 else ''}", "bold #f0abfc"))
+    if d.new_agents:
+        parts.append((f"{len(d.new_agents)} new agent{'s' if len(d.new_agents) != 1 else ''}", "text"))
+    if d.gone_agents:
+        parts.append((f"{len(d.gone_agents)} gone", "muted"))
+    for text, style in parts:
+        head.append(" · ", style="muted")
+        head.append(text, style=style)
+    lines = [labeled(head)]
+    rows = [("+ ", "high", e) for e in d.opened] + [("− ", "ok", e) for e in d.closed]
+    for mark, style, e in rows[:SINCE_LINES]:
+        line = Text(" " * LABEL_WIDTH)
+        line.append(mark, style=style)
+        line.append(d.labels.get(e.src, e.src), style="bold #f0abfc")
+        line.append("  →  ", style="muted")
+        line.append(d.labels.get(e.dst, e.dst), style="high" if e.dst.startswith("impact:") else "bold #f0abfc")
+        if mark == "+ ":
+            line.append(f"  {e.evidence}", style="muted")
+        lines.append(labeled(line))
+    if len(rows) > SINCE_LINES:
+        lines.append(labeled(Text(" " * LABEL_WIDTH + f"{len(rows) - SINCE_LINES} more in the report", style="muted")))
+    return Group(*lines)
+
+
 def _direct_block(g) -> Optional[Group]:
     """No chain across agents: say so, and show the most serious exposure a single agent has."""
     from ..reach import direct, strongest_direct
@@ -374,7 +416,7 @@ def _studio_target(inv: Inventory) -> Optional[str]:
 
 
 def scan_screen(inv: Inventory, version: str, width: int, compact: bool = False,
-                report_hint: Optional[str] = None, show_findings: bool = True) -> Group:
+                report_hint: Optional[str] = None, show_findings: bool = True, since=None) -> Group:
     parts: List = [header(inv, version)]
     if not compact:
         parts += [discovery_line(inv), Text()]
@@ -396,6 +438,8 @@ def scan_screen(inv: Inventory, version: str, width: int, compact: bool = False,
         reach = reach_block(inv)
         if reach is not None:
             parts += [reach, Text()]
+        if since is not None:
+            parts += [since_block(since), Text()]
         parts.append(labeled(next_step(inv)))
         if report_hint:
             t = _section("REPORT")

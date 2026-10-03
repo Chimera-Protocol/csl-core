@@ -87,7 +87,10 @@ list, run history and existing policies. Every agent gets its tools classified b
 write, external, execute, spend, destructive), its guard coverage, and findings from "agent runs as
 root" to "an inbound webhook reaches a public posting tool". Nothing on the host is changed;
 credential values, prompts and transcripts never reach any output. Reports land in
-`.csl/venom/reports/`, and `cslcore venom --check` gates CI.
+`.csl/venom/reports/`, and `cslcore venom --check` gates CI. A scan is a snapshot, so each later
+scan also names what opened since the last one (a plugin installed, a credential added);
+`--check --fail-on-new-reach` fails CI on it. Between scans the guard covers the gap: a tool it
+was not mapped for is denied, not allowed.
 
 When discovery finishes, the web draws back into one point and spreads again along what can really
 reach what: the **reach map**, with the strongest chain lit as a purple artery.

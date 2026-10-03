@@ -13,12 +13,15 @@ from ..model import Inventory
 from .screen import _n
 
 
-def to_json(inv: Inventory) -> Dict[str, Any]:
-    from ..reach import build, summary
+def to_json(inv: Inventory, since=None) -> Dict[str, Any]:
+    """`since` is the reach diff against the previous scan (reach.since_last), when there is one."""
+    from ..reach import build, diff_summary, summary
 
     data = inv.to_dict()
     data["coverage"]["ratio"] = inv.coverage.ratio
     data["reach"] = summary(build(inv))
+    if since is not None:
+        data["reach"]["since_last_scan"] = diff_summary(since)
     return redact.deep(data)
 
 
@@ -26,7 +29,7 @@ def _esc(s: Any) -> str:
     return str(s).replace("|", "\\|").replace("\n", " ")
 
 
-def to_markdown(inv: Inventory) -> str:
+def to_markdown(inv: Inventory, since=None) -> str:
     h = inv.host
     out: List[str] = [
         "# CSL-Core Venom report",
@@ -106,6 +109,19 @@ def to_markdown(inv: Inventory) -> str:
         if more:
             out += ["", f"{more} more reach chain{'s' if more != 1 else ''} on this host."]
     out.append("")
+    if since is not None:
+        out += ["### Since the last scan", "", f"Compared with the scan of {_when(since.since)}."]
+        if not since.changed:
+            out.append("No path opened or closed.")
+        out += [f"- opened: {_esc(since.step(e))} ({_esc(e.evidence)})" for e in since.opened]
+        out += [f"- closed: {_esc(since.step(e))}" for e in since.closed]
+        out += [f"- new agent: {_esc(a)}" for a in since.new_agents]
+        out += [f"- agent gone: {_esc(a)}" for a in since.gone_agents]
+        if since.new_chains:
+            n = len(since.new_chains)
+            out.append(f"- {n} new reach chain{'s' if n != 1 else ''}; the strongest: "
+                       + " → ".join(_esc(since.labels[x]) for x in since.new_chains[0].nodes))
+        out.append("")
 
     out += ["## Vocabulary drift", ""]
     if not inv.drift:
@@ -142,5 +158,10 @@ def to_markdown(inv: Inventory) -> str:
     return redact.text("\n".join(out))
 
 
-def json_text(inv: Inventory) -> str:
-    return json.dumps(to_json(inv), indent=1, sort_keys=True, ensure_ascii=False) + "\n"
+def json_text(inv: Inventory, since=None) -> str:
+    return json.dumps(to_json(inv, since), indent=1, sort_keys=True, ensure_ascii=False) + "\n"
+
+
+def _when(stamp: str) -> str:
+    """'2026-10-01T14:22:00+00:00' -> '2026-10-01 14:22'."""
+    return stamp[:16].replace("T", " ") if stamp else "an earlier scan"

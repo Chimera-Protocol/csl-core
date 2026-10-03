@@ -77,11 +77,11 @@ def confirm_probe(args, console, probe, roots) -> bool:
     return confirm(console, "Start / query them now?", bool(getattr(args, "yes", False)), default=False)
 
 
-def save_report(ws: Workspace, inv: Inventory) -> Optional[str]:
+def save_report(ws: Workspace, inv: Inventory, since=None) -> Optional[str]:
     stamp = inv.host.scanned_at.replace("-", "").replace(":", "").replace("T", "-")[:13] or "latest"
-    data = report_mod.to_json(inv)
+    data = report_mod.to_json(inv, since)
     js = json.dumps(data, indent=1, sort_keys=True, ensure_ascii=False) + "\n"
-    md = report_mod.to_markdown(inv)
+    md = report_mod.to_markdown(inv, since)
     ws.write_text(ws.reports / f"report-{stamp}.json", js)
     ws.write_text(ws.reports / f"report-{stamp}.md", md)
     ws.write_text(ws.reports / "latest.json", js)
@@ -90,9 +90,26 @@ def save_report(ws: Workspace, inv: Inventory) -> Optional[str]:
     return ws.rel(ws.reports / "latest.md")
 
 
-def check_failed(inv: Inventory, fail_on: str) -> bool:
+def check_failed(inv: Inventory, fail_on: str, since=None, fail_on_new_reach: bool = False) -> bool:
     levels = {"high": ["high"], "medium": ["high", "medium"], "low": ["high", "medium", "low"]}[fail_on]
+    if fail_on_new_reach and since is not None and since.opened:
+        return True
     return any(f.severity in levels for f in inv.findings) or bool(blocking_drift(inv.drift))
+
+
+def previous_scan(ws: Workspace, inv: Inventory):
+    """The reach diff against the last scan saved in this workspace (None on the first scan, or
+    when the last one covered another folder or host)."""
+    from .reach import since_last
+
+    data = ws.latest_inventory()
+    if data is None:
+        return None
+    try:
+        previous = Inventory.from_dict(data)
+    except (TypeError, ValueError, KeyError, AttributeError):
+        return None  # written by another version: nothing to compare with
+    return since_last(previous, inv)
 
 
 # ---------------------------------------------------------------------------
@@ -105,22 +122,27 @@ def cmd_scan(args) -> int:
     result = run_scan(args, console, live=not as_json and not args.check)
     inv = result.inventory
     ws = workspace_for(args)
+    since = previous_scan(ws, inv)
     hint = None
     if not getattr(args, "no_save", False):
-        hint = save_report(ws, inv)
+        hint = save_report(ws, inv, since)
     if as_json:
-        sys.stdout.write(report_mod.json_text(inv))
+        sys.stdout.write(report_mod.json_text(inv, since))
     else:
-        console.print(scan_screen(inv, VENOM_VERSION, console.width, compact=args.compact, report_hint=hint))
+        console.print(scan_screen(inv, VENOM_VERSION, console.width, compact=args.compact, report_hint=hint,
+                                  since=since))
         console.print()
     if getattr(args, "share", False) and not as_json:
         _share(console, ws, inv, bool(getattr(args, "anonymize", False)))
     if args.check:
-        failed = check_failed(inv, args.fail_on)
+        new_reach = bool(getattr(args, "fail_on_new_reach", False))
+        failed = check_failed(inv, args.fail_on, since, new_reach)
         if not as_json:
             msg = "check failed" if failed else "check passed"
+            what = (f"{args.fail_on} findings, vocabulary drift or a path opened since the last scan" if new_reach
+                    else f"{args.fail_on} findings or vocabulary drift")
             console.print(f"  [label]CHECK[/label]       [{'high' if failed else 'ok'}]{msg}[/] "
-                          f"[muted](fail on {args.fail_on} findings or vocabulary drift)[/muted]")
+                          f"[muted](fail on {what})[/muted]")
         return EXIT_CHECK_FAILED if failed else EXIT_OK
     return EXIT_OK
 

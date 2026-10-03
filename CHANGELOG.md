@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.5]
+
+### Added
+- Since the last scan: from the second scan in a workspace on, `cslcore venom` names every path
+  that opened or closed since the previous scan of the same folder or host (a plugin installed,
+  a credential added, a new or removed agent, a tool now decided by a rule). On screen as SINCE,
+  in the report as "Since the last scan", in JSON as `reach.since_last_scan`.
+- `cslcore venom --check --fail-on-new-reach` fails CI when a path opened since the last scan.
+- Tests for what happens after the scan: a tool that appears later (a new plugin or MCP server)
+  is denied by the guard and the Claude Code hook, in log mode it is recorded as WOULD_BLOCK,
+  a tool an agent never had is denied, and the guard fails closed when its policy is gone.
+
 ## [0.6.4]
 
 ### Fixed
