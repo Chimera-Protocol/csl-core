@@ -36,8 +36,15 @@ Then watch it run:
 cslcore watch
 ```
 
-Want to look first? `cslcore venom` is the scan on its own: read-only, about a second. To try the
-whole flow on a sample host instead of your machine:
+Want to look first, without installing anything? With [uv](https://docs.astral.sh/uv/):
+
+```bash
+uvx csl-core venom
+```
+
+The scan on its own: read-only, about a second. Add `--share` to get a card of your machine's reach
+map to post (no host name, user names or paths on it; `--anonymize` also hides agent names). To try
+the whole flow on a sample host instead of your machine:
 
 ```bash
 cslcore setup --root tests/venom/fixtures/host_ops --workspace /tmp/csl-demo

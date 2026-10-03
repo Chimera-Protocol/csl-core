@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.3]
+
+### Added
+- `cslcore venom --share`: a card of the machine's reach map, counts and strongest chain, written as
+  SVG (and PNG when cairosvg or rsvg-convert is installed). No host name, user names or file paths
+  on it; `--anonymize` also replaces agent names with their kind.
+- `csl-core` command, the same CLI under the package name: `uvx csl-core venom` runs without
+  installing.
+- Release workflow: a version tag runs lint and every test, checks the tag against the package
+  version, and publishes to PyPI through Trusted Publishing.
+- CLI reference for the 0.6 commands (`docs/cli-reference.md`).
+
+### Changed
+- Lint is clean and blocking in CI, with the rule set and the ruff version pinned; the files frozen
+  since v0.5.1 are excluded.
+
 ## [0.6.2]
 
 ### Added
