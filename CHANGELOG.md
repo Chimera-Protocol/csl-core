@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   strongest direct exposure is the hero stroke when there is no chain, long names are shortened.
 - Python warnings from the operator's own files (for example an invalid escape sequence) are no
   longer printed while the scanner parses them.
+- The discovery animation hands over to the reach map on hosts with direct exposures but no chain
+  (it used to stop at the discovery web there).
 
 ## [0.6.3]
 

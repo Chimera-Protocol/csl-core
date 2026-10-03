@@ -108,3 +108,22 @@ def test_discovery_web_is_quick_steady_and_only_on_wide_terminals(tmp_path):
     narrow.events["code"] = ("done", "1 thing", 0.0)
     assert "◉" not in render(narrow.frame(0.5), width=80)
     assert "◉" in render(r.frame(0.5), width=100)
+
+
+def test_the_map_also_spreads_when_there_is_no_chain():
+    """Seen on a 300-agent host: every agent acts alone (no chain, no agent reaching another),
+    but many act on untrusted input. The reveal still hands over to the reach map."""
+    from chimera_core.venom.model import Agent, Inventory, Tool, ToolParam
+
+    agents = [Agent(f"code:/p{i}", f"payments-{i:03d}", "code", project=f"/p{i}",
+                    tools=[Tool("fetch_url", "decorator", risk_class="READ", coverage="unguarded", params=[ToolParam("url")]),
+                           Tool("transfer_funds", "decorator", risk_class="SPEND", coverage="unguarded")])
+              for i in range(300)]
+    r = R.Reveal(_console(), "0.6.4")
+    r.t0 = 0.0
+    r.events["code"] = ("done", "300 files", 0.0)
+    r.done, r.inv, r.skipped = True, Inventory(agents=agents), True
+    r.frame(0.01)
+    assert r.topo is not None and r.topo.g.chains == []
+    text = render(r.frame(0.02), width=100)
+    assert "STRONGEST EXPOSURE" in text and "payments-" in text

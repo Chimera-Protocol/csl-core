@@ -190,12 +190,14 @@ class Reveal:
         return 0.1 + 0.62 * (1 - math.exp(-(now - start) / 1.3))
 
     def _map(self) -> Optional[Topo]:
-        """The reach map, once the scan result is in (None when no agent can reach another)."""
+        """The reach map, once the scan result is in (None when nothing reaches anything at stake:
+        no chain, no agent reaching another, no agent acting on untrusted input)."""
         if not self._topo_built and self.inv is not None and self._all_shown():
-            from ..reach import build
+            from ..reach import build, strongest_direct
             self._topo_built = True
             g = build(self.inv)
-            if any(g.nodes[e.src].kind == "agent" and g.nodes[e.dst].kind == "agent" for e in g.edges) or g.chains:
+            if (g.chains or strongest_direct(g) is not None
+                    or any(g.nodes[e.src].kind == "agent" and g.nodes[e.dst].kind == "agent" for e in g.edges)):
                 self.topo = Topo(g, w=MAP_W, h=MAP_H, seed=self.version)
         return self.topo
 
