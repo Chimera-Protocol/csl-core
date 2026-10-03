@@ -70,6 +70,10 @@ def card(inv: Inventory, version: str, anonymize: bool = False) -> Panel:
     if g.top is not None:
         story.append(Text.assemble(("STRONGEST CHAIN  ", "label"),
                                    ("  →  ".join(g.nodes[n].label for n in g.top.nodes), "bold #f0abfc")))
+        d = strongest_direct(g)
+        if d is not None:
+            story.append(Text.assemble(("DIRECT           ", "label"),
+                                       ("  →  ".join(g.nodes[x].label for x in d), "#f0abfc")))
     else:
         d = strongest_direct(g)
         if d is not None:

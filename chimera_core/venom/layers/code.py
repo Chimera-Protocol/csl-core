@@ -209,7 +209,11 @@ MCP_DECORATOR_OWNERS = {"mcp", "server", "app", "srv", "fastmcp"}
 
 def analyze_source(path: str, source: str) -> CodeFile:
     """Raises SyntaxError for files that do not parse (the caller counts them)."""
-    tree = ast.parse(source, filename=path)
+    import warnings
+
+    with warnings.catch_warnings():  # the operator's file, not ours: its warnings are not ours to print
+        warnings.simplefilter("ignore")
+        tree = ast.parse(source, filename=path)
     cf = CodeFile(path=path)
     frameworks: List[str] = []
     functions: Dict[str, ast.AST] = {}

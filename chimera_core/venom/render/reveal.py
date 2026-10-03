@@ -311,12 +311,19 @@ class Reveal:
         if ct is None or topo is None or self.console.width < WEB_MIN_WIDTH:
             return []
         g = topo.g
-        if topo.chain is None:
+        if g.top is None:
             from ..reach import direct
             n = len({a for _s, a, _i in direct(g)})
-            note = (f"no chain across agents · {n} agent{'s' if n != 1 else ''} act on untrusted input without a rule"
-                    if n else "no chain across agents, and no agent acts on untrusted input without a rule")
-            return [Text.assemble(("REACH  ", "label"), (note, "ok" if not n else "warn")), Text("")]
+            if topo.chain is None or not n:
+                return [Text.assemble(("REACH  ", "label"),
+                                      ("no chain across agents, and no agent acts on untrusted input without a rule", "ok")),
+                        Text("")]
+            route = "  →  ".join(g.nodes[x].label for x in topo.chain.nodes)
+            k = 1.0 if self.skipped else (min(1.0, ct / 1.2) if ct >= 0 else 0.0)
+            return [Text.assemble(("STRONGEST EXPOSURE  ", "label"), (route[: int(len(route) * k)], "bold #f0abfc")),
+                    Text.assemble(("                    ", ""),
+                                  (f"no chain across agents · {n} agent{'s' if n != 1 else ''} act on untrusted input "
+                                   "without a rule" if k >= 1 else "", "muted")), Text("")]
         if ct < 0:
             return [Text(""), Text("")]
         route = "  →  ".join(g.nodes[n].label for n in topo.chain.nodes)

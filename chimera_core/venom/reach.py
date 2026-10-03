@@ -86,7 +86,13 @@ class ReachGraph:
     chains: List[Chain] = field(default_factory=list)
 
     def out(self, nid: str) -> List[Edge]:
-        return [e for e in self.edges if e.src == nid]
+        index = self.__dict__.get("_out")
+        if index is None or self.__dict__.get("_out_n") != len(self.edges):
+            index = {}
+            for e in self.edges:
+                index.setdefault(e.src, []).append(e)
+            self.__dict__["_out"], self.__dict__["_out_n"] = index, len(self.edges)
+        return index.get(nid, [])
 
     def neighbours(self, nid: str) -> List[str]:
         return [e.dst for e in self.edges if e.src == nid] + [e.src for e in self.edges if e.dst == nid]
@@ -145,20 +151,27 @@ def _reach(a: Agent, b: Agent) -> Optional[Tuple[str, str, str]]:
     return None
 
 
-def _inputs(a: Agent) -> List[Tuple[str, str, str]]:
-    """(node id, label, evidence) for the untrusted inputs an agent receives."""
+INPUT_KIND = {"inbound_http": "inbound HTTP", "messaging": "inbound messages", "email": "inbound email"}
+
+
+def _inputs(a: Agent) -> List[Tuple[str, str, str, List[str]]]:
+    """(node id, kind label, evidence, routes) for the untrusted inputs an agent receives. One node per
+    kind of input: an API with a hundred routes is one way in, not a hundred."""
     out = []
+    routes: Dict[str, List[str]] = {}
     for t in a.triggers:
-        if t.type in ("inbound_http", "messaging", "email"):
-            src = t.schedule or t.source or t.type
-            out.append((f"input:{t.type}:{src}", {"inbound_http": "inbound HTTP", "messaging": "inbound messages",
-                                                   "email": "inbound email"}[t.type] + f" {src}",
-                        f"{a.display_name} is triggered by {t.type} ({src})"))
+        if t.type in INPUT_KIND:
+            routes.setdefault(t.type, []).append(t.schedule or t.source or t.type)
+    for kind, rs in routes.items():
+        rs = list(dict.fromkeys(rs))
+        shown = ", ".join(rs[:3]) + (f" and {len(rs) - 3} more" if len(rs) > 3 else "")
+        out.append((f"input:{kind}", INPUT_KIND[kind],
+                    f"{a.display_name} is triggered by {INPUT_KIND[kind]} ({shown})", rs))
     readers = [t for t in a.tools if t.name in INPUT_TOOLS or (t.risk_class in ("READ", "EXTERNAL") and
                                                                 any(p.name in ("url", "uri") for p in t.params))]
     if readers:
         out.append(("input:web", "web content", f"{a.display_name} reads web content with {readers[0].name}; "
-                                                f"what it reads enters its context"))
+                                                f"what it reads enters its context", []))
     return out
 
 
@@ -194,16 +207,24 @@ def _impacts(a: Agent) -> List[Tuple[str, str]]:
 def build(inv: Inventory) -> ReachGraph:
     g = ReachGraph()
     agents = [a for a in inv.agents if a.exempt is None or a.exempt.status != "approved"]
+    routes: Dict[str, List[str]] = {}
     for a in agents:
         g.nodes[a.id] = Node(a.id, "agent", a.display_name, a.kind, active=a.state == "running")
-        for nid, label, ev in _inputs(a):
+        for nid, label, ev, rs in _inputs(a):
             g.nodes.setdefault(nid, Node(nid, "input", label))
+            routes.setdefault(nid, []).extend(rs)
             g.edges.append(Edge(nid, a.id, "reaches", ev))
         for key, ev in _impacts(a):
             label, weight = IMPACTS[key]
             nid = f"impact:{key}"
             g.nodes.setdefault(nid, Node(nid, "impact", label, weight=weight))
             g.edges.append(Edge(a.id, nid, "can", ev))
+    for nid, rs in routes.items():  # "inbound HTTP /hook", or "inbound HTTP · 113 routes"
+        rs = list(dict.fromkeys(rs))
+        if len(rs) == 1:
+            g.nodes[nid].label += f" {rs[0]}"
+        elif rs:
+            g.nodes[nid].label += f" · {len(rs)} routes"
     for a in agents:
         for b in agents:
             r = _reach(a, b)
@@ -221,38 +242,60 @@ def _chains(g: ReachGraph, max_hops: int = 5) -> List[Chain]:
     """Reach chains: routes from an input through at least two agents to an impact that none of
     the earlier agents could reach on its own (an escalation, not a detour).
 
-    One route per (input, entry agent, impact): the shortest, then the most certain. A longer
-    detour to the same place adds nothing. Strongest first: impact, then certainty, then fewer
-    steps (the more direct route is the more real one)."""
+    One search per (input, impact): breadth first from every agent the input reaches that cannot
+    do the impact itself, through agents that cannot do it either, until an agent that can. That
+    gives the shortest route to each such agent, and the cost grows with the size of the graph,
+    not with the number of paths through it (hundreds of agents on one account stay fast).
+    One chain per (input, impact, agent that holds it). Strongest first: impact, then certainty,
+    then fewer steps."""
     from collections import deque
 
-    best: Dict[Tuple[str, str, str], Chain] = {}
-    for e0 in g.edges:
-        if g.nodes[e0.src].kind != "input" or e0.guarded:
-            continue
-        queue = deque([([e0.src, e0.dst], [e0])])
-        while queue:
-            path, edges = queue.popleft()
-            for e in g.out(path[-1]):
-                if e.guarded or e.dst in path:
+    owners: Dict[str, set] = {}
+    for e in g.edges:
+        if g.nodes[e.dst].kind == "impact" and not e.guarded:
+            owners.setdefault(e.dst, set()).add(e.src)
+    found: List[Chain] = []
+    inputs = [n.id for n in g.nodes.values() if n.kind == "input"]
+    for x in inputs:
+        entries = [e for e in g.out(x) if not e.guarded]
+        for impact, holders in owners.items():
+            parent: Dict[str, Tuple[Optional[str], Edge]] = {}
+            queue = deque()
+            for e in entries:
+                if e.dst not in holders and e.dst not in parent:
+                    parent[e.dst] = (None, e)
+                    queue.append((e.dst, 1))
+            reached: List[str] = []
+            while queue:
+                here, depth = queue.popleft()
+                if depth >= max_hops:
                     continue
-                node = g.nodes[e.dst]
-                if node.kind == "impact":
-                    agents = [p for p in path if g.nodes[p].kind == "agent"]
-                    if len(agents) < 2:
+                for e in g.out(here):
+                    if e.guarded or g.nodes[e.dst].kind != "agent" or e.dst in parent:
                         continue
-                    # an escalation only: no earlier agent on the route can do this itself
-                    if any(x.dst == e.dst and not x.guarded for a in agents[:-1] for x in g.out(a)):
-                        continue
-                    hops = edges + [e]
-                    certain = all(x.confidence == "likely" for x in hops)
-                    c = Chain(path + [e.dst], hops, node.weight * 100 + (10 if certain else 0) - len(hops))
-                    key = (path[0], path[1], e.dst)
-                    if key not in best or (c.hops, -c.score) < (best[key].hops, -best[key].score):
-                        best[key] = c
-                elif node.kind == "agent" and len(edges) < max_hops:
-                    queue.append((path + [e.dst], edges + [e]))
-    return sorted(best.values(), key=lambda c: (-c.score, c.nodes))
+                    parent[e.dst] = (here, e)
+                    if e.dst in holders:
+                        reached.append(e.dst)  # an agent that can do it: the chain ends here
+                    else:
+                        queue.append((e.dst, depth + 1))
+            direct_to = {e.dst for e in entries}
+            for holder in reached:
+                if holder in direct_to:
+                    continue  # the input reaches it without going through anyone: a direct exposure
+                path, edges = [holder], []
+                node = holder
+                while node is not None:
+                    prev, e = parent[node]
+                    edges.append(e)
+                    path.append(prev if prev is not None else x)
+                    node = prev
+                path.reverse()
+                edges.reverse()
+                last = next(e for e in g.out(holder) if e.dst == impact and not e.guarded)
+                hops = edges + [last]
+                certain = all(h.confidence == "likely" for h in hops)
+                found.append(Chain(path + [impact], hops, g.nodes[impact].weight * 100 + (10 if certain else 0) - len(hops)))
+    return sorted(found, key=lambda c: (-c.score, c.nodes))
 
 
 def direct(g: ReachGraph) -> List[Tuple[str, str, str]]:

@@ -26,7 +26,7 @@ def _text(inv, anonymize=False):
 
 def test_card_tells_the_story_without_identifying_the_machine(inv):
     text = _text(inv)
-    assert "what can reach what on this machine" in text and "9 reach chains" in text
+    assert "what can reach what on this machine" in text and "1 reach chain" in text
     assert "STRONGEST CHAIN" in text and "root on the host" in text and "pip install csl-core" in text
     assert inv.host.name not in text and "/srv" not in text and "/webhooks" not in text
 

@@ -16,7 +16,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from rich.text import Text
 
-from ..reach import Chain, ReachGraph
+from ..reach import Chain, ReachGraph, direct, strongest_direct
 from .web import Canvas, _branch, _walk
 
 EDGE = "#134e4a"
@@ -30,6 +30,19 @@ IMPACT_STYLE = {
     "impact:exec": "#f87171", "impact:destroy": "#f87171", "impact:publish": "#7dd3fc",
 }
 Point = Tuple[float, float]
+
+
+def _direct_hero(g: ReachGraph) -> Optional[Chain]:
+    """No chain across agents: the strongest direct exposure (input -> agent -> impact) as the hero stroke."""
+    d = strongest_direct(g)
+    if d is None:
+        return None
+    src, agent, impact = d
+    e1 = next((e for e in g.edges if e.src == src and e.dst == agent), None)
+    e2 = next((e for e in g.edges if e.src == agent and e.dst == impact), None)
+    if e1 is None or e2 is None:
+        return None
+    return Chain([src, agent, impact], [e1, e2], g.nodes[impact].weight * 100)
 
 
 class Zoom:
@@ -126,11 +139,14 @@ class Topo:
         self.w, self.h = w, h
         self.W, self.H = w * 2, h * 4
         rng = random.Random(seed)
-        self.chain: Optional[Chain] = g.top
+        self.chain: Optional[Chain] = g.top or _direct_hero(g)  # no chain: the strongest direct exposure
         connected = {e.src for e in g.edges} | {e.dst for e in g.edges}
         in_chains = [n for c in g.chains for n in c.nodes]
+        exposure = {}
+        for _src, a, imp in direct(g):
+            exposure[a] = max(exposure.get(a, 0), g.nodes[imp].weight)
         agents = sorted((n for n in g.nodes.values() if n.kind == "agent" and n.id in connected),
-                        key=lambda n: (-in_chains.count(n.id), -n.weight, n.label))[:max_agents]
+                        key=lambda n: (-in_chains.count(n.id), -exposure.get(n.id, 0), not n.active, -n.weight, n.label))
         spine = list(self.chain.nodes) if self.chain else []
         agents = [g.nodes[n] for n in spine if g.nodes[n].kind == "agent"] + [a for a in agents if a.id not in spine]
         agents = agents[:max_agents]
@@ -142,21 +158,16 @@ class Topo:
         self.hidden_agents = max(0, sum(1 for n in g.nodes.values() if n.kind == "agent" and n.id in connected) - len(agents))
         self.placed: Dict[str, Placed] = {}
         mid = self.H / 2
-        # the spine: the strongest chain as one clear stroke through the middle, left to right
+        # the spine: the strongest chain (or exposure) as one clear stroke through the middle
         if spine:
             xs = [3.0 + i * (self.W - 7.0) / (len(spine) - 1) for i in range(len(spine))]
             for nid, x in zip(spine, xs):
                 n = g.nodes[nid]
                 self.placed[nid] = Placed(nid, n.kind, n.label, x, mid + (rng.random() - 0.5) * 3 if n.kind == "agent" else mid)
-        # everything else above and below it
+        # inputs and impacts in their columns, the other agents spread over the canvas above and below
         self._side([n for n in inputs if n.id not in self.placed], 3.0, rng)
         self._side([n for n in impacts if n.id not in self.placed], self.W - 4.0, rng)
-        depth = _depths(g, [a.id for a in agents])
-        deepest = max(depth.values(), default=1)
-        rest = [a for a in agents if a.id not in self.placed]
-        for i, a in enumerate(rest):
-            x = 12 + (self.W - 26) * (depth.get(a.id, 1) - 1) / max(1, deepest - 1) if deepest > 1 else self.W / 2
-            self._side([a], x + (rng.random() - 0.5) * 8, rng, slot=i)
+        self._fill([a for a in agents if a.id not in self.placed], rng)
         for n, a in enumerate(agents, 1):
             if a.id in self.placed:
                 self.placed[a.id].number = n
@@ -184,6 +195,25 @@ class Topo:
         self._schedule()
 
     # -- layout ---------------------------------------------------------------------------
+    def _fill(self, nodes, rng: random.Random) -> None:
+        """Spread nodes over the canvas in two bands (above and below the spine), in a loose grid."""
+        if not nodes:
+            return
+        mid = self.H / 2
+        left, right = 12.0, self.W - 14.0
+        bands = [(3.0, mid - 7.0), (mid + 7.0, self.H - 3.0)]
+        for b, (top, bottom) in enumerate(bands):
+            group = nodes[b::2]
+            if not group:
+                continue
+            rows = max(1, min(3, int((bottom - top) // 7)))
+            cols = max(1, -(-len(group) // rows))
+            for i, node in enumerate(group):
+                r, c = divmod(i, cols)
+                x = left + (right - left) * ((c + 0.5) / cols) + (rng.random() - 0.5) * 4
+                y = top + (bottom - top) * ((r + 0.5) / rows) + (rng.random() - 0.5) * 3
+                self.placed[node.id] = Placed(node.id, node.kind, node.label, x, min(self.H - 2, max(2, y)))
+
     def _side(self, nodes, x: float, rng: random.Random, slot: int = 0) -> None:
         """Place nodes above and below the spine, alternating, away from the middle row."""
         mid = self.H / 2
@@ -239,7 +269,11 @@ class Topo:
         if self.origin is None:
             return
         self.reached[self.origin] = 0.0
-        frontier = [self.origin]
+        # the other ways in ignite one after another, so the whole map is taken
+        later = [p.id for p in self.placed.values() if p.kind == "input" and p.id != self.origin]
+        for k, nid in enumerate(later, 1):
+            self.reached[nid] = 0.35 * k
+        frontier = [self.origin] + later
         while frontier:
             frontier.sort(key=lambda n: self.reached[n])
             here = frontier.pop(0)
@@ -450,16 +484,19 @@ class Topo:
         art = set(self.chain.nodes) if self.chain else set()
         rows: List[Text] = [Text("REACH MAP", style="label")]
 
+        def cut(label: str, n: int = 34) -> str:
+            return label if len(label) <= n else label[: n - 1] + "…"
+
         def shown(p: Placed) -> bool:
             return st is not None and p.id in self.reached and st >= self.reached[p.id]
 
         for p in self.placed.values():
             if p.kind == "input":
                 rows.append(Text.assemble(("◆ " if shown(p) else "◇ ", INPUT),
-                                          (p.label, ("bold #fde68a" if p.id in art else "text") if shown(p) else "#334155")))
+                                          (cut(p.label), ("bold #fde68a" if p.id in art else "text") if shown(p) else "#334155")))
         for p in sorted((q for q in self.placed.values() if q.kind == "agent"), key=lambda q: q.number or 0):
             rows.append(Text.assemble((f"{p.number} ", "#94a3b8"), ("● ", AGENT if shown(p) else "#334155"),
-                                      (p.label, (f"bold {CHAIN}" if p.id in art else "head") if shown(p) else "#334155")))
+                                      (cut(p.label, 32), (f"bold {CHAIN}" if p.id in art else "head") if shown(p) else "#334155")))
         if self.hidden_agents:
             rows.append(Text(f"  + {self.hidden_agents} more agents", style="muted"))
         for p in self.placed.values():

@@ -267,7 +267,11 @@ def isolated_function(source: str, func: str, filename: str):
     import sys
     import typing
 
-    tree = ast.parse(source, filename=filename)
+    import warnings
+
+    with warnings.catch_warnings():  # the operator's file, not ours: its warnings are not ours to print
+        warnings.simplefilter("ignore")
+        tree = ast.parse(source, filename=filename)
     funcs = {n.name: n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
     if func not in funcs:
         raise SystemExit(f"{filename} has no top-level function {func}")

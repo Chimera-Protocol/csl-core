@@ -327,9 +327,10 @@ class MapView:
         grid.add_column(width=max(24, width - self.w - 8), overflow="ellipsis")
         grid.add_row(self.canvas(now), self.side())
         chain = Text("")
-        if g.top is not None and self.mode == "map":
-            chain = Text.assemble(("REACH CHAIN  ", "label"),
-                                  ("  →  ".join(g.nodes[n].label for n in g.top.nodes), "bold #f0abfc"))
+        hero = self.topo.chain
+        if hero is not None and self.mode == "map":
+            chain = Text.assemble(("REACH CHAIN  " if g.top is not None else "STRONGEST EXPOSURE  ", "label"),
+                                  ("  →  ".join(g.nodes[n].label for n in hero.nodes), "bold #f0abfc"))
         keys = ("Esc back · q quit" if self.mode == "dive"
                 else "↑↓ or 1-9 select · Enter dive in · s sphere · n names · r replay · q quit")
         body = Group(head, Text(""), grid, Text(""), chain, Text(keys, style="muted"))

@@ -298,6 +298,16 @@ def reach_block(inv: Inventory) -> Optional[Group]:
     tail.append(" · see it spread: ", style="muted")
     tail.append("cslcore venom map", style="brand")
     lines.append(labeled(tail))
+    from ..reach import strongest_direct
+    d = strongest_direct(g)
+    if d is not None:  # a single agent that already does the worst on its own is shown too
+        line = Text(" " * LABEL_WIDTH)
+        line.append("direct: ", style="muted")
+        for i, n in enumerate(d):
+            if i:
+                line.append("  →  ", style="muted")
+            line.append(g.nodes[n].label, style="high" if g.nodes[n].kind == "impact" else "bold #f0abfc")
+        lines.append(labeled(line))
     return Group(*lines)
 
 

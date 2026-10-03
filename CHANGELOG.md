@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.4]
+
+### Fixed
+- Reach chains scale: one breadth-first search per input and impact instead of walking every path.
+  A host where many agents share one account (each can reach every other) used to take minutes from
+  about 30 agents; 600 agents now take about half a second.
+- A chain only counts when the input does not already reach the agent at its end directly; the
+  strongest direct exposure is shown next to the strongest chain (scan screen and share card).
+- One input node per kind (`inbound HTTP · 111 routes`) instead of one per route, which flooded
+  the map and the legend on hosts with real APIs.
+- The reach map on large hosts: agents spread over the canvas, every way in ignites in turn, the
+  strongest direct exposure is the hero stroke when there is no chain, long names are shortened.
+- Python warnings from the operator's own files (for example an invalid escape sequence) are no
+  longer printed while the scanner parses them.
+
 ## [0.6.3]
 
 ### Added

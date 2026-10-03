@@ -24,12 +24,13 @@
    ▲ V04  publisher: inbound messaging (/webhooks/sms) reaches EXTERNAL tool post_to_page unguarded
           10 more in .csl/venom/reports/latest.md
 
-  REACH       web content  →  claude-code:ops  →  ingest-worker  →  root on the host
+  REACH       web content  →  claude-code:ops  →  membership-bot  →  moves money
               · claude-code:ops reads web content with WebFetch; what it reads enters its context
-              · claude-code:ops may work under / and has Bash without a rule; ingest-worker lives in
-              /srv/ingest-worker                                                                    
-              · ingest-worker runs as root
-              likely · 3 steps · 8 more reach chains on this host · see it spread: cslcore venom map
+              · claude-code:ops may work under / and has Bash without a rule; membership-bot lives  
+              in /srv/membership-bot                                                                
+              · transfer_funds without a rule
+              likely · 3 steps · see it spread: cslcore venom map
+              direct: web content  →  ingest-worker  →  root on the host
 
   NEXT        cslcore setup  first install: 46 tools need a policy                                
               cslcore studio --agent claude-code-ops  write its policy, verify (Z3, TLA+), go live
