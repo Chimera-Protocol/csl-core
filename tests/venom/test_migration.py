@@ -29,7 +29,7 @@ def migrated(tmp_path, capsys):
 
 def test_existing_setup_detected_and_adopted(migrated):
     ws, out = migrated
-    assert "Existing CSL-Core setup found" in out and "adopted, not copied" in out
+    assert "Your code already uses CSL-Core" in out and "adopted, not copied" in out
     state = json.loads((ws / ".csl/venom/state.json").read_text())
     assert list(state["adopted"].values()) == [str(POLICY.resolve())]
     assert not list((ws / ".csl/policies").glob("*.csl"))  # nothing copied

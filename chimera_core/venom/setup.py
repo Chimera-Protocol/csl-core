@@ -232,6 +232,8 @@ class Flow:
         for a in inv.agents:
             if a.guard.status == "none" or a.kind == "assistant":
                 continue
+            if all("venom_guard" in (e.detail or "") for e in a.guard.evidence):
+                continue  # wired by cslcore itself (0.6): not an integration of the operator's own
             linked = [p for p in link_policies(a, inv.policies) if p.status != "draft"]
             if linked:
                 out.append((a, linked[0]))
@@ -289,11 +291,11 @@ class Flow:
             names = ", ".join(sorted({a.display_name for a, _ in existing}))
             self.console.print()
             self.console.print(Panel(Group(
-                Text.assemble(("Existing CSL-Core setup found: ", "head"),
+                Text.assemble(("Your code already uses CSL-Core: ", "head"),
                               (f"{plural(len({p.path for _, p in existing}), 'policy').replace('policys', 'policies')} wired into "
                                f"{plural(len(existing), 'agent')} ({names}).", "text")),
-                Text("Nothing in your code changes. In step 6 you keep these policies as they are (adopt them); "
-                     "in step 8 you can test your own mappers for fail-open cases.", style="muted")),
+                Text("Nothing in your code changes: on the protection board you keep these policies as they are.",
+                     style="muted")),
                 box=box.ROUNDED, border_style="ok", padding=(0, 1)))
         self._changes()
         return True
@@ -1178,7 +1180,10 @@ class Flow:
             stops = [c for c in report.cases if c.expected == check.STOPPED]
 
             def sample(cases):
-                shown = list(dict.fromkeys(f"{c.tool}: {c.what}" for c in cases))
+                shown = list(dict.fromkeys(
+                    f"{c.tool}: {c.what}" + (", with approval" if c.expected == check.RUNS and c.approval else
+                                             ", without approval" if c.expected == check.STOPPED and not c.approval else "")
+                    for c in cases))
                 return "\n".join(shown[:2]) + (f"\n+ {len(shown) - 2} more" if len(shown) > 2 else "")
             t.add_row(key, sample(runs) or "·", sample(stops) or "·",
                       Text("✓ as its limits say", style="ok") if report.ok
