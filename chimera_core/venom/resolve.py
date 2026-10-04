@@ -55,11 +55,6 @@ def _within(path: str, folder: str) -> bool:
     return path == folder or path.startswith(folder + "/")
 
 
-def _top(project: str, path: str) -> str:
-    rel = path[len(project.rstrip("/")) + 1:]
-    return rel.split("/", 1)[0] if "/" in rel else ""
-
-
 HELPER_DIRS = {"tools", "tool", "utils", "util", "lib", "libs", "helpers", "helper", "common", "shared", "core",
                "functions", "skills", "actions", "integrations"}
 

@@ -186,6 +186,17 @@ def register(sub) -> None:
     _shared(li)
     li.set_defaults(func=_lazy("chimera_core.venom.limits_cmd.cmd_limits"))
 
+    ap = sub.add_parser("apply", help="Make the limits in csl-limits.ini (kept in the repository) the active policies")
+    ap.add_argument("--file", metavar="PATH", help="the limits file (default: csl-limits.ini here or above)")
+    ap.add_argument("--check", action="store_true",
+                    help="change nothing; exit 1 when an active policy is not what the file says (for CI)")
+    ap.add_argument("--init", action="store_true", help="write csl-limits.ini from the limits each agent has now")
+    ap.add_argument("--force", action="store_true", help="with --init: write the file again although it exists")
+    ap.add_argument("--wire", action="store_true", help="also wire each agent that is not wired yet (each diff is shown)")
+    ap.add_argument("--yes", action="store_true", help="activate (and wire) without asking (each diff is still printed)")
+    _shared(ap)
+    ap.set_defaults(func=_lazy("chimera_core.venom.apply_cmd.cmd_apply"))
+
     mo = sub.add_parser("mode", help="Per-agent enforcement mode (log or block) and kill switches")
     mo.add_argument("--agent", metavar="ID", help="agent key (as in `cslcore watch`); omit to list every agent")
     mo.add_argument("--all", action="store_true", help="apply the mode to every agent (sets the default, clears per-agent modes)")

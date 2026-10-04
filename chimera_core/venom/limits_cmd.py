@@ -171,6 +171,8 @@ def cmd_limits(args) -> int:
         console.print(f"  [high]{e}[/high]")
         return EXIT_USAGE
     changed = bool(done)
+    if changed:
+        repo_file_note(console, key)
     for item in done:
         console.print(Text.assemble(("  · ", "muted"), (item, "text")))
     if changed:
@@ -187,10 +189,28 @@ def cmd_limits(args) -> int:
     return EXIT_OK
 
 
-def show_check(console, ws, agent, lim=None) -> bool:
+def repo_file_note(console, key: str) -> None:
+    """A repository that keeps this agent's limits in csl-limits.ini: the file is where they change."""
+    from .apply_cmd import FILE, LimitsFileError, find_file, parse
+
+    path = find_file()
+    try:
+        named = path is not None and key in parse(path.read_text(encoding="utf-8"))
+    except (LimitsFileError, OSError):
+        named = False
+    if named:
+        console.print(Text(f"  {key}'s limits are kept in {path}; this change lasts until the next cslcore apply. "
+                           f"To keep it, change {FILE} (and review it in a pull request).", style="warn"))
+
+
+def show_check(console, ws, agent, lim=None, compact: bool = False) -> bool:
     """The check table for one agent; False when a sample call is not decided as its limits say."""
     from . import check
+    from .board import store_check
+    from .policy.draft import agent_key
 
     report = check.run(ws, agent, lim)
-    check.show(console, report, agent.display_name)
+    if report.cases and not ws.plan_only:
+        store_check(ws, agent_key(agent), report)
+    check.show(console, report, agent.display_name, compact=compact)
     return report.ok or not report.cases

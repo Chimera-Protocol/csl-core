@@ -241,6 +241,40 @@ def decide(guard, module, case: Case) -> str:
         return STOPPED
 
 
+def decide_all(report: Report, agent: Agent, lim: L.Limits, guard, module) -> Report:
+    for tool in sorted(L.tools_of(agent, lim), key=lambda x: x.name.lower()):
+        tl = lim.tools.get(tool.name) or L.ToolLimit(L.kind_of(tool))
+        for case in cases_for(tool, tl, lim):
+            case.got = decide(guard, module, case)
+            report.cases.append(case)
+    return report
+
+
+def run_text(agent: Agent, lim: L.Limits, text: str) -> Tuple[Report, int]:
+    """The check for a policy that is not active anywhere yet (a file in a pull request): its
+    mapping is generated as binding would, and must have no fail-open case. Returns the report and
+    the number of fail-open cases."""
+    import types
+
+    from .layers.governance import read_policy
+    from .mapping import codegen, harness
+    from .mapping.assistant import compile_guard
+    from .mapping.spec import build_spec
+    from .policy.draft import agent_key
+
+    key = agent_key(agent)
+    report = Report(key)
+    spec = build_spec(agent, read_policy(f"policies/{key}.csl", text, "draft"), lim)
+    module = types.ModuleType(f"_venom_check_{key}")
+    exec(compile(codegen.generate(spec, f"policies/{key}.csl"), "<generated mapping>", "exec"), module.__dict__)
+    guard = compile_guard(text)
+    with contextlib.redirect_stdout(io.StringIO()):
+        res = harness.run(spec, module.map_call, guard, module)
+    module = types.ModuleType(f"_venom_check_{key}")  # the harness patches allowlists: a fresh one
+    exec(compile(codegen.generate(spec, f"policies/{key}.csl"), "<generated mapping>", "exec"), module.__dict__)
+    return decide_all(report, agent, lim, guard, module), len(res.fail_open)
+
+
 def run(ws, agent: Agent, lim: Optional[L.Limits] = None) -> Report:
     from ..runtime import ChimeraGuard, RuntimeConfig
     from .bindings import Bindings
@@ -268,12 +302,7 @@ def run(ws, agent: Agent, lim: Optional[L.Limits] = None) -> Report:
     except Exception as e:
         report.note = f"the policy or its mapping does not load ({type(e).__name__})"
         return report
-    for tool in sorted(L.tools_of(agent, lim), key=lambda x: x.name.lower()):
-        tl = lim.tools.get(tool.name) or L.ToolLimit(L.kind_of(tool))
-        for case in cases_for(tool, tl, lim):
-            case.got = decide(guard, module, case)
-            report.cases.append(case)
-    return report
+    return decide_all(report, agent, lim, guard, module)
 
 
 # ---------------------------------------------------------------------------
@@ -306,6 +335,10 @@ def table(report: Report, show_all: bool = False) -> Table:
     return t
 
 
+def _calls(n: int, one: str, many: str) -> str:
+    return f"{n} sample call {one}" if n == 1 else f"{n} sample calls {many}"
+
+
 def show(console, report: Report, name: str = "", compact: bool = False) -> None:
     """The check for one agent: a line, and the table (compact: the table only when a call is wrong)."""
     title = name or report.agent
@@ -315,8 +348,9 @@ def show(console, report: Report, name: str = "", compact: bool = False) -> None
     runs, stops, bad = report.counts()
     head = (Text("  ✓ ", style="ok") if not bad else Text("  ✗ ", style="high"))
     head.append_text(Text.assemble((title, "head"),
-                                   (f"   {runs} sample calls run, {stops} stop, as its limits say" if not bad
-                                    else f"   {bad} of {len(report.cases)} sample calls not as its limits say", "muted" if not bad else "high")))
+                                   (f"   {_calls(runs, 'runs', 'run')}, {stops} stop{'s' if stops == 1 else ''}, as its limits say"
+                                    if not bad else f"   {bad} of {_calls(len(report.cases), 'is', 'are')} not as its limits say",
+                                    "muted" if not bad else "high")))
     console.print(head)
     if compact and not bad:
         return
