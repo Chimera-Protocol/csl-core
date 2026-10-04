@@ -31,6 +31,41 @@ from . import exemptions as ex
 from .model import Exemption
 
 
+def has_workspace(folder: Path) -> bool:
+    return (folder / ".csl" / "venom").is_dir()
+
+
+def locate(given: Optional[str] = None, near: Optional[str] = None) -> Path:
+    """The workspace a guard uses, wherever the agent runs (another machine, CI, a container):
+
+        1. CSL_WORKSPACE, when it is set (the operator's override for a deployment)
+        2. `given`: absolute, or relative to the file the guard is created in (`near`)
+        3. the nearest folder above that file (or the current folder) that has a .csl workspace
+        4. `given` as it is, or the current folder (the guard then refuses calls: fail closed)
+
+    Lines written before 0.6.9 pass an absolute path: it is used when it holds a workspace."""
+    env = os.environ.get("CSL_WORKSPACE")
+    if env:
+        return Path(env).expanduser().resolve()
+    base = Path(near).resolve().parent if near else Path.cwd()
+    candidate = None
+    if given:
+        g = Path(given).expanduser()
+        candidate = (g if g.is_absolute() else base / g).resolve()
+        if has_workspace(candidate):
+            return candidate
+    for folder in [base, *base.parents]:
+        if has_workspace(folder):
+            return folder
+    return candidate or Path.cwd().resolve()
+
+
+def scope_root_paths(roots: List[str], near: str) -> List[str]:
+    """Scope roots written relative to a generated mapping file, made absolute where it runs."""
+    here = Path(near).resolve().parent
+    return [r if os.path.isabs(r) else str((here / r).resolve()) for r in roots]
+
+
 class Workspace:
     def __init__(self, root: str | os.PathLike, plan_only: bool = False) -> None:
         self.root = Path(root).resolve()

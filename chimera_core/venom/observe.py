@@ -275,20 +275,39 @@ def current_mode(workspace: Workspace, agent_id: str, default: str = "log") -> s
     return Controls(workspace).get(agent_id, default).mode
 
 
-def venom_guard(agent_id: str, *, policy: Optional[str] = None, mapping: Optional[str] = None, workspace: str = ".",
-                mode: Optional[str] = None) -> VenomGuard:
+def venom_guard(agent_id: str, *, policy: Optional[str] = None, mapping: Optional[str] = None,
+                workspace: Optional[str] = None, mode: Optional[str] = None, near: Optional[str] = None) -> VenomGuard:
     """Build the guard an agent uses at start.
 
     Without `policy` / `mapping` the agent's binding is used (`cslcore policy bind`, studio "go
-    live") and followed live. Paths are relative to the workspace. `mode` pins the enforcement
-    mode; otherwise it follows `cslcore mode` and the watch panel live."""
+    live") and followed live. Paths are relative to the workspace. The workspace itself is found by
+    workspace.locate: CSL_WORKSPACE, then `workspace` (relative to `near`, the agent's file, when
+    given), then the nearest .csl workspace above it. `mode` pins the enforcement mode; otherwise it
+    follows `cslcore mode` and the watch panel live."""
     import contextlib
     import io
 
     from ..factory import load_guard
     from .controls import AgentControl, LiveControls
 
-    ws = Workspace(workspace)
+    from .workspace import locate
+
+    # `near=__file__` (what cslcore wire writes): the workspace path is relative to that file, and is
+    # found again when the repository is cloned elsewhere (see workspace.locate)
+    if near is not None:  # what cslcore wire writes since 0.6.9: relative to the agent's file
+        root = locate(workspace, near)
+    elif workspace and Path(workspace).is_absolute():
+        # a line written before 0.6.9: its absolute path, else the workspace above the file that creates
+        # the guard (a clone on another machine); never searched from csl-core's own modules
+        import sys
+
+        caller = sys._getframe(1).f_globals.get("__file__")
+        own = str(Path(__file__).resolve().parents[1])
+        near_search = caller if isinstance(caller, str) and not str(Path(caller).resolve()).startswith(own) else None
+        root = locate(workspace, near_search)
+    else:  # relative or not given: from the current folder, as before
+        root = locate(workspace or ".", None)
+    ws = Workspace(root)
     follow = policy is None
     if follow:
         from .bindings import Bindings

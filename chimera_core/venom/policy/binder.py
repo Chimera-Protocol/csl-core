@@ -88,8 +88,10 @@ def bind(ws, policy: Path, agents: List[Agent], *, write: bool = True, policy_te
         from .limits import load as load_limits
 
         spec = build_spec(agent, ref, load_limits(ws, key))
-        code = codegen.generate(spec, rel)
+        m = mapping_rel(key)
+        code = codegen.generate(spec, rel, str((ws.root / m).parent))
         mod = types.ModuleType("_venom_bind_mapping")
+        mod.__file__ = str(ws.root / m)  # the generated code reads its scope roots from its own place
         exec(compile(code, "<generated mapping>", "exec"), mod.__dict__)  # the generator's own output
         with contextlib.redirect_stdout(io.StringIO()):
             res = harness.run(spec, mod.map_call, compile_guard(text), mod)
@@ -102,7 +104,6 @@ def bind(ws, policy: Path, agents: List[Agent], *, write: bool = True, policy_te
         if write and not ws.plan_only:
             if edited:
                 ws.write_text(policy, text)
-            m = mapping_rel(key)
             ws.write_text(ws.root / m, code)
             bindings.bind(key, policy, m)
     return plan

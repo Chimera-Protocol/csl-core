@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import List
+from typing import List, Optional
 
 from .. import VENOM_VERSION
 from ..analysis.coverage import suggest
@@ -45,7 +45,36 @@ def _helper(v: VarSpec, expr: str, ptype: str = "", penum=None) -> str:
     return f'{expr}  # TODO: domain not supported by the generator; map explicitly'
 
 
-def generate(spec: MappingSpec, policy_rel: str) -> str:
+def _portable_roots(roots: List[str], mapping_dir: Optional[str]) -> Optional[List[str]]:
+    """The scope roots relative to the mapping's folder when they are in the same repository as it
+    (the nearest folder with .git above it), so the mapping holds in a clone on another machine."""
+    import os
+
+    if not mapping_dir or not roots:
+        return None
+    here = os.path.realpath(mapping_dir)
+    repo = next((d for d in [here, *_parents(here)] if os.path.isdir(os.path.join(d, ".git"))), None)
+    if repo is None:
+        return None
+    out = []
+    for r in roots:
+        real = os.path.realpath(r)
+        out.append(os.path.relpath(real, here) if real == repo or real.startswith(repo + os.sep) else r)
+    return out
+
+
+def _parents(path: str) -> List[str]:
+    import os
+
+    out = []
+    while os.path.dirname(path) != path:
+        path = os.path.dirname(path)
+        out.append(path)
+    return out
+
+
+def generate(spec: MappingSpec, policy_rel: str, mapping_dir: Optional[str] = None) -> str:
+    """`mapping_dir`: where the mapping file is written; the code then reads its own __file__."""
     out: List[str] = [
         '"""',
         f"Mapping for {spec.agent_name} ({spec.agent_id}) onto {policy_rel}.",
@@ -78,7 +107,13 @@ def generate(spec: MappingSpec, policy_rel: str) -> str:
     if "destination_allowlisted" in derived:
         out.append(f"DESTINATION_ALLOWLIST = {q(spec.destinations)}  # hosts (\"api.example.com\", \"*.example.com\"), addresses")
     if derived & {"target_in_scope", "command_class", "path_class"}:
-        out.append(f"SCOPE_ROOTS = {q(spec.scope_roots)}  # the folders the agent may write under")
+        portable = _portable_roots(spec.scope_roots, mapping_dir)
+        if portable is not None and portable != spec.scope_roots:
+            out.append("from chimera_core.venom.workspace import scope_root_paths  # noqa: E402")
+            out.append(f"SCOPE_ROOTS = scope_root_paths({q(portable)}, __file__)  # the folders the agent may write under, "
+                       "from this file")
+        else:
+            out.append(f"SCOPE_ROOTS = {q(spec.scope_roots)}  # the folders the agent may write under")
     out += ["", "", "def map_call(tool_name, args, context=None):",
             '    """Return the policy variables for one tool call; raises MappingError when a value cannot be mapped."""',
             "    args = args or {}", "    context = context or {}",

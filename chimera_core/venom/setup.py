@@ -711,12 +711,13 @@ class Flow:
                             self.console.print("  [warn]your mapper lets some inputs through that should block (listed above); "
                                                "the generated mapping below closes them, and MAPPING.md shows how to fix "
                                                "yours[/warn]")
-            code = codegen.generate(spec, final_rel)
+            path = mapping_path(self.ws, a)
+            code = codegen.generate(spec, final_rel, str(path.parent))
             import types
             mod = types.ModuleType("_venom_setup_mapping")
+            mod.__file__ = str(path)  # the generated code reads its scope roots from its own place
             exec(compile(code, "<generated mapping>", "exec"), mod.__dict__)  # generator output
             res = harness.run(spec, mod.map_call, compile_guard(text), mod)
-            path = mapping_path(self.ws, a)
             st["mapping"] = self.ws.rel(path)
             st.setdefault("fail_open", len(res.fail_open))
             if not self.ws.plan_only:

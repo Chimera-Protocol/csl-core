@@ -104,7 +104,9 @@ def test_one_agent_then_the_rest_with_one_key(host, monkeypatch, capsys):
     bo = rows["backoffice"]
     assert bo.protected and bo.check == "ok" and bo.mode == "block" and str(bo.state) == "protected"
     mod = _load(host_dir / "fs/srv/backoffice/agent.py")
-    call = (lambda fn, **kw: fn.invoke(kw) if hasattr(fn, "invoke") else fn(**kw))
+    def call(fn, **kw):
+        return fn.invoke(kw) if hasattr(fn, "invoke") else fn(**kw)
+
     assert call(mod.transfer_funds, amount=900, to_wallet="w") == "sent 900"
     with pytest.raises(PermissionError):
         call(mod.transfer_funds, amount=9_000, to_wallet="w")

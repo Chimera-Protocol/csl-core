@@ -126,7 +126,9 @@ def test_two_agents_in_one_file_each_keep_their_own_policy(repo, capsys):
     assert '@_csl_guard.tool("charge_card")' in text and '@_csl_guard_helpdesk.tool("delete_ticket")' in text
     assert text.count("from chimera_core.venom.observe import venom_guard") == 1
     mod = _load(root / "desk/agents.py")
-    call = (lambda fn, **kw: fn(**kw))  # plain functions here (the fallback when the Agents SDK is absent)
+    def call(fn, **kw):  # plain functions here (the fallback when the Agents SDK is absent)
+        return fn(**kw)
+
     assert call(mod.charge_card, customer_id="c", amount=40) == "charged"
     with pytest.raises(PermissionError):
         call(mod.charge_card, customer_id="c", amount=500)  # billing's own limits

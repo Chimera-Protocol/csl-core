@@ -187,6 +187,14 @@ def _guard_var(source: str, key: str) -> str:
     return "_csl_guard" if "_csl_guard" not in others else "_csl_guard_" + re.sub(r"\W", "_", key)
 
 
+def _relative(root, path: str) -> str:
+    """The workspace as seen from the agent's file, so the line holds in a clone of the repository
+    on any machine (venom_guard also reads CSL_WORKSPACE and searches upwards for .csl)."""
+    import os
+
+    return os.path.relpath(str(root), os.path.dirname(os.path.realpath(path)))
+
+
 DEPENDENCY_FILES = ("requirements.txt", "pyproject.toml", "setup.py", "setup.cfg", "Pipfile")
 
 
@@ -264,7 +272,7 @@ def _plan_code(agent: Agent, key: str, ws: Workspace, probe) -> Plan:
             at = _header_line(tree)
             header = "" if "from chimera_core.venom.observe import venom_guard" in before else \
                 f"from chimera_core.venom.observe import venom_guard  {MARK}\n"
-            header += f"{var} = venom_guard({json.dumps(key)}, workspace={json.dumps(str(ws.root))})  {MARK}\n"
+            header += f"{var} = venom_guard({json.dumps(key)}, workspace={json.dumps(_relative(ws.root, path))}, near=__file__)  {MARK}\n"
             inserts.append((at, ("\n" if at else "") + header))
         for row, text in sorted(inserts, key=lambda r: r[0], reverse=True):
             lines.insert(row, text)
