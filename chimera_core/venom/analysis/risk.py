@@ -188,8 +188,10 @@ def classify(tool: Tool, body_calls: Optional[List[str]] = None) -> Tuple[str, s
         for rx, cls in _PARAM_HINTS:
             if not rx.search(p.name):
                 continue
-            # a parameter can decide an unmatched tool, or lift a READ tool that takes a command or an amount
-            if best is None or (best[0] == "READ" and cls in ("EXEC", "SPEND")):
+            # a parameter can decide an unmatched tool, or lift a READ tool that takes a command or an amount;
+            # not one whose name starts with a reading verb (check_balance(wallet) reads a balance)
+            read_by_verb = verb is not None and verb[0] == "READ" and best is not None and best[0] == "READ"
+            if best is None or (best[0] == "READ" and cls in ("EXEC", "SPEND") and not read_by_verb):
                 best = (cls, f"parameter '{p.name}'")
     return best or ("UNCLASSIFIED", "no evidence; counted as sensitive")
 

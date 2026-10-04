@@ -170,6 +170,20 @@ def register(sub) -> None:
     _shared(wi)
     wi.set_defaults(func=_lazy("chimera_core.venom.wire_cmd.cmd_wire"))
 
+    li = sub.add_parser("limits", help="What each agent may do, in your own numbers (money limits, kinds, extra tools)")
+    li.add_argument("--agent", metavar="ID", help="one agent (key or name); omit to list every agent")
+    li.add_argument("--set", metavar="TOOL=FREE..MAX", action="append", default=[],
+                    help="money limits: moves freely up to FREE, with approval up to MAX, never above MAX (100k..300k)")
+    li.add_argument("--decide", metavar="TOOL=allow|approval|block|standard", action="append", default=[],
+                    help="override what happens to one tool")
+    li.add_argument("--add-tool", metavar="NAME:RISK[:AMOUNT_PARAM]", action="append", default=[],
+                    help="a tool the scan did not see (risk: spend, shell, sql, write, send, destroy, other)")
+    li.add_argument("--scope", metavar="FOLDER", action="append", default=[], help="another folder the agent may write under")
+    li.add_argument("--profile", choices=["standard", "strict"], help="standard: harmful actions stop; strict: only what is listed")
+    li.add_argument("--yes", action="store_true", help="activate without asking (the diff is still printed)")
+    _shared(li)
+    li.set_defaults(func=_lazy("chimera_core.venom.limits_cmd.cmd_limits"))
+
     mo = sub.add_parser("mode", help="Per-agent enforcement mode (log or block) and kill switches")
     mo.add_argument("--agent", metavar="ID", help="agent key (as in `cslcore watch`); omit to list every agent")
     mo.add_argument("--all", action="store_true", help="apply the mode to every agent (sets the default, clears per-agent modes)")
