@@ -25,6 +25,9 @@ CHAIN = "#e879f9"
 CHAIN_HOT = "bold #fdf4ff"
 INPUT = "#fbbf24"
 AGENT = "#5eead4"
+FROZEN = "#bae6fd"  # a frozen agent: ice
+FROZEN_VEIN = "#1e3a4c"  # its veins, cold
+GUARDED = "#4ade80"  # an agent in block mode: its rules decide every call
 IMPACT_STYLE = {
     "impact:root": "#f87171", "impact:spend": "#fb923c", "impact:payment": "#fb923c", "impact:cloud": "#c084fc",
     "impact:exec": "#f87171", "impact:destroy": "#f87171", "impact:publish": "#7dd3fc",
@@ -192,6 +195,9 @@ class Topo:
                 brs.append((k, _branch(rng, (px, py), heading, rng.randint(4, 10))))
             self.branches[id(e)] = brs
         self.dust = [(rng.random() * self.W, rng.random() * self.H) for _ in range(int(self.W * self.H * 0.006))]
+        # what the operator has done to an agent (node id -> "frozen" | "block"): a frozen agent's
+        # veins go cold and carry no light; an agent in block mode wears a steady guard ring
+        self.marks: Dict[str, str] = {}
         self._schedule()
 
     # -- layout ---------------------------------------------------------------------------
@@ -351,6 +357,10 @@ class Topo:
                 continue
             path = self.curves[id(e)]
             n = min(len(path), int((st - start) * self.speed) + 1)
+            if self.marks.get(e.src) == "frozen" and settled:  # held: the vein is cold
+                for x, y in path:
+                    c.dot(x, y, FROZEN_VEIN, 1)
+                continue
             art = id(e) in self.artery
             growing = n < len(path)
             beat = settled and (0.5 + 0.5 * math.sin((st - self.spread_total) * 5.0)) > 0.75
@@ -382,7 +392,8 @@ class Topo:
         # once everything is taken, light keeps flowing out along the artery, and faintly elsewhere
         if settled:
             flow = st - self.spread_total - 0.3
-            route = [p for e in (self.chain.edges if self.chain else []) for p in self.curves.get(id(e), [])]
+            held = self.chain is not None and any(self.marks.get(n) == "frozen" for n in self.chain.nodes)
+            route = [] if held else [p for e in (self.chain.edges if self.chain else []) for p in self.curves.get(id(e), [])]
             if route:
                 for off in (0.0, 0.5):
                     head = int((flow * 34 + off * (len(route) + 20)) % (len(route) + 20))
@@ -391,7 +402,7 @@ class Topo:
                         if 0 <= j < len(route):
                             c.dot(*route[j], "bold #fdf4ff" if d == 0 else CHAIN, 7)
             for e in self.edges:
-                if id(e) in self.artery:
+                if id(e) in self.artery or self.marks.get(e.src) == "frozen":
                     continue
                 path = self.curves[id(e)]
                 j = int((flow * 18 + (sum(map(ord, e.src + e.dst)) % 23)) % (len(path) + 30))
@@ -421,7 +432,12 @@ class Topo:
                 color = IMPACT_STYLE.get(p.id, "#f87171")
                 bright = age < 0.4 or (on_art and int(t * 2.5) % 2 == 0)
                 c.put(p.x, p.y, "▲", f"bold {color}" if bright else color)
+            elif self.marks.get(p.id) == "frozen":
+                c.ring(p.x, p.y, 2.4, FROZEN, 6)
+                c.put(p.x, p.y, "●", f"bold {FROZEN}")
             else:
+                if self.marks.get(p.id) == "block":
+                    c.ring(p.x, p.y, 2.6, GUARDED, 3)
                 pulse = on_art and int(t * 3) % 2 == 0
                 c.put(p.x, p.y, "●", f"bold {CHAIN}" if on_art and (pulse or age < 0.4) else (f"bold {AGENT}" if age < 0.4 else AGENT))
                 if p.number is not None:

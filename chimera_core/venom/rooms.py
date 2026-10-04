@@ -82,12 +82,13 @@ def _loop(console, Keys, Live, room, r, current) -> None:
 
 def _make(name: str, console, args, inv):
     if name == "map":
+        from .commands import workspace_for
         from .render.mapview import MapRoom
-        if inv is None:
+        ws = workspace_for(args) if args is not None else None
+        if inv is None and ws is not None:
             from .watch import _inventory
-            from .commands import workspace_for
-            inv = _inventory(workspace_for(args))
-        return MapRoom(inv, console)
+            inv = _inventory(ws)
+        return MapRoom(inv, console, ws=ws)
     if name == "watch":
         from .watch import WatchRoom
         return WatchRoom(args, console)

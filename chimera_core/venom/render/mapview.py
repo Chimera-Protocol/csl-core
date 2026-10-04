@@ -8,6 +8,8 @@
     s              turn the map into a slowly rotating sphere, and back
     n              names on the map on / off (on by default)
     r              replay the spread
+    x              freeze the selected agent: every action blocked, in any mode (x again unfreezes)
+    m              switch the selected agent between log and block mode
     w              the live panel (watch): the map shrinks away, the decisions take its place
     q              quit
 
@@ -31,7 +33,7 @@ from rich.text import Text
 
 from ..model import Agent, Inventory
 from ..reach import ReachGraph, build
-from .topo import AGENT, CHAIN, IMPACT_STYLE, INPUT, Sphere, Then, Topo, ViewCanvas, Zoom
+from .topo import AGENT, CHAIN, FROZEN, GUARDED, IMPACT_STYLE, INPUT, Sphere, Then, Topo, ViewCanvas, Zoom
 from .web import Canvas, _walk
 
 RISK_COLOR = {"READ": "#94a3b8", "WRITE": "#fbbf24", "EXTERNAL": "#7dd3fc", "IDENTITY": "#f0abfc",
@@ -175,8 +177,9 @@ class Dive:
 class MapView:
     """State and frames of the interactive map; `handle(key)` returns False to quit."""
 
-    def __init__(self, inv: Inventory, width: int, height: int, seed: str = "map") -> None:
+    def __init__(self, inv: Inventory, width: int, height: int, seed: str = "map", ws=None) -> None:
         self.inv = inv
+        self.ws = ws  # the workspace whose controls x and m change (None: the map only shows)
         self.g = build(inv)
         self.w = max(40, min(width - 46, 96))
         self.h = max(13, min(height - 9, 34))
@@ -201,6 +204,11 @@ class MapView:
         self.leave: Optional[Tuple[float, str]] = None
         self.exit_to: Optional[str] = None
         self.external = None
+        # control, as in the live panel: (agent key, its control, whether a policy guards it)
+        self.control: Dict[str, tuple] = {}
+        self.pending: Optional[Tuple[str, str, str]] = None  # (action, agent key, question)
+        self.message: Optional[Tuple[str, str, float]] = None  # (text, style, when)
+        self.synced = 0.0
 
     # -- rooms ------------------------------------------------------------------------------
     def enter(self, came_from: str) -> None:
@@ -221,6 +229,14 @@ class MapView:
     def handle(self, key: str) -> bool:
         now = time.monotonic()
         self.idle0 = now
+        if self.pending is not None:  # a question is open: y does it, any other key cancels
+            action, target, _q = self.pending
+            self.pending = None
+            if key in ("y", "Y"):
+                self._apply(action, target)
+            else:
+                self.message = ("cancelled", "muted", now)
+            return True
         if key in ("q", "ctrl-c"):
             return False
         if self.leave is not None or (self.zoom and now - self.zoom[0] < ZOOM_S):
@@ -247,7 +263,69 @@ class MapView:
             self.spread0 = now
         elif key in ("w", "W"):
             self.leave = (now, "watch")
+        elif key in ("x", "X", "m"):
+            self._control_key(key.lower(), now)
         return True
+
+    # -- control: freeze and mode, as in the live panel ----------------------------------------
+    def _sync(self, now: float, force: bool = False) -> None:
+        """Read the controls (about once a second, so changes made elsewhere show here too)."""
+        if self.ws is None or (not force and now - self.synced < 1.0):
+            return
+        from ..bindings import Bindings
+        from ..controls import Controls
+        from ..policy.draft import agent_key
+
+        self.synced = now
+        controls, bound = Controls(self.ws), set(Bindings(self.ws).all())
+        marks = {}
+        for a in self.inv.agents:
+            k = agent_key(a)
+            ctl = controls.get(k)
+            self.control[a.id] = (k, ctl, k in bound)
+            if ctl.disabled:
+                marks[a.id] = "frozen"
+            elif ctl.mode == "block" and k in bound:
+                marks[a.id] = "block"
+        self.topo.marks = marks
+
+    def _control_key(self, key: str, now: float) -> None:
+        a = self.selected_agent()
+        if a is None:
+            self.message = ("select an agent first (↑↓ or 1-9)", "muted", now)
+            return
+        if self.ws is None:
+            self.message = ("open the map from a workspace to change controls", "muted", now)
+            return
+        self._sync(now, force=True)
+        k, ctl, bound = self.control[a.id]
+        later = "" if bound else " (no policy guards it yet: it applies from its first guarded call)"
+        if key == "x":
+            if ctl.disabled:
+                self._apply("enable", k)
+            else:
+                self.pending = ("disable", k, f"Freeze {a.display_name}? every action is blocked, in any mode, until x again{later}")
+        else:
+            to = "block" if ctl.mode == "log" else "log"
+            q = (f"Switch {a.display_name} to BLOCK mode? policy violations will be blocked{later}" if to == "block"
+                 else f"Switch {a.display_name} to LOG mode? nothing will be blocked, only recorded")
+            self.pending = (f"mode_{to}", k, q)
+
+    def _apply(self, action: str, target: str) -> None:
+        from ..controls import Controls
+
+        controls, now = Controls(self.ws), time.monotonic()
+        if action == "disable":
+            controls.set_disabled(target, True)
+            self.message = (f"{target} FROZEN: every action is blocked (x unfreezes)", "high", now)
+        elif action == "enable":
+            controls.set_disabled(target, False)
+            self.message = (f"{target} unfrozen", "ok", now)
+        elif action.startswith("mode_"):
+            mode = action[5:]
+            controls.set_mode(target, mode)
+            self.message = (f"{target} → {mode.upper()} mode (next call, no restart)", "ok" if mode == "log" else "brand", now)
+        self._sync(now, force=True)
 
     def selected(self) -> Optional[str]:
         return self.order[self.sel] if self.order else None
@@ -362,10 +440,21 @@ class MapView:
         rows = self.topo.legend(99.0)
         rows.append(Text.assemble(("◇", INPUT), (" input  ", "muted"), ("●", AGENT), (" agent  ", "muted"),
                                   ("▲", "#f87171"), (" at stake  ", "muted"), ("━", CHAIN), (" strongest chain", "muted")))
+        if self.topo.marks:
+            rows.append(Text.assemble(("●", f"bold {FROZEN}"), (" frozen  ", "muted"), ("○", GUARDED), (" block mode", "muted")))
         sid = self.selected()
         if sid in self.g.nodes:
             node = self.g.nodes[sid]
             rows += [Text(""), Text("SELECTED", style="label"), Text(node.label, style="bold #fde047")]
+            if sid in self.control:
+                _k, ctl, bound = self.control[sid]
+                if ctl.disabled:
+                    rows.append(Text("frozen" + ("" if bound else ", from its first guarded call"), style=f"bold {FROZEN}"))
+                elif bound:
+                    rows.append(Text(f"{ctl.mode} mode" + (": its rules decide every call" if ctl.mode == "block" else ""),
+                                     style=GUARDED if ctl.mode == "block" else "muted"))
+                else:
+                    rows.append(Text("no policy guards it yet: cslcore setup --agent " + _k, style="muted"))
             ins = [e for e in self.g.edges if e.dst == sid]
             outs = [e for e in self.g.edges if e.src == sid]
             for title, edges, other in (("reached by", ins, "src"), ("reaches", outs, "dst")):
@@ -378,6 +467,7 @@ class MapView:
         return Group(*rows)
 
     def frame(self, now: float, width: int) -> Panel:
+        self._sync(now)
         g = self.g
         head = Text.assemble((f"{len(g.chains)} reach chain{'s' if len(g.chains) != 1 else ''}", "bold #f0abfc"),
                              (f" · {sum(1 for n in g.nodes.values() if n.kind == 'agent')} agents", "muted"),
@@ -391,9 +481,18 @@ class MapView:
         if hero is not None and self.mode == "map":
             chain = Text.assemble(("REACH CHAIN  " if g.top is not None else "STRONGEST EXPOSURE  ", "label"),
                                   ("  →  ".join(g.nodes[n].label for n in hero.nodes), "bold #f0abfc"))
-        keys = ("Esc back · q quit" if self.mode == "dive"
-                else "↑↓ or 1-9 select · Enter dive in · s sphere · n names · r replay · w watch · q quit")
-        body = Group(head, Text(""), grid, Text(""), chain, Text(keys, style="muted"))
+            held = [g.nodes[n].label for n in hero.nodes if self.topo.marks.get(n) == "frozen"]
+            if held:
+                chain.append(f"   held: {', '.join(held)} frozen", style=f"bold {FROZEN}")
+        if self.pending is not None:
+            keys = Text.assemble((self.pending[2], "warn"), ("   [y/n]", "head"))
+        elif self.message is not None and now - self.message[2] < 4.0:
+            keys = Text(self.message[0], style=self.message[1])
+        else:
+            keys = Text("Esc back · q quit" if self.mode == "dive"
+                        else "↑↓ or 1-9 select · Enter dive in · x freeze · m mode · s sphere · n names · r replay · "
+                             "w watch · q quit", style="muted")
+        body = Group(head, Text(""), grid, Text(""), chain, keys)
         title = Text.assemble((" CSL-Core Venom ", "brand"), ("· reach map ", "muted"))
         return Panel(body, title=title, title_align="left", box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))
 
@@ -401,10 +500,10 @@ class MapView:
 class MapRoom(MapView):
     """The map as a room (see venom/rooms.py)."""
 
-    def __init__(self, inv: Inventory, console, seed: Optional[str] = None) -> None:
+    def __init__(self, inv: Inventory, console, seed: Optional[str] = None, ws=None) -> None:
         from .. import VENOM_VERSION
 
-        super().__init__(inv, console.width, console.height, seed=seed or VENOM_VERSION)
+        super().__init__(inv, console.width, console.height, seed=seed or VENOM_VERSION, ws=ws)
 
     def frame(self, now: float, width: int, height: int = 0) -> Panel:  # type: ignore[override]
         return super().frame(now, width)

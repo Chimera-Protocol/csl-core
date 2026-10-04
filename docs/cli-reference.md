@@ -204,6 +204,8 @@ The reach map full screen. `--rescan` scans again first; `--once` prints one fra
 | `s` | the 3D globe; it turns the selected node to the front |
 | `n` | names on the map on or off |
 | `r` | replay the spread |
+| `x` | freeze the selected agent: every action blocked in any mode until `x` again; cuts its veins on the map |
+| `m` | switch the selected agent between log and block mode (block-mode agents wear a green ring) |
 | `w` | the live panel, on its live decisions (`f` there comes back to the full map) |
 | `q` | quit |
 

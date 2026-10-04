@@ -156,3 +156,89 @@ def test_ask_next_takes_one_key():
     assert rooms.ask_next(c, {"m": "reach map", "q": "quit"}, Keys([None, "m"])) == "m"
     assert rooms.ask_next(c, {"m": "reach map", "q": "quit"}, Keys(["enter"])) is None
     assert rooms.ask_next(c, {"m": "reach map", "q": "quit"}, Keys(["q"])) is None
+
+
+def _map_on(ws, monkeypatch):
+    from chimera_core.venom.watch import _inventory
+    from chimera_core.venom.workspace import Workspace
+
+    monkeypatch.chdir(ws)
+    w = Workspace(ws)
+    v = M.MapView(_inventory(w), 130, 40, ws=w)
+    v.spread0 -= 99
+    return v, w
+
+
+def _select(v, name):
+    v.sel = v.order.index(next(n for n in v.order if v.g.nodes[n].label == name))
+
+
+def test_freeze_on_the_map_stops_the_real_agent(ws, monkeypatch):
+    from chimera_core.venom.controls import Controls
+    from chimera_core.venom.observe import venom_guard
+
+    v, w = _map_on(ws, monkeypatch)
+    _select(v, "membership-bot")
+    v.handle("x")
+    assert v.pending and v.pending[2].startswith("Freeze membership-bot") and "no policy" not in v.pending[2]
+    text = render(v.frame(time.monotonic(), 130), width=130)
+    assert "[y/n]" in text
+    assert v.handle("q") and v.pending is None  # q answers the question (cancel); it does not quit
+    v.handle("x")
+    v.handle("y")
+    assert Controls(w).get("membership-bot").disabled
+    g = venom_guard("membership-bot", policy="policies/membership-bot.csl", mapping="policies/membership_bot_mapping.py")
+    r = g.verify("transfer_funds", {"amount": 5, "to_wallet": "w"})
+    assert not r.allowed and r.violated_rule_ids == ["__agent_disabled__"]  # the map's x is enforcement
+    node = next(n for n in v.order if v.g.nodes[n].label == "membership-bot")
+    assert v.topo.marks[node] == "frozen"
+    text = render(v.frame(time.monotonic(), 130), width=130)
+    assert "FROZEN" in text and "held: membership-bot frozen" in text and "frozen" in text.split("SELECTED")[1]
+    v.handle("x")  # unfreezing needs no question
+    assert not Controls(w).get("membership-bot").disabled and node not in v.topo.marks
+    assert g.verify("transfer_funds", {"amount": 5, "to_wallet": "w"}).allowed
+
+
+def test_mode_on_the_map(ws, monkeypatch):
+    from chimera_core.venom.controls import Controls
+
+    v, w = _map_on(ws, monkeypatch)
+    _select(v, "ingest-worker")
+    v.handle("m")
+    assert "BLOCK mode" in v.pending[2]
+    v.handle("n")
+    assert Controls(w).get("ingest-worker").mode == "log" and v.message[0] == "cancelled"
+    v.handle("m")
+    v.handle("y")
+    node = next(n for n in v.order if v.g.nodes[n].label == "ingest-worker")
+    assert Controls(w).get("ingest-worker").mode == "block" and v.topo.marks[node] == "block"
+    assert "block mode" in render(v.frame(time.monotonic(), 130), width=130).split("SELECTED")[1]
+
+
+def test_an_agent_without_a_policy_is_told_so(tmp_path, capsys, monkeypatch):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    run_cli(["venom", "--root", str(HOST_OPS), "--workspace", str(ws), "--no-anim"], capsys)
+    v, w = _map_on(ws, monkeypatch)
+    _select(v, "membership-bot")
+    v.handle("x")
+    assert "no policy guards it yet" in v.pending[2]
+    v.handle("y")
+    assert "from its first guarded call" in render(v.frame(time.monotonic(), 130), width=130)
+    v.sel = v.order.index(next(n for n in v.order if v.g.nodes[n].kind == "input"))
+    v.handle("x")
+    assert v.pending is None and "select an agent" in v.message[0]
+
+
+def test_the_panels_map_shows_the_same_marks(ws, monkeypatch):
+    from chimera_core.venom import watch as W
+    from chimera_core.venom.controls import Controls
+    from chimera_core.venom.workspace import Workspace
+
+    monkeypatch.chdir(ws)
+    w = Workspace(ws)
+    Controls(w).set_disabled("publisher", True)
+    p = W.ControlPanel(Controls(w), W.WatchModel(), W._inventory(w), w)
+    W.map_pane(p, p.model, p.inv, 60, 16)
+    node = next(a.id for a in p.inv.agents if a.display_name == "publisher")
+    assert p.topo.marks.get(node) == "frozen"

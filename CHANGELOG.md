@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- The map controls what it shows, as the live panel does: `x` freezes the selected agent (its
+  veins go cold, a chain through it is shown as held) and `m` switches it between log and block
+  mode (block-mode agents wear a green ring). Both ask first, act on the next tool call without a
+  restart, and say so when no policy guards the agent yet. The panel's own map shows the same marks.
+
 ## [0.6.6]
 
 ### Added

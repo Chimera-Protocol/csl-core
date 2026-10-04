@@ -213,6 +213,7 @@ class ControlPanel:
         self.map_on = False  # the live view shows the reach map instead of the decision stream
         self.go_map = False  # f: open the full map (a room, see venom/rooms.py)
         self.pane_zoom = 1.0  # the panel's map grows into the full map, and settles when it comes back
+        self.marks_at = 0.0  # when the map's frozen / block marks were last read
         self.topo = None
         self.topo_size: Optional[Tuple[int, int]] = None
 
@@ -493,13 +494,16 @@ class ControlPanel:
             self.message = (f"ALL agents → {mode.upper()} mode", "ok" if mode == "log" else "brand")
             return
         if action.startswith("mode_"):
+            self.marks_at = 0.0
             mode = action[5:]
             self.controls.set_mode(target, mode)
             self.message = (f"{target} → {mode.upper()} mode (next call, no restart)", "ok" if mode == "log" else "brand")
         elif action == "disable":
+            self.marks_at = 0.0
             self.controls.set_disabled(target, True)
             self.message = (f"{target} FROZEN: every action is blocked (x unfreezes)", "high")
         elif action == "enable":
+            self.marks_at = 0.0
             self.controls.set_disabled(target, False)
             self.message = (f"{target} unfrozen", "ok")
         elif action in ("disable_tool", "enable_tool"):
@@ -749,9 +753,20 @@ def map_pane(panel: "ControlPanel", model: WatchModel, inv: Inventory, cols: int
 
     if panel.topo is None or panel.topo_size != (cols, rows):
         panel.topo = Topo(build(inv), w=cols, h=rows, max_agents=12, seed=VENOM_VERSION)
-        panel.topo_size = (cols, rows)
+        panel.topo_size, panel.marks_at = (cols, rows), 0.0
     by_key = {agent_key(a): a for a in inv.agents}
     now = time.monotonic()
+    if now - panel.marks_at > 1.0:  # frozen and block-mode agents look as they do on the full map
+        from .bindings import Bindings
+        bound = set(Bindings(panel.ws).all()) if panel.ws is not None else set()
+        marks = {}
+        for k, a in by_key.items():
+            ctl = panel.controls.get(k)
+            if ctl.disabled:
+                marks[a.id] = "frozen"
+            elif ctl.mode == "block" and k in bound:
+                marks[a.id] = "block"
+        panel.topo.marks, panel.marks_at = marks, now
     pulses = []
     for rec in list(model.stream)[-60:]:
         age = now - rec.get("_seen", 0)
