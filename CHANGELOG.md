@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.6]
+
 ### Added
 - One flow. After `cslcore venom`, at a terminal, one key leads on: `m` the reach map (it grows
   out of one point), `s` the guided setup, `q` the shell. Scripts, pipes, `--json`, `--check` and
