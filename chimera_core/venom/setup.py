@@ -558,7 +558,8 @@ class Flow:
                  ("a", "draft it with your AI assistant"), ("s", "skip for now")]
         self.console.print(Padding(grid(*rows, label_width=2), (0, 0, 0, 4)))
         default = "1" if cands and cands[0][1] >= 1.0 else "t"
-        return self.choose("choice", [str(i) for i in range(1, len(cands) + 1)] + ["t", "w", "e", "a", "s"], default)
+        return self.choose(f"A key above (Enter: {default})", [str(i) for i in range(1, len(cands) + 1)] + ["t", "w", "e", "a", "s"],
+                           default)
 
     def _studio(self, a: Agent, st: Dict[str, Any], draft_path: Path, active_path: Path) -> None:
         """Open the studio on the agent's template draft; setup continues when it closes."""
@@ -1075,7 +1076,7 @@ class Flow:
     def home(self) -> Optional[int]:
         """Returns an exit code to stop, or None to start a new setup cycle."""
         self.console.print(self.home_panel())
-        pick = self.choose("choice", ["b", "s", "w", "m", "p", "o", "q"], "b")
+        pick = self.choose("Enter for the protection board, or a key above", ["b", "s", "w", "m", "p", "o", "q"], "b")
         if pick == "s":
             return None
         if pick == "b":
