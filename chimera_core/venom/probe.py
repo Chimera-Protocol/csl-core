@@ -467,9 +467,21 @@ def agent_python(project: Optional[str]) -> Tuple[str, str]:
     return sys.executable, "the Python running cslcore (no project environment found)"
 
 
+_IMPORTS_OK: set = set()  # (interpreter, module) found importable in this run: not asked again
+
+
 def can_import(python: str, module: str = "chimera_core.venom.observe", timeout: float = 20.0) -> Optional[bool]:
     """Whether `python` can import `module` (by default what a wired guard line imports, with its
     dependencies); None when the interpreter cannot be started at all."""
+    if (python, module) in _IMPORTS_OK:
+        return True
+    ok = _try_import(python, module, timeout)
+    if ok:
+        _IMPORTS_OK.add((python, module))
+    return ok
+
+
+def _try_import(python: str, module: str, timeout: float) -> Optional[bool]:
     try:
         res = subprocess.run([python, "-c", f"import {module}"], capture_output=True, timeout=timeout)
     except (OSError, subprocess.SubprocessError):
