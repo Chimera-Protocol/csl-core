@@ -215,6 +215,9 @@ class ControlPanel:
         self.pane_zoom = 1.0  # the panel's map grows into the full map, and settles when it comes back
         self.marks_at = 0.0  # when the map's frozen / block marks were last read
         self.guard_request: Optional[str] = None  # an agent to put under a guard (outside the screen)
+        self.limits_request: Optional[str] = None  # an agent whose limits change (outside the screen)
+        self.wire_request: Optional[str] = None  # an agent to wire (outside the screen)
+        self.rescan_request = False  # after unwiring: scan again, so every view shows it
         self.topo = None
         self.topo_size: Optional[Tuple[int, int]] = None
 
@@ -240,6 +243,10 @@ class ControlPanel:
             return True
         agent = next((a for a in self.inv.agents if agent_key(a) == key), None)
         return agent is None or agent.guard.status != "none"
+
+    def wired_here(self, key: str) -> bool:
+        """Whether `cslcore wire` (or the board) changed this agent's files, so it can be undone."""
+        return self.ws is not None and key in ((self.ws.load_state().get("wiring") or {}))
 
     def agents(self) -> List[str]:
         names = self.all_agents()
@@ -306,7 +313,8 @@ class ControlPanel:
             return [("↑↓", "agent"), ("e", "exempt agent from rule"), ("o", "open policy"), ("Esc", "back")]
         if self.focus == "rules":
             return [("↑↓", "rule"), ("Enter", "open"), ("Tab", "agents"), ("Esc", "back")]
-        out = [("↑↓", "select"), ("Enter", "tools"), ("m", "mode"), ("M", "all"), ("x", "freeze"), ("e", "exempt"),
+        out = [("↑↓", "select"), ("Enter", "tools"), ("l", "limits"), ("w", "wire"), ("m", "mode"), ("M", "all"),
+               ("x", "freeze"), ("e", "exempt"),
                ("/", "search"), ("Tab", "rules"), ("g", "stream" if self.map_on else "map"), ("f", "full map"), ("?", "help")]
         out.append(("Esc", "clear search") if self.query else ("q", "quit"))
         return out
@@ -433,6 +441,14 @@ class ControlPanel:
                 self._apply("enable", agent)
             else:
                 self.pending = ("disable", agent, f"Freeze {agent}? every action is blocked, in any mode, until x again")
+        elif agent and key == "l":
+            self.limits_request = agent
+        elif agent and key == "w":
+            if self.wired_here(agent):
+                self.pending = ("unwire", agent, f"Unwire {agent}? its files go back as they were and nothing "
+                                                 "decides its calls any more")
+            else:
+                self.wire_request = agent
         elif agent and key == "e":
             if self.controls.get(agent).exempt:
                 self.pending = ("unexempt_agent", agent, f"End the exemption of {agent}? its policy applies again")
@@ -506,6 +522,16 @@ class ControlPanel:
             return
         if action == "guard":
             self.guard_request = target
+            return
+        if action == "unwire":
+            from . import wiring
+            results = wiring.undo(self.ws, target)
+            kept = [p for _k, p, r in results if r == "skipped"]
+            self.wire_request = None
+            self.message = ((f"{target} unwired: its files are as they were; nothing decides its calls now", "warn")
+                            if not kept else (f"{target}: {len(kept)} file(s) changed since and were left as they are",
+                                              "high"))
+            self.rescan_request = True
             return
         if action.startswith("mode_"):
             self.marks_at = 0.0
@@ -655,6 +681,8 @@ def help_pane() -> Table:
     for k, v in (("↑ ↓", "move"), ("Enter", "open (an agent's tools, a rule's actions)"), ("Esc", "back one level"),
                  ("Tab", "switch between agents and rules"), ("/", "search agents"),
                  ("m / M", "switch the agent / ALL agents between LOG and BLOCK"),
+                 ("l", "the agent's limits: change them; its policy, mapping and check follow"),
+                 ("w", "wire the agent (the guard into its call path), or unwire it (its files as they were)"),
                  ("x", "freeze the agent (blocks every action in any mode); x again unfreezes it"),
                  ("e", "exempt the agent (or, in its tools, one tool); a reason is required"),
                  ("space", "in tools: disable or enable one tool"),
@@ -945,7 +973,11 @@ class WatchRoom:
                 self.grow0 = time.monotonic()  # the panel's map grows into the full map
             else:
                 self.exit_to = "map"
-        if self.panel.studio_request or self.panel.editor_request or self.panel.guard_request:
+        if getattr(self.panel, "rescan_request", False):
+            self.panel.rescan_request = False
+            self.external = self._rescan
+        if (self.panel.studio_request or self.panel.editor_request or self.panel.guard_request
+                or self.panel.limits_request or self.panel.wire_request):
             self.external = self._outside
         self.next_frame = self.next_poll = 0.0
         return ok
@@ -1000,13 +1032,76 @@ class WatchRoom:
             self.panel.message = (f"{key} is still not wired", "warn")
         Prompt.ask("  [muted]Enter: back to the live panel[/muted]", default="", show_default=False, console=self.console)
 
+    def _rescan(self) -> None:
+        from .wire_cmd import rescan, scan_probe
+
+        _probe, root = scan_probe(self.args, self.ws)
+        rescan(self.args, self.console, self.ws, root)
+        self._follow_scan()
+
+    def _follow_scan(self) -> None:
+        self.inv = _inventory(self.ws)
+        self.panel.inv = self.inv
+        self.panel.topo = None  # the map follows the new scan
+        self.states = _states(self.inv, self.probe)
+        self.next_frame = 0.0
+
+    def _limits_of(self, key: str, wire_only: bool = False) -> None:
+        """l: the agent's limits, and the policy, mapping, wiring and check that follow (the board's
+        loop); w: only its wiring. Running agents take the new policy on their next call."""
+        from rich.prompt import Prompt
+
+        from . import board as B
+        from .wire_cmd import rescan, scan_probe, show_plan
+
+        agent = next((a for a in (self.inv.agents if self.inv else []) if agent_key(a) == key), None)
+        if agent is None:
+            self.panel.message = (f"{key} is not in the last scan", "warn")
+            return
+        ui = B.TerminalUI(self.console)
+        if not wire_only:
+            ok = B.protect(ui, self.console, self.args, self.ws, agent)
+            self.panel.message = ((f"{key}: new limits active; running agents use them from their next call", "ok") if ok
+                                  else (f"{key}: the limits are not active (see above)", "warn"))
+        else:
+            from . import wiring
+            from .bindings import Bindings
+
+            if Bindings(self.ws).get(key) is None:
+                self.console.print(f"  [warn]{key} has no policy yet: l sets its limits and makes one[/warn]")
+                self.panel.message = (f"{key} has no policy yet: press l", "warn")
+            else:
+                plan = B.wire_plan(self.args, self.ws, agent)
+                if plan.kind == "done":
+                    self.panel.message = (f"{key}: {plan.note}", "ok")
+                elif plan.kind == "manual" or not plan.changes:
+                    self.console.print(Text("  " + (plan.note or "nothing to change"), style="warn"))
+                    self.panel.message = (f"{key} cannot be wired automatically (see .csl/venom/wiring.md)", "warn")
+                else:
+                    show_plan(self.console, plan)
+                    if ui.ask(f"Wire {key}?", True):
+                        wiring.apply(plan, self.ws)
+                        _probe, root = scan_probe(self.args, self.ws)
+                        rescan(self.args, self.console, self.ws, root)
+                        self.panel.message = (f"{key} wired: its calls go through the guard", "ok")
+                    else:
+                        self.panel.message = ("not wired", "muted")
+        self._follow_scan()
+        Prompt.ask("  [muted]Enter: back to the live panel[/muted]", default="", show_default=False, console=self.console)
+
     def _outside(self) -> None:
-        """The studio, $EDITOR and putting an agent under a guard run outside the screen; the panel
-        shows what came of it."""
+        """The studio, $EDITOR, limits, wiring and putting an agent under a guard run outside the
+        screen; the panel shows what came of it."""
         panel, ws = self.panel, self.ws
         if panel.guard_request:
             key, panel.guard_request = panel.guard_request, None
             self._guard_it(key)
+        if panel.limits_request:
+            key, panel.limits_request = panel.limits_request, None
+            self._limits_of(key)
+        if panel.wire_request:
+            key, panel.wire_request = panel.wire_request, None
+            self._limits_of(key, wire_only=True)
         if panel.studio_request:
             path, agent = panel.studio_request
             panel.studio_request = None

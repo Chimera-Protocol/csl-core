@@ -141,36 +141,24 @@ def guard_one(console, args, ws, agent) -> bool:
     that passes the fail-open test), then the wiring change. True when the guard is in its call
     path afterwards. Used by the map and the live panel when someone wants to stop an agent that
     nothing guards yet."""
-    from .policy.binder import bind
-    from .policy.draft import agent_key, draft_for
-    from .policy.gate import verify_text
-    from .policy.workbench import confirm, highlight_csl
+    from . import board as B
+    from .policy import limits as L
+    from .policy.draft import agent_key
+    from .policy.workbench import confirm
 
     key = agent_key(agent)
     console.print(Text.assemble(("\n  ", ""), (agent.display_name, "head"), ("  nothing guards it yet", "warn")))
     if key not in guarded_keys(ws):
-        draft = draft_for(agent, [e for e in ws.load_exemptions() if e.status == "approved"])
-        gate = verify_text(draft.text)
-        if not gate.ok:
-            issue = gate.issues[0].message if gate.issues else gate.stage
-            console.print(f"  [high]the drafted policy does not pass the check ({issue}); open it with "
-                          f"cslcore studio --agent {key}[/high]")
-            return False
-        console.print(Text("  POLICY   drafted from its tools, checked with Z3", style="label"))
-        console.print(highlight_csl(draft.text))
-        for why in draft.skipped:
-            console.print(Text("    " + why, style="muted"))
-        if not confirm(console, f"Activate this policy for {key}?", False, default=True):
+        lim = L.defaults(agent, B.scope_of(args, ws, agent), L.load(ws, key))
+        console.print(Text("  LIMITS   the standard ones for what its tools do (change them later with l, or "
+                           f"cslcore limits --agent {key})", style="label"))
+        B.show_limits(console, agent, lim)
+        if not confirm(console, f"Activate a policy made from these limits for {key}?", False, default=True):
             console.print("  [muted]nothing changed[/muted]")
             return False
-        path = ws.policies / f"{key}.csl"
-        ws.write_text(path, draft.text)
-        plan = bind(ws, path, [agent])
-        result = plan.results[0] if plan.results else None
-        if result is None or not result.ok:
-            console.print(f"  [high]not bound: {result.message if result else 'no result'}[/high]")
+        L.save(ws, lim)
+        if B.make_policy(console, ws, agent, lim) is None:
             return False
-        console.print(Text.assemble(("  ✓ active ", "ok"), (ws.rel(path), "head"), (f"  mapping: {result.message}", "muted")))
     probe, root = scan_probe(args, ws)
     plan = wiring.plan_for(agent, key, ws, probe)
     if plan.kind == "manual":

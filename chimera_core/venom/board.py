@@ -214,6 +214,29 @@ def table(rows: List[Row], width: int = 120) -> Table:
     return t
 
 
+class TerminalUI:
+    """Questions at a terminal, for the board outside setup (the live panel, the map)."""
+
+    def __init__(self, console) -> None:
+        self.console = console
+
+    def ask(self, question: str, default: bool) -> bool:
+        from rich.markup import escape
+
+        from .policy.workbench import confirm
+        return confirm(self.console, escape(question), False, default=default)
+
+    def choose(self, question: str, choices: List[str], default: str) -> str:
+        from rich.markup import escape
+        from rich.prompt import Prompt
+        return Prompt.ask(f"  {escape(question)}", choices=choices, default=default, console=self.console)
+
+    def text_input(self, question: str, default: str = "") -> str:
+        from rich.markup import escape
+        from rich.prompt import Prompt
+        return Prompt.ask(f"  {escape(question)}", default=default, show_default=bool(default), console=self.console)
+
+
 # ---------------------------------------------------------------------------
 # asking for limits
 # ---------------------------------------------------------------------------
