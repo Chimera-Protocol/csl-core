@@ -17,9 +17,9 @@ import getpass
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
-from .workspace import Workspace
+from .workspace import StateUnreadable, Workspace
 
 MODES = ("log", "block")
 NEW_ACTIVATION_MODE = "block"  # an agent whose first policy is activated starts here, unless a mode was chosen
@@ -31,12 +31,13 @@ def mode_on_activation(ws: Workspace, agent: str, first: bool, chosen: Optional[
     block, as the agent's own mode. An agent that already had a policy keeps the mode it has, so
     agents running in log mode are never switched by a later activation."""
     controls = Controls(ws)
-    has_own = isinstance((ws.load_state().get("modes") or {}).get(agent), dict)
-    mode = chosen if chosen in MODES else (NEW_ACTIVATION_MODE if first and not has_own else None)
-    if mode is None:
-        return controls.get(agent).mode
-    if not ws.plan_only and (not has_own or controls.get(agent).mode != mode):
-        controls.set_mode(agent, mode)
+    with ws.state_lock():
+        has_own = isinstance((ws.load_state().get("modes") or {}).get(agent), dict)
+        mode = chosen if chosen in MODES else (NEW_ACTIVATION_MODE if first and not has_own else None)
+        if mode is None:
+            return controls.get(agent).mode
+        if not ws.plan_only and (not has_own or controls.get(agent).mode != mode):
+            controls.set_mode(agent, mode)
     return mode
 
 
@@ -96,9 +97,8 @@ class Controls:
     def set_mode(self, agent: str, mode: str) -> None:
         if mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
-        state = self.ws.load_state()
-        state.setdefault("modes", {})[agent] = {"mode": mode, "since": _now()}
-        self.ws.save_state(state)
+        with self.ws.transaction() as state:
+            state.setdefault("modes", {})[agent] = {"mode": mode, "since": _now()}
         self._audit(agent, f"mode {mode}")
 
     def default_mode(self) -> Optional[str]:
@@ -109,9 +109,8 @@ class Controls:
         """Workspace default for agents without their own mode; per-agent modes are kept."""
         if mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
-        state = self.ws.load_state()
-        state.setdefault("defaults", {})["mode"] = mode
-        self.ws.save_state(state)
+        with self.ws.transaction() as state:
+            state.setdefault("defaults", {})["mode"] = mode
         self._audit("*", f"default mode {mode}")
 
     def set_all(self, mode: str) -> List[str]:
@@ -119,41 +118,37 @@ class Controls:
         Returns the agents whose explicit mode changed."""
         if mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
-        state = self.ws.load_state()
-        changed = [k for k, v in (state.get("modes") or {}).items() if isinstance(v, dict) and v.get("mode") != mode]
-        state.setdefault("defaults", {})["mode"] = mode
-        state["modes"] = {}
-        self.ws.save_state(state)
+        with self.ws.transaction() as state:
+            changed = [k for k, v in (state.get("modes") or {}).items() if isinstance(v, dict) and v.get("mode") != mode]
+            state.setdefault("defaults", {})["mode"] = mode
+            state["modes"] = {}
         self._audit("*", f"mode {mode} (all)", ", ".join(changed))
         return changed
 
     def set_many(self, agents: List[str], mode: str) -> None:
         if mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
-        state = self.ws.load_state()
-        for a in agents:
-            state.setdefault("modes", {})[a] = {"mode": mode, "since": _now()}
-        self.ws.save_state(state)
+        with self.ws.transaction() as state:
+            for a in agents:
+                state.setdefault("modes", {})[a] = {"mode": mode, "since": _now()}
         for a in agents:
             self._audit(a, f"mode {mode}")
 
     def set_disabled(self, agent: str, disabled: bool) -> None:
-        state = self.ws.load_state()
-        c = state.setdefault("controls", {}).setdefault(agent, {})
-        c["disabled"] = disabled
-        c["at"] = _now()
-        self.ws.save_state(state)
+        with self.ws.transaction() as state:
+            c = state.setdefault("controls", {}).setdefault(agent, {})
+            c["disabled"] = disabled
+            c["at"] = _now()
         self._audit(agent, "disable agent" if disabled else "enable agent")
 
     def set_exempt(self, agent: str, exempt: bool, reason: str = "") -> None:
         """Agent-wide exemption from the panel. Recorded in exemptions.yaml and the audit log."""
         from .model import Exemption
 
-        state = self.ws.load_state()
-        c = state.setdefault("controls", {}).setdefault(agent, {})
-        c["exempt"] = exempt
-        c["at"] = _now()
-        self.ws.save_state(state)
+        with self.ws.transaction() as state:
+            c = state.setdefault("controls", {}).setdefault(agent, {})
+            c["exempt"] = exempt
+            c["at"] = _now()
         items = [e for e in self.ws.load_exemptions() if not (e.scope == "agent" and e.agent == agent)]
         if exempt:
             items.append(Exemption(agent=agent, scope="agent", reason=reason, approved_by=_who(), status="approved"))
@@ -161,13 +156,12 @@ class Controls:
         self._audit(agent, "exempt agent" if exempt else "end exemption", reason)
 
     def set_tool(self, agent: str, tool: str, disabled: bool) -> None:
-        state = self.ws.load_state()
-        c = state.setdefault("controls", {}).setdefault(agent, {})
-        tools = set(c.get("disabled_tools") or [])
-        (tools.add if disabled else tools.discard)(tool)
-        c["disabled_tools"] = sorted(tools)
-        c["at"] = _now()
-        self.ws.save_state(state)
+        with self.ws.transaction() as state:
+            c = state.setdefault("controls", {}).setdefault(agent, {})
+            tools = set(c.get("disabled_tools") or [])
+            (tools.add if disabled else tools.discard)(tool)
+            c["disabled_tools"] = sorted(tools)
+            c["at"] = _now()
         self._audit(agent, "disable tool" if disabled else "enable tool", tool)
 
     def audit_tail(self, n: int = 20) -> List[Dict]:
@@ -185,15 +179,32 @@ class LiveControls:
     """Cached view for a running guard: re-reads state.json only when it changed."""
 
     def __init__(self, ws: Workspace, agent: str, default_mode: str) -> None:
+        import threading
+
         self.ws = ws
         self.agent = agent
-        self.default_mode = default_mode
-        self._mtime: Optional[float] = -1.0
-        self.current = AgentControl(default_mode)
+        self.default_mode = default_mode  # what an agent with no mode set anywhere runs in
+        self._version: Any = object()  # never equal to a real version: the first call reads
+        self.current: Optional[AgentControl] = None  # nothing known yet
+        self._lock = threading.Lock()
 
     def refresh(self) -> AgentControl:
-        mtime = self.ws.state_mtime()
-        if mtime != self._mtime:
-            self._mtime = mtime
-            self.current = Controls._from_state(self.ws.load_state(), self.agent, self.default_mode)
-        return self.current
+        """The agent's control (mode, freeze, tool switches, exemption) for this call, fail closed.
+
+        Tool calls run in parallel threads (LangGraph's ToolNode, async agents): the state is read
+        and only then marked as seen, under a lock, so no call gets a control before it was read.
+        A state that cannot be read keeps the last control read; with none read yet, the call
+        gets block mode with the agent frozen. A permissive default is never handed out."""
+        with self._lock:
+            version = self.ws.state_mtime()
+            if version != self._version or self.current is None:
+                try:
+                    state = self.ws.load_state_strict()
+                except StateUnreadable:
+                    state = None
+                if state is not None:
+                    self.current = Controls._from_state(state, self.agent, self.default_mode)
+                    self._version = version
+                elif self.current is None:
+                    return AgentControl("block", disabled=True)  # nothing known: stop (and read again next call)
+            return self.current

@@ -48,7 +48,9 @@ def compile_guard(text: str):
     from ...language.parser import parse_csl
     from ...runtime import ChimeraGuard, RuntimeConfig
 
-    with contextlib.redirect_stdout(io.StringIO()):
+    from ..observe import COMPILE_LOCK
+
+    with COMPILE_LOCK, contextlib.redirect_stdout(io.StringIO()):  # Z3 takes one thread at a time
         compiled = CSLCompiler().compile(parse_csl(text))
     return ChimeraGuard(compiled, RuntimeConfig(raise_on_block=False))
 

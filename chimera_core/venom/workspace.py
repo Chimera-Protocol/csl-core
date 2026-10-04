@@ -20,9 +20,13 @@ file changed after the diff was shown.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import os
+import secrets
+import threading
+from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -66,9 +70,91 @@ def scope_root_paths(roots: List[str], near: str) -> List[str]:
     return [r if os.path.isabs(r) else str((here / r).resolve()) for r in roots]
 
 
+class StateUnreadable(Exception):
+    """state.json exists but cannot be read or parsed (a guard then keeps what it knew)."""
+
+
+class LockTimeout(Exception):
+    """The state lock was not free within the time asked for."""
+
+
+def _lock_file(fh, path: Path, timeout: Optional[float]) -> object:
+    """Take the lock between writers, on any OS; returns what _unlock_file needs.
+
+    POSIX: flock. Windows: msvcrt.locking on the first byte. Neither: a lock file made with
+    O_CREAT | O_EXCL (a stale one, older than a minute, is taken over). The state needs a local
+    disk: flock is not reliable on NFS and some container volumes."""
+    import time as _time
+
+    deadline = None if timeout is None else _time.monotonic() + timeout
+    try:
+        import fcntl
+    except ImportError:
+        fcntl = None
+    if fcntl is not None:
+        while True:
+            try:
+                fcntl.flock(fh.fileno(), fcntl.LOCK_EX | (fcntl.LOCK_NB if deadline is not None else 0))
+                return ("flock", fh)
+            except BlockingIOError:
+                if _time.monotonic() >= deadline:
+                    raise LockTimeout(str(path))
+                _time.sleep(0.01)
+    try:
+        import msvcrt
+    except ImportError:
+        msvcrt = None
+    if msvcrt is not None:
+        while True:
+            try:
+                fh.seek(0)
+                msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+                return ("msvcrt", fh)
+            except OSError:
+                if deadline is not None and _time.monotonic() >= deadline:
+                    raise LockTimeout(str(path))
+                _time.sleep(0.01)
+    marker = path.with_suffix(".held")
+    while True:
+        try:
+            fd = os.open(str(marker), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(fd, str(os.getpid()).encode())
+            os.close(fd)
+            return ("file", marker)
+        except FileExistsError:
+            try:
+                if _time.time() - marker.stat().st_mtime > 60:
+                    marker.unlink()  # its writer is gone
+                    continue
+            except OSError:
+                continue
+            if deadline is not None and _time.monotonic() >= deadline:
+                raise LockTimeout(str(path))
+            _time.sleep(0.01)
+
+
+def _unlock_file(held) -> None:
+    kind, obj = held
+    if kind == "flock":
+        import fcntl
+        fcntl.flock(obj.fileno(), fcntl.LOCK_UN)
+    elif kind == "msvcrt":
+        import msvcrt
+        obj.seek(0)
+        msvcrt.locking(obj.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        try:
+            obj.unlink()
+        except OSError:
+            pass
+
+
 class Workspace:
     def __init__(self, root: str | os.PathLike, plan_only: bool = False) -> None:
         self.root = Path(root).resolve()
+        self._loaded: Dict[int, Tuple[Dict[str, Any], Dict[str, Any]]] = {}
+        self._thread_lock = threading.RLock()
+        self._lock_depth = 0
         self.plan_only = plan_only
         self.planned: List[str] = []  # writes skipped because of --plan-only
         self._appendable: set = set()  # log files already checked to be inside the workspace
@@ -117,9 +203,18 @@ class Workspace:
             return None
         path.parent.mkdir(parents=True, exist_ok=True)
         self._ignore_csl(path)
-        tmp = path.with_suffix(path.suffix + ".tmp")
-        tmp.write_text(text, encoding="utf-8")
-        tmp.replace(path)
+        # a temp file of its own (process, thread, random): two writers never share one, and the
+        # rename makes the new content appear whole or not at all
+        tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.{secrets.token_hex(4)}.tmp")
+        try:
+            with open(tmp, "w", encoding="utf-8") as fh:
+                fh.write(text)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp, path)
+        finally:
+            if tmp.exists():
+                tmp.unlink()
         if path.parent == self.policies and path.suffix in (".csl", ".py"):
             self.bump()
         return path
@@ -204,9 +299,80 @@ class Workspace:
     # state --------------------------------------------------------------------
     def load_state(self) -> Dict[str, Any]:
         try:
-            return json.loads(self.state_path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
+            state = self.load_state_strict()
+        except StateUnreadable:
             return {}
+        self._loaded[id(state)] = (state, copy.deepcopy(state))  # what this caller started from (save_state merges)
+        if len(self._loaded) > 256:
+            self._loaded.pop(next(iter(self._loaded)))
+        return state
+
+    def load_state_strict(self) -> Dict[str, Any]:
+        """The state as it is on disk; {} when there is none yet; StateUnreadable when it cannot be
+        read or parsed. Guards use this: an unreadable state never reads as "nothing set"."""
+        try:
+            text = self.state_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            return {}
+        except OSError as e:
+            raise StateUnreadable(str(e)) from e
+        try:
+            data = json.loads(text)
+        except ValueError as e:
+            raise StateUnreadable(str(e)) from e
+        if not isinstance(data, dict):
+            raise StateUnreadable("not an object")
+        return data
+
+    @contextmanager
+    def state_lock(self, timeout: Optional[float] = None):
+        """One writer at a time for the workspace's state files, across threads and processes.
+        Only writers take it: a guard reads without it (writes are atomic renames). `timeout`:
+        give up with LockTimeout instead of waiting (a tool call never waits on the panel)."""
+        if not self._thread_lock.acquire(timeout=-1 if timeout is None else timeout):
+            raise LockTimeout(str(self.venom / "state.lock"))
+        try:
+            if self._lock_depth:
+                self._lock_depth += 1
+                try:
+                    yield
+                finally:
+                    self._lock_depth -= 1
+                return
+            fh = held = None
+            if not self.plan_only:
+                lock = self.venom / "state.lock"
+                lock.parent.mkdir(parents=True, exist_ok=True)
+                self._ignore_csl(lock)
+                fh = open(lock, "a+")
+                try:
+                    held = _lock_file(fh, lock, timeout)
+                except BaseException:
+                    fh.close()
+                    raise
+            self._lock_depth = 1
+            try:
+                yield
+            finally:
+                self._lock_depth = 0
+                if held is not None:
+                    _unlock_file(held)
+                if fh is not None:
+                    fh.close()
+        finally:
+            self._thread_lock.release()
+
+    @contextmanager
+    def transaction(self):
+        """Read, change and write state.json as one step: the controls (modes, freezes, tool
+        switches, exemptions) are written this way, so no concurrent write can undo them."""
+        with self.state_lock():
+            try:
+                state = self.load_state_strict()
+            except StateUnreadable:
+                state = {}
+            yield state
+            self._write_state(state)
 
     @staticmethod
     def mtime(path) -> Optional[float]:
@@ -215,13 +381,36 @@ class Workspace:
         except OSError:
             return None
 
-    def state_mtime(self) -> Optional[float]:
+    def state_mtime(self):
+        """A version of state.json: changes with every write (time, inode, size), so a guard never
+        misses one, also where file times are coarse (an atomic rename always makes a new inode)."""
         try:
-            return os.stat(self._state_file).st_mtime_ns / 1e9
+            st = os.stat(self._state_file)
         except OSError:
             return None
+        return (st.st_mtime_ns, st.st_ino, st.st_size)
 
     def save_state(self, state: Dict[str, Any]) -> None:
+        """Write the state; a key this caller did not change keeps what is on disk now, so a write
+        that read the state earlier never undoes a concurrent one (a freeze, a mode, a limit)."""
+        entry = self._loaded.pop(id(state), None)
+        base = entry[1] if entry is not None and entry[0] is state else None
+        with self.state_lock():
+            if base is not None:
+                try:
+                    disk = self.load_state_strict()
+                except StateUnreadable:
+                    disk = None
+                if disk is not None:
+                    for k in set(disk) | set(state):
+                        if state.get(k) == base.get(k) and disk.get(k) != base.get(k):
+                            if k in disk:
+                                state[k] = copy.deepcopy(disk[k])
+                            else:
+                                state.pop(k, None)
+            self._write_state(state)
+
+    def _write_state(self, state: Dict[str, Any]) -> None:
         self.write_text(self.state_path, json.dumps(state, indent=2, sort_keys=True) + "\n")
 
     def bump(self) -> None:
@@ -233,9 +422,8 @@ class Workspace:
         self.save_state(state)
 
     def update_state(self, **changes: Any) -> Dict[str, Any]:
-        state = self.load_state()
-        state.update(changes)
-        self.save_state(state)
+        with self.transaction() as state:
+            state.update(changes)
         return state
 
     # policies -------------------------------------------------------------------

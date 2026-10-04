@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import re
+import threading
 import time
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
@@ -119,10 +120,15 @@ class ApprovalPending(str):
     def __new__(cls, tool: str, request_id: Optional[str] = None) -> "ApprovalPending":
         from .approvals import TTL
 
-        text = tool if request_id is None else (
-            f"CSL-Core: {tool} was not run. It needs a person's approval (request {request_id}). "
-            f"Approve it in cslcore watch (key a); then the same call with the same arguments runs "
-            f"once within {TTL // 60} minutes.")
+        if request_id is None:
+            text = tool
+        elif not request_id:
+            text = (f"CSL-Core: {tool} was not run. It needs a person's approval, and the request could not be "
+                    "recorded just now (the workspace was busy); try the call again in a moment.")
+        else:
+            text = (f"CSL-Core: {tool} was not run. It needs a person's approval (request {request_id}). "
+                    f"Approve it in cslcore watch (key a); then the same call with the same arguments runs "
+                    f"once within {TTL // 60} minutes.")
         obj = super().__new__(cls, text)
         obj.tool, obj.request_id = (tool, request_id) if request_id is not None else ("", "")
         return obj
@@ -148,6 +154,9 @@ class VenomGuard:
         self._state_mtime = workspace.state_mtime() if workspace is not None else None
         self._policy_mtime = workspace.mtime(policy_path) if workspace is not None and policy_path is not None else None
         self._mapping_mtime = workspace.mtime(mapping_path) if workspace is not None and mapping_path is not None else None
+        import threading
+
+        self._reload_lock = threading.Lock()
         self._install(compiled)
 
     def _install(self, compiled) -> None:
@@ -181,6 +190,10 @@ class VenomGuard:
         self._install(compiled)
 
     def _reload_if_changed(self) -> None:
+        with self._reload_lock:  # parallel tool calls: one reload, never a half-installed policy
+            self._reload_unlocked()
+
+    def _reload_unlocked(self) -> None:
         """Pick up a policy changed by `cslcore policy activate` or the panel; keep the old one if the new one fails.
 
         Venom's own changes bump state.json, so one stat per call notices them at once; files
@@ -387,6 +400,11 @@ class VenomGuard:
         return wrap
 
 
+# Z3 (used while compiling a policy) is not safe to run from several threads at once: guards that
+# compile or reload in parallel tool calls take turns. Deciding a call does not use Z3.
+COMPILE_LOCK = threading.Lock()
+
+
 def _compile_quiet(text: str):
     import contextlib
     import io
@@ -394,7 +412,7 @@ def _compile_quiet(text: str):
     from ..language.compiler import CSLCompiler
     from ..language.parser import parse_csl
 
-    with contextlib.redirect_stdout(io.StringIO()):
+    with COMPILE_LOCK, contextlib.redirect_stdout(io.StringIO()):
         return CSLCompiler().compile(parse_csl(text))
 
 
@@ -447,7 +465,7 @@ def venom_guard(agent_id: str, *, policy: Optional[str] = None, mapping: Optiona
         raise ValueError("pass both policy and mapping, or neither to use the agent's binding")
     policy_path = (ws.root / policy) if not Path(policy).is_absolute() else Path(policy)
     mapping_path = (ws.root / mapping) if not Path(mapping).is_absolute() else Path(mapping)
-    with contextlib.redirect_stdout(io.StringIO()):  # the compiler reports progress on stdout
+    with COMPILE_LOCK, contextlib.redirect_stdout(io.StringIO()):  # the compiler reports progress on stdout
         compiled = load_guard(str(policy_path)).constitution
     module = ws.load_module(mapping_path)
     controls = LiveControls(ws, agent_id, mode or "log")

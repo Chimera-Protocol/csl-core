@@ -20,7 +20,10 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
+from .workspace import LockTimeout
+
 TTL = 600  # seconds an approval stays usable
+CALL_WAIT = 0.5  # seconds a tool call waits for the state lock at most (then: not approved, stopped)
 KEEP = timedelta(days=1)  # decided or stale requests are forgotten after this
 
 
@@ -57,34 +60,51 @@ class Approvals:
 
     # the agent's side ------------------------------------------------------------------
     def request(self, agent: str, tool: str, args: Dict[str, Any], shown: Dict[str, Any], rules: List[str]) -> str:
-        """Record a request (or find the one already waiting for the same call); its id."""
-        key = call_key(agent, tool, args)
-        data = self._load()
-        for rid, r in data.items():
-            if r.get("key") == key and r.get("status") == "pending":
-                return rid
-        rid = secrets.token_hex(3)
-        data[rid] = {"agent": agent, "tool": tool, "key": key, "shown": shown, "rules": rules,
-                     "at": _now().isoformat(timespec="seconds"), "status": "pending"}
-        self._save(data)
-        return rid
+        """Record a request (or find the one already waiting for the same call); its id, or "" when
+        the workspace was busy for longer than a tool call waits (the call still does not run)."""
+        try:
+            lock = self.ws.state_lock(timeout=CALL_WAIT)
+            lock.__enter__()
+        except LockTimeout:
+            return ""
+        try:
+            key = call_key(agent, tool, args)
+            data = self._load()
+            for rid, r in data.items():
+                if r.get("key") == key and r.get("status") == "pending":
+                    return rid
+            rid = secrets.token_hex(3)
+            data[rid] = {"agent": agent, "tool": tool, "key": key, "shown": shown, "rules": rules,
+                         "at": _now().isoformat(timespec="seconds"), "status": "pending"}
+            self._save(data)
+            return rid
+        finally:
+            lock.__exit__(None, None, None)
 
     def consume(self, agent: str, tool: str, args: Dict[str, Any]) -> Optional[str]:
         """An approval for exactly this call, approved less than TTL seconds ago and not used yet:
         mark it used and return its id. Anything else: None."""
-        key = call_key(agent, tool, args)
-        data = self._load()
-        for rid, r in data.items():
-            if r.get("key") != key or r.get("status") != "approved":
-                continue
-            at = _when(r.get("decided_at"))
-            if at is None or _now() - at > timedelta(seconds=TTL):
-                r["status"] = "expired"
-                continue
-            r["status"], r["used_at"] = "used", _now().isoformat(timespec="seconds")
-            self._save(data)
-            return rid
-        return None
+        try:
+            lock = self.ws.state_lock(timeout=CALL_WAIT)  # an approval is used once, across processes
+            lock.__enter__()
+        except LockTimeout:
+            return None  # busy: not approved this time (the call stops, it never waits)
+        try:
+            key = call_key(agent, tool, args)
+            data = self._load()
+            for rid, r in data.items():
+                if r.get("key") != key or r.get("status") != "approved":
+                    continue
+                at = _when(r.get("decided_at"))
+                if at is None or _now() - at > timedelta(seconds=TTL):
+                    r["status"] = "expired"
+                    continue
+                r["status"], r["used_at"] = "used", _now().isoformat(timespec="seconds")
+                self._save(data)
+                return rid
+            return None
+        finally:
+            lock.__exit__(None, None, None)
 
     # the operator's side ---------------------------------------------------------------
     def pending(self) -> List[Dict[str, Any]]:
@@ -95,14 +115,15 @@ class Approvals:
         return sorted(out, key=lambda r: r.get("at", ""))
 
     def decide(self, rid: str, approve: bool, by: str = "") -> bool:
-        data = self._load()
-        r = data.get(rid)
-        if not r or r.get("status") != "pending":
-            return False
-        r["status"] = "approved" if approve else "denied"
-        r["decided_at"], r["by"] = _now().isoformat(timespec="seconds"), by
-        self._save(data)
-        return True
+        with self.ws.state_lock():  # one at a time, across processes: an approval is used once
+            data = self._load()
+            r = data.get(rid)
+            if not r or r.get("status") != "pending":
+                return False
+            r["status"] = "approved" if approve else "denied"
+            r["decided_at"], r["by"] = _now().isoformat(timespec="seconds"), by
+            self._save(data)
+            return True
 
 
 def _when(iso: Any) -> Optional[datetime]:
