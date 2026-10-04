@@ -214,7 +214,7 @@ def cmd_apply(args) -> int:
     except LimitsFileError as e:
         console.print(f"  [high]{e}[/high]")
         return EXIT_USAGE
-    agents = _agents(args, console, ws, root)
+    agents = _agents(args, console, ws, Path(args.root).resolve() if getattr(args, "root", None) else root)
     checking = bool(getattr(args, "check", False))
     plan: List[Tuple[Agent, str, L.Limits, str]] = []
     try:
@@ -222,7 +222,7 @@ def cmd_apply(args) -> int:
             agent = _match(agents, name)
             if agent is None:
                 known = ", ".join(sorted(agent_key(a) for a in agents if a.tools)) or "none"
-                raise LimitsFileError(f"[{name}]: no agent by that name in {root} (its agents: {known})")
+                raise LimitsFileError(f"[{name}]: no agent by that name (the scanned agents: {known})")
             from .board import scope_of
             key = agent_key(agent)
             lim = limits_from(section, agent, key, scope_of(args, ws, agent), root)
@@ -335,7 +335,7 @@ def _init(args, console, ws, path: Path) -> int:
         console.print(f"  [warn]{path} exists; edit it, or pass --force to write it again[/warn]")
         return EXIT_USAGE
     root = path.parent
-    agents = _agents(args, console, ws, root)
+    agents = _agents(args, console, ws, Path(args.root).resolve() if getattr(args, "root", None) else root)
     rows = []
     for a in sorted((a for a in agents if a.tools), key=lambda a: agent_key(a)):
         key = agent_key(a)

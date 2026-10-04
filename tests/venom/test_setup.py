@@ -39,8 +39,9 @@ def test_b15_scripted_end_to_end(tmp_path, capsys):
 
 
 def test_block_default_never_switches_agents_already_in_log(tmp_path, capsys):
-    """Block is where a first activation starts; an agent already running in log mode keeps it when
-    setup runs again or its limits change."""
+    """Block is where a first activation starts; an agent already running in log mode (a 0.6.8
+    workspace: one default mode, log, and no mode per agent) keeps it when setup runs again, its
+    limits change or a repository file is applied."""
     rc, out, ws = _setup(tmp_path, capsys, "--yes", "--activate", "--mode", "log")
     state = json.loads((ws / ".csl/venom/state.json").read_text())
     assert state["defaults"]["mode"] == "log" and not state.get("modes")
@@ -50,6 +51,10 @@ def test_block_default_never_switches_agents_already_in_log(tmp_path, capsys):
     rc, out, _ = run_cli(["limits", "--agent", "membership-bot", "--set", "transfer_funds=200..900", "--yes",
                           "--root", str(HOST_OPS), "--workspace", str(ws)], capsys)
     assert rc == 0 and "✓ active" in out
+    (tmp_path / "csl-limits.ini").write_text("[publisher]\npost_to_page = block\n")  # a repository file, no mode
+    rc, out, _ = run_cli(["apply", "--file", str(tmp_path / "csl-limits.ini"), "--yes", "--workspace", str(ws),
+                          "--root", str(HOST_OPS), "--no-anim"], capsys)
+    assert rc == 0 and "publisher mode log" in " ".join(out.split()), out
     from chimera_core.venom.controls import Controls
     from chimera_core.venom.workspace import Workspace
     c = Controls(Workspace(ws))

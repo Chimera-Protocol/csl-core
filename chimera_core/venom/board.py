@@ -49,6 +49,7 @@ class Row:
     mode: str = "log"
     frozen: bool = False
     check: str = ""  # ok | failed | "" (not run for the active policy)
+    skipped: bool = False  # the operator chose to leave it untouched on the board
 
     @property
     def protected(self) -> bool:
@@ -65,6 +66,8 @@ class Row:
     def state(self) -> Text:
         if self.frozen:
             return Text("frozen", style="high")
+        if self.skipped and not self.policy:
+            return Text("skipped, left untouched", style="muted")
         if self.own and not self.policy:
             return Text(f"its code enforces {self.own}; keep it", style="warn")
         if self.policy == "adopted" and self.protected:
@@ -157,6 +160,7 @@ def row_for(ws, agent: Agent, setup_state: Optional[Dict[str, Any]] = None, args
     r = Row(agent, key, risk_of(kinds), [WORDS[k] for k in kinds if k not in ("read", "other")] or ["reads"])
     r.limits = lim is not None
     st = (setup_state or {}).get(agent.id) or {}
+    r.skipped = bool(st.get("board_skip"))
     b = Bindings(ws).get(key)
     if b is not None and b.mapping:
         text = ws.read(Bindings(ws).abs(b.policy)) or ""
@@ -509,6 +513,19 @@ def fresh_agents(ws, agents: List[Agent]):
     return [now.get(a.id, a) for a in agents], inv.policies
 
 
+def skip(setup_state: Optional[Dict[str, Any]], r: Row, on: bool) -> None:
+    """"Skip / leave it untouched": kept with the setup's own state (the workspace), never in the
+    agent's files; standard protection (a) passes it by."""
+    if setup_state is None:
+        return
+    st = setup_state.setdefault(r.agent.id, {"key": r.key})
+    if on:
+        st["board_skip"] = True
+    else:
+        st.pop("board_skip", None)
+        st.pop("skipped", None)
+
+
 def run(ui, console, args, ws, agents: List[Agent], setup_state: Optional[Dict[str, Any]] = None,
         other_ways=None) -> List[Row]:
     """The board at a terminal, until the operator leaves it. `other_ways(agent)` offers the other
@@ -519,7 +536,7 @@ def run(ui, console, args, ws, agents: List[Agent], setup_state: Optional[Dict[s
         console.print()
         console.print(Text("  PROTECTION   the riskiest agents first", style="label"))
         console.print(table(rows, console.width))
-        open_rows = [r for r in rows if not r.policy and not r.own]
+        open_rows = [r for r in rows if not r.policy and not r.own and not r.skipped]
         done = sum(1 for r in rows if r.protected)
         console.print(Text.assemble(("  ", ""), (f"{done} of {len(rows)} protected", "ok" if done == len(rows) else "text"),
                                     ("   number: one agent (limits, policy, wiring, check)", "muted")))
@@ -542,9 +559,18 @@ def run(ui, console, args, ws, agents: List[Agent], setup_state: Optional[Dict[s
                 console.print(f"  [muted]{r.key}: its code already enforces {r.own}; keeping it is the first choice[/muted]")
                 other_ways(r.agent)
                 continue
-            if other_ways is not None and r.policy in ("", "hand") and not r.limits:
-                how = ui.choose(f"{r.key}: Enter sets its limits; o for other ways (an existing policy, the studio, "
-                                "an editor, your assistant)", ["l", "o"], "l")
+            if r.policy in ("", "hand") and not r.limits or r.skipped:
+                other = other_ways is not None
+                how = ui.choose(f"{r.key}: Enter sets its limits"
+                                + ("; o other ways (an existing policy, the studio, an editor, your assistant)" if other else "")
+                                + "; s skip it (nothing is changed for it)", ["l", "o", "s"] if other else ["l", "s"],
+                                "l")
+                if how == "s":
+                    skip(setup_state, r, True)
+                    console.print(f"  [muted]{r.key} skipped: no limits, policy, mode or wiring change; "
+                                  "a number brings it back[/muted]")
+                    continue
+                skip(setup_state, r, False)
                 if how == "o":
                     other_ways(r.agent)
                     continue

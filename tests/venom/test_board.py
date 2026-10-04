@@ -143,3 +143,28 @@ def test_an_agent_with_its_own_policy_is_offered_to_keep_it(host, monkeypatch):
     assert flow.policies()
     r = _rows(host_dir, ws)["membership-bot"]
     assert r.policy == "adopted" and r.protected and "its own code" in str(r.state)
+
+
+def test_skip_leaves_an_agent_untouched(host, monkeypatch, capsys):
+    """s on the board: no limits, no policy, no mode, no wiring and no change to its files; standard
+    protection for the rest passes it by, and so do the later setup steps."""
+    import json
+
+    host_dir, ws = host
+    agent_file = host_dir / "fs/srv/backoffice/agent.py"
+    before = agent_file.read_text()
+    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "a", ""], choices=["s", "block"])
+    assert flow.policies()
+    state = json.loads((ws / ".csl/venom/state.json").read_text())
+    assert agent_file.read_text() == before
+    assert not (ws / "policies/backoffice.csl").exists()
+    assert "backoffice" not in (state.get("limits") or {})
+    assert "backoffice" not in (state.get("modes") or {}) and "backoffice" not in (state.get("wiring") or {})
+    assert "backoffice" not in (state.get("bindings") or {})
+    rows = _rows(host_dir, ws)
+    assert rows["backoffice"].skipped and "left untouched" in str(rows["backoffice"].state)
+    assert rows["devhelper"].protected  # the rest got standard protection
+    for step in ("verify", "map", "wire", "activate"):
+        assert getattr(flow, step)()
+    flow.wire_now()
+    assert agent_file.read_text() == before and not (ws / "policies/backoffice.csl").exists()

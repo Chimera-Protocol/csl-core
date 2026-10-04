@@ -407,6 +407,8 @@ class Flow:
             b = bindings.get(st["key"])
             if b is not None and b.mapping and not st.get("draft") and not st.get("adopted"):
                 st.update(policy=b.policy, mapping=b.mapping, protected=True)
+            elif st.get("board_skip"):
+                st["skipped"] = True  # the later steps leave it alone too
         self.save()
         return True
 
