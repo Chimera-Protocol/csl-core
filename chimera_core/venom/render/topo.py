@@ -152,6 +152,10 @@ class Topo:
                         key=lambda n: (-in_chains.count(n.id), -exposure.get(n.id, 0), not n.active, -n.weight, n.label))
         spine = list(self.chain.nodes) if self.chain else []
         agents = [g.nodes[n] for n in spine if g.nodes[n].kind == "agent"] + [a for a in agents if a.id not in spine]
+        # agents under a guard stay on the map even when nothing reaches through them any more:
+        # they are the ones the operator watches, freezes and switches
+        agents += sorted((n for n in g.nodes.values() if n.kind == "agent" and n.wired and n.id not in connected),
+                         key=lambda n: n.label)
         agents = agents[:max_agents]
         keep = {a.id for a in agents}
         inputs = [n for n in g.nodes.values() if n.kind == "input"
@@ -301,6 +305,8 @@ class Topo:
             self.spread_total = 2.8
         else:
             self.speed = self.SPEED
+        for nid in self.placed:  # agents nothing reaches (under a guard, for one) light up at the end
+            self.reached.setdefault(nid, self.spread_total)
 
     def chain_duration(self) -> float:
         """How long the spread runs before the map is complete."""

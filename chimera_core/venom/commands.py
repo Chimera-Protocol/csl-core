@@ -77,6 +77,13 @@ def confirm_probe(args, console, probe, roots) -> bool:
     return confirm(console, "Start / query them now?", bool(getattr(args, "yes", False)), default=False)
 
 
+def remember_root(ws: Workspace, args) -> None:
+    """The folder a scan covered (--root), so later commands (wire) find the same files."""
+    root = getattr(args, "root", None)
+    if not ws.plan_only and ws.exists():
+        ws.update_state(scan_root=os.path.abspath(root) if root else None)
+
+
 def save_report(ws: Workspace, inv: Inventory, since=None) -> Optional[str]:
     stamp = inv.host.scanned_at.replace("-", "").replace(":", "").replace("T", "-")[:13] or "latest"
     data = report_mod.to_json(inv, since)
@@ -126,6 +133,7 @@ def cmd_scan(args) -> int:
     hint = None
     if not getattr(args, "no_save", False):
         hint = save_report(ws, inv, since)
+        remember_root(ws, args)
     if as_json:
         sys.stdout.write(report_mod.json_text(inv, since))
     else:

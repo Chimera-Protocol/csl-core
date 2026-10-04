@@ -132,6 +132,21 @@ policy it already uses, draft one from risk-class templates, write it in the stu
 assistant draft it. Every draft passes the same gate (parse, validate, Z3, diff, your confirmation)
 before it becomes active.
 
+Then the guard goes into each agent's call path for real, once its policy is active: setup shows the
+change as a diff and makes it when you confirm (`--wire` with `--yes`), or later `cslcore wire`.
+
+- **Claude Code:** a `PreToolUse` hook in the project's `.claude/settings.local.json`. Every tool
+  call goes through it, including tools a plugin adds later.
+- **Python tools** (LangChain `@tool`, OpenAI Agents `@function_tool`, CrewAI, plain functions):
+  `@_csl_guard.tool("name")` directly above each tool function, under the framework's own decorator.
+  The tool keeps its name, docstring and signature, so the framework sees the same tool.
+
+A tool that exists only as a schema (the model asks for it, your own code runs it) cannot be wired
+automatically; it gets the exact `guard.check` line instead, and the summary says it is not wired.
+Each changed file is copied into the workspace first, and `cslcore wire --undo` puts it back. The
+map and the live panel only show an agent as guarded when the scan sees its guard in the call path;
+`x` on an agent nothing guards yet offers to put it under one, then freezes it.
+
 ### 3. Write and prove: `cslcore studio`
 
 <p align="center">
@@ -249,7 +264,8 @@ guard = observe(load_guard("policies/payments.csl"), agent="payments-agent")
 
 | Where | How |
 |---|---|
-| Claude Code | `PreToolUse` hook: `cslcore hook` (setup writes the settings snippet) |
+| Claude Code | `PreToolUse` hook: `cslcore hook` (`cslcore wire` adds it to the project's settings) |
+| Python tool functions | `@guard.tool("name")` on each tool (`cslcore wire` adds it, with the diff first) |
 | LangChain / LangGraph | `guard_tools(tools, guard, inject={...})` wraps tools; `gate(guard)` for LCEL chains |
 | Any Python agent | `venom_guard(agent).verify(tool, args, context)` before each tool call |
 | Your AI assistant | MCP server: `pip install "csl-core[mcp]"`, then `csl-core-mcp` |

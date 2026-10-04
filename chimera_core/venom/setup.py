@@ -35,7 +35,7 @@ from rich.text import Text
 
 from . import VENOM_VERSION
 from . import exemptions as ex
-from .commands import EXIT_OK, console_for, run_scan, save_report, workspace_for
+from .commands import EXIT_OK, console_for, remember_root, run_scan, save_report, workspace_for
 from .model import Agent, Inventory, PolicyRef
 from .policy import draft as D
 from .policy.gate import verify_text
@@ -237,6 +237,7 @@ class Flow:
         self.inv = res.inventory
         if not self.ws.plan_only:
             save_report(self.ws, self.inv)
+            remember_root(self.ws, self.args)
         return True
 
     def inventory(self) -> bool:
@@ -762,6 +763,56 @@ class Flow:
         self.save()
         return True
 
+    def wire_now(self) -> None:
+        """After activation: make the wiring change in each agent whose policy is now active, so the
+        guard is really in its call path (a hook, or a decorator on each tool function). Shown as a
+        diff and confirmed; --yes needs --wire. Never before a policy is active: a guard without
+        its policy refuses every call."""
+        from . import wiring
+        from .bindings import Bindings
+        from .wire_cmd import rescan, scan_probe, show_plan
+
+        if self.ws.plan_only:
+            return
+        apply_all = bool(getattr(self.args, "wire", False))
+        if not apply_all and not self.interactive:
+            if getattr(self.args, "yes", False):
+                self.console.print("  [muted]the wiring change is not made with --yes alone; pass --wire, or run "
+                                   "cslcore wire[/muted]")
+            return
+        inv = self.load_inventory()
+        bound = set(Bindings(self.ws).all())
+        by_id = {a.id: a for a in inv.agents}
+        probe, root = scan_probe(self.args, self.ws)
+        plans = []
+        for aid, st in self.agents_state().items():
+            a = by_id.get(aid)
+            if a is not None and st.get("key") in bound:
+                plans.append(wiring.plan_for(a, st["key"], self.ws, probe))
+        todo = [p for p in plans if p.changes and p.kind in ("hook", "code")]
+        manual = [p for p in plans if p.kind == "manual"]
+        if not todo and not manual:
+            return
+        self.console.print()
+        self.console.print(Text("  WIRE     the change that puts each guard in its agent's call path", style="label"))
+        applied = 0
+        if todo and (apply_all or self.ask(f"Make it now in {plural(len(todo), 'agent')}? Each diff is shown first", True)):
+            for p in todo:
+                show_plan(self.console, p)
+                if apply_all or self.ask(f"Wire {p.agent}?", True):
+                    try:
+                        wiring.apply(p, self.ws)
+                        applied += 1
+                    except (RuntimeError, OSError) as e:
+                        self.console.print(f"  [high]not wired: {e}[/high]")
+        for p in manual:
+            self.console.print(Text.assemble(("  ", ""), (p.agent, "head"), (f"  {p.note}", "warn")))
+        if applied:
+            rescan(self.args, self.console, self.ws, root)
+            self.inv = None
+            self.console.print(Text.assemble(("  ✓ wired ", "ok"), (plural(applied, "agent"), "head"),
+                                             ("  undo any time: cslcore wire --undo", "muted")))
+
     def activate(self) -> bool:
         from .policy.workbench import diff_text
         pending = [(aid, st) for aid, st in self.agents_state().items() if st.get("draft") and st.get("verified")]
@@ -914,6 +965,7 @@ class Flow:
         except StopFlow:
             self.console.print("  [muted]stopped; progress is saved. Run cslcore setup to continue.[/muted]")
             return EXIT_INCOMPLETE
+        self.wire_now()
         self.console.print()
         self.console.print(self.summary())
         from .rooms import ask_next, interactive
@@ -932,12 +984,22 @@ class Flow:
         rows.add_column(style="muted", overflow="fold")
         controls = Controls(self.ws)
         waiting = 0
+        inv = self.load_inventory()
+        status = {a.id: a.guard.status for a in inv.agents}
         for aid, st in sorted(self.agents_state().items(), key=lambda kv: kv[1].get("key", "")):
             key = st.get("key", aid)
             mode = controls.get(key).mode
             if st.get("policy"):
                 note = " (adopted)" if st.get("adopted") else ""
-                rows.add_row(key, Text("active", style="ok"), f"{short(st['policy'])}{note} · {mode} mode")
+                if status.get(aid) == "wired":
+                    rows.add_row(key, Text("guarded", style="ok"), f"{short(st['policy'])}{note} · {mode} mode · in its call path")
+                elif status.get(aid) == "wired_no_rule":
+                    rows.add_row(key, Text("partly", style="warn"),
+                                 f"{short(st['policy'])}{note} · a guard is in its call path, but no rule there covers "
+                                 f"its tools: cslcore policy extend {key}")
+                else:
+                    rows.add_row(key, Text("not wired", style="warn"),
+                                 f"{short(st['policy'])}{note} · nothing stops it yet: cslcore wire --agent {key}")
             elif st.get("draft"):
                 rows.add_row(key, Text("draft", style="warn"), f"{st['draft']} · activate: cslcore policy activate {key} (or ctrl+l in cslcore studio)")
             elif st.get("assistant"):

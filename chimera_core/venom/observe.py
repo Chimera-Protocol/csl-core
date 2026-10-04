@@ -9,6 +9,11 @@ Decision logger and log mode.
                         mapping="policies/membership_bot_mapping.py")
     guard.check(tool_name, args, context)   # raises PermissionError when blocked (block mode)
 
+or, on the tool function itself (what `cslcore wire` writes into an agent's code):
+
+    @guard.tool("transfer_funds")
+    def transfer_funds(amount: int, to_wallet: str): ...
+
 The enforcement mode comes from `cslcore mode --agent ID log|block` (state.json) at start.
 Log mode uses the existing RuntimeConfig(dry_run=True): nothing is blocked, every decision
 is recorded as ALLOW or WOULD_BLOCK. Records carry policy-variable values only, and only
@@ -213,6 +218,45 @@ class VenomGuard:
         if not result.allowed:
             raise PermissionError(f"blocked by policy: {', '.join(result.violated_rule_ids) or 'violation'}")
         return result
+
+    def tool(self, name: str) -> Callable:
+        """Decorator for a tool function: the policy decides every call before the function runs.
+        It keeps the function's name, docstring and signature, so frameworks that read them
+        (LangChain's @tool, OpenAI Agents' @function_tool) see the same tool. Put it directly
+        above `def`, under the framework's own decorator."""
+        import functools
+        import inspect
+
+        def wrap(fn: Callable) -> Callable:
+            sig = inspect.signature(fn)
+
+            def arguments(args, kwargs) -> Dict[str, Any]:
+                try:
+                    bound = sig.bind_partial(*args, **kwargs).arguments
+                except TypeError:
+                    return dict(kwargs)
+                out: Dict[str, Any] = {}
+                for k, v in bound.items():
+                    kind = sig.parameters[k].kind
+                    if kind is inspect.Parameter.VAR_KEYWORD and isinstance(v, dict):
+                        out.update(v)
+                    elif k not in ("self", "cls") and kind is not inspect.Parameter.VAR_POSITIONAL:
+                        out[k] = v
+                return out
+
+            if inspect.iscoroutinefunction(fn):
+                @functools.wraps(fn)
+                async def guarded_async(*args, **kwargs):
+                    self.check(name, arguments(args, kwargs))
+                    return await fn(*args, **kwargs)
+                return guarded_async
+
+            @functools.wraps(fn)
+            def guarded(*args, **kwargs):
+                self.check(name, arguments(args, kwargs))
+                return fn(*args, **kwargs)
+            return guarded
+        return wrap
 
 
 def _compile_quiet(text: str):

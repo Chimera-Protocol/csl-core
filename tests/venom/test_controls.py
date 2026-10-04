@@ -12,14 +12,12 @@ from chimera_core.venom import watch as W
 from chimera_core.venom.controls import Controls
 from chimera_core.venom.workspace import Workspace
 
-from .conftest import HOST_OPS, render, run_cli
+from .conftest import render, run_cli, wired_setup
 
 
 @pytest.fixture
 def wired(tmp_path, capsys, monkeypatch):
-    ws = tmp_path / "ws"
-    ws.mkdir()
-    run_cli(["setup", "--root", str(HOST_OPS), "--workspace", str(ws), "--yes", "--activate"], capsys)
+    ws = wired_setup(tmp_path, capsys)
     monkeypatch.chdir(ws)
     return Workspace(ws)
 
@@ -113,13 +111,15 @@ def test_audit_trail_and_cli(wired, capsys):
 
 
 def test_panel_render_shows_controls(wired):
-    Controls(wired).set_disabled("publisher", True)
+    Controls(wired).set_disabled("ingest-worker", True)
     p = _panel(wired)
-    _select(p, "publisher")
+    _select(p, "ingest-worker")
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc)
     text = render(W.render(p.model, p.inv, {}, {}, now, now, 120, 30, p), width=120, height=30)
     assert "OFF" in text and "▸" in text and "m mode" in text
+    row = next(line for line in text.splitlines() if "publisher" in line)
+    assert "NONE" in row  # its tools exist only as schemas: no guard in its call path, nothing decided
     p.handle("?")
     text = render(W.render(p.model, p.inv, {}, {}, now, now, 120, 30, p), width=120, height=30)
     assert "freeze the agent" in text

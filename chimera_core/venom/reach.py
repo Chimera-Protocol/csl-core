@@ -52,6 +52,7 @@ class Node:
     detail: str = ""
     weight: int = 1  # impact severity, or how much flows through an agent
     active: bool = False  # an agent that is running now
+    wired: bool = False  # the scan saw a guard in its call path
 
 
 @dataclass
@@ -209,7 +210,8 @@ def build(inv: Inventory) -> ReachGraph:
     agents = [a for a in inv.agents if a.exempt is None or a.exempt.status != "approved"]
     routes: Dict[str, List[str]] = {}
     for a in agents:
-        g.nodes[a.id] = Node(a.id, "agent", a.display_name, a.kind, active=a.state == "running")
+        g.nodes[a.id] = Node(a.id, "agent", a.display_name, a.kind, active=a.state == "running",
+                             wired=a.guard.status != "none")
         for nid, label, ev, rs in _inputs(a):
             g.nodes.setdefault(nid, Node(nid, "input", label))
             routes.setdefault(nid, []).extend(rs)

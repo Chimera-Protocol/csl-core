@@ -214,6 +214,7 @@ class ControlPanel:
         self.go_map = False  # f: open the full map (a room, see venom/rooms.py)
         self.pane_zoom = 1.0  # the panel's map grows into the full map, and settles when it comes back
         self.marks_at = 0.0  # when the map's frozen / block marks were last read
+        self.guard_request: Optional[str] = None  # an agent to put under a guard (outside the screen)
         self.topo = None
         self.topo_size: Optional[Tuple[int, int]] = None
 
@@ -232,6 +233,13 @@ class ControlPanel:
             if k and k not in names:
                 names.append(k)
         return names
+
+    def in_path(self, key: str) -> bool:
+        """Whether the last scan saw a guard in this agent's call path (unknown agents: assume so)."""
+        if self.inv is None:
+            return True
+        agent = next((a for a in self.inv.agents if agent_key(a) == key), None)
+        return agent is None or agent.guard.status != "none"
 
     def agents(self) -> List[str]:
         names = self.all_agents()
@@ -417,6 +425,9 @@ class ControlPanel:
             q = (f"Switch ALL {n} agents to BLOCK? policy violations will be blocked everywhere" if to == "block"
                  else f"Switch ALL {n} agents to LOG? nothing will be blocked anywhere, only recorded")
             self.pending = (f"all_{to}", "*", q)
+        elif agent and key in ("x", "d") and not self.in_path(agent):
+            self.pending = ("guard", agent, f"{agent} is not wired: freezing it would stop nothing. "
+                                            "Put it under a guard now (you see each step)?")
         elif agent and key in ("x", "d"):  # x everywhere; d was the key before 0.6.6
             if self.controls.get(agent).disabled:
                 self._apply("enable", agent)
@@ -492,6 +503,9 @@ class ControlPanel:
             mode = action[4:]
             self.controls.set_all(mode)
             self.message = (f"ALL agents → {mode.upper()} mode", "ok" if mode == "log" else "brand")
+            return
+        if action == "guard":
+            self.guard_request = target
             return
         if action.startswith("mode_"):
             self.marks_at = 0.0
@@ -587,7 +601,9 @@ def agents_pane(model: WatchModel, inv: Optional[Inventory], states: Dict[str, s
         rate = st.rate
         rate_t = Text("-" if rate is None else f"{rate * 100:.0f}%",
                       style="muted" if rate is None else ("high" if rate > 0.25 else ("warn" if rate > 0.05 else "ok")))
-        if ctl is not None and ctl.disabled:
+        if panel is not None and not panel.in_path(name):
+            mode_t = Text("NONE", style="muted")  # no guard in its call path: nothing is decided
+        elif ctl is not None and ctl.disabled:
             mode_t = Text("OFF", style="high")
         elif ctl is not None and ctl.exempt:
             mode_t = Text("EXEMP", style="exempt")
@@ -929,7 +945,7 @@ class WatchRoom:
                 self.grow0 = time.monotonic()  # the panel's map grows into the full map
             else:
                 self.exit_to = "map"
-        if self.panel.studio_request or self.panel.editor_request:
+        if self.panel.studio_request or self.panel.editor_request or self.panel.guard_request:
             self.external = self._outside
         self.next_frame = self.next_poll = 0.0
         return ok
@@ -963,9 +979,34 @@ class WatchRoom:
             self.next_frame = now + (MAP_FRAME_S if animated else self.refresh)
         return self.last
 
+    def _guard_it(self, key: str) -> None:
+        from rich.prompt import Prompt
+
+        from .wire_cmd import guard_one
+
+        agent = next((a for a in (self.inv.agents if self.inv else []) if agent_key(a) == key), None)
+        if agent is None:
+            self.panel.message = (f"{key} is not in the last scan", "warn")
+            return
+        ok = guard_one(self.console, self.args, self.ws, agent)
+        self.inv = _inventory(self.ws)
+        self.panel.inv = self.inv
+        self.panel.topo = None  # the map follows the new scan
+        if ok:
+            self.panel.controls.set_disabled(key, True)
+            self.console.print(f"  [high]{key} FROZEN[/high] [muted]every action is blocked until x again[/muted]")
+            self.panel.message = (f"{key} is guarded now, and FROZEN (x unfreezes)", "high")
+        else:
+            self.panel.message = (f"{key} is still not wired", "warn")
+        Prompt.ask("  [muted]Enter: back to the live panel[/muted]", default="", show_default=False, console=self.console)
+
     def _outside(self) -> None:
-        """The studio and $EDITOR run outside the screen; the panel shows what came of it."""
+        """The studio, $EDITOR and putting an agent under a guard run outside the screen; the panel
+        shows what came of it."""
         panel, ws = self.panel, self.ws
+        if panel.guard_request:
+            key, panel.guard_request = panel.guard_request, None
+            self._guard_it(key)
         if panel.studio_request:
             path, agent = panel.studio_request
             panel.studio_request = None

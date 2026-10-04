@@ -180,6 +180,9 @@ class MapView:
     def __init__(self, inv: Inventory, width: int, height: int, seed: str = "map", ws=None) -> None:
         self.inv = inv
         self.ws = ws  # the workspace whose controls x and m change (None: the map only shows)
+        self.dims = (width, height, seed)
+        self.args = None  # set by the room: what a guard-it-now job scans with
+        self.console = None
         self.g = build(inv)
         self.w = max(40, min(width - 46, 96))
         self.h = max(13, min(height - 9, 34))
@@ -282,7 +285,10 @@ class MapView:
         for a in self.inv.agents:
             k = agent_key(a)
             ctl = controls.get(k)
-            self.control[a.id] = (k, ctl, k in bound)
+            in_path = a.guard.status != "none"  # what the scan saw: a guard in its code, or a cslcore hook
+            self.control[a.id] = (k, ctl, k in bound, in_path)
+            if not in_path:
+                continue  # nothing would stop it: no ice, no guard ring
             if ctl.disabled:
                 marks[a.id] = "frozen"
             elif ctl.mode == "block" and k in bound:
@@ -298,16 +304,23 @@ class MapView:
             self.message = ("open the map from a workspace to change controls", "muted", now)
             return
         self._sync(now, force=True)
-        k, ctl, bound = self.control[a.id]
-        later = "" if bound else " (no policy guards it yet: it applies from its first guarded call)"
+        k, ctl, bound, in_path = self.control[a.id]
+        if not in_path:  # freezing it would stop nothing: offer to put it under a guard first
+            if self.args is None:
+                self.message = (f"{a.display_name} is not wired: cslcore wire --agent {k}", "warn", now)
+                return
+            what = "wire it" if bound else "write its policy and wire it"
+            self.pending = ("guard", a.id, f"{a.display_name} is not wired: freezing it would stop nothing. "
+                                           f"Put it under a guard now ({what}; you see each step)?")
+            return
         if key == "x":
             if ctl.disabled:
                 self._apply("enable", k)
             else:
-                self.pending = ("disable", k, f"Freeze {a.display_name}? every action is blocked, in any mode, until x again{later}")
+                self.pending = ("disable", k, f"Freeze {a.display_name}? every action is blocked, in any mode, until x again")
         else:
             to = "block" if ctl.mode == "log" else "log"
-            q = (f"Switch {a.display_name} to BLOCK mode? policy violations will be blocked{later}" if to == "block"
+            q = (f"Switch {a.display_name} to BLOCK mode? policy violations will be blocked" if to == "block"
                  else f"Switch {a.display_name} to LOG mode? nothing will be blocked, only recorded")
             self.pending = (f"mode_{to}", k, q)
 
@@ -315,6 +328,9 @@ class MapView:
         from ..controls import Controls
 
         controls, now = Controls(self.ws), time.monotonic()
+        if action == "guard":
+            self.external = lambda: self._guard_it(target)
+            return
         if action == "disable":
             controls.set_disabled(target, True)
             self.message = (f"{target} FROZEN: every action is blocked (x unfreezes)", "high", now)
@@ -326,6 +342,41 @@ class MapView:
             controls.set_mode(target, mode)
             self.message = (f"{target} → {mode.upper()} mode (next call, no restart)", "ok" if mode == "log" else "brand", now)
         self._sync(now, force=True)
+
+    def _guard_it(self, agent_id: str) -> None:
+        """Outside the screen: put the agent under a guard (policy, wiring), then freeze it, as asked."""
+        from rich.prompt import Prompt
+
+        from ..controls import Controls
+        from ..watch import _inventory
+        from ..wire_cmd import guard_one
+
+        agent = next(a for a in self.inv.agents if a.id == agent_id)
+        console = self.console
+        ok = guard_one(console, self.args, self.ws, agent)
+        inv = _inventory(self.ws) or self.inv
+        self.reload(inv)
+        self._sync(time.monotonic(), force=True)
+        key = self.control.get(agent_id, (None,))[0]
+        if ok and key:
+            Controls(self.ws).set_disabled(key, True)
+            console.print(f"  [high]{agent.display_name} FROZEN[/high] [muted]every action is blocked until x again[/muted]")
+            self.message = (f"{agent.display_name} is guarded now, and FROZEN (x unfreezes)", "high", time.monotonic())
+        else:
+            self.message = (f"{agent.display_name} is still not wired", "warn", time.monotonic())
+        Prompt.ask("  [muted]Enter: back to the map[/muted]", default="", show_default=False, console=console)
+        self._sync(time.monotonic(), force=True)
+
+    def reload(self, inv: Inventory) -> None:
+        """The map of a new scan (after wiring), keeping what was selected and how it is shown."""
+        sel = self.selected()
+        keep = (self.sphere, self.labels, self.angle, self.args, self.console)
+        width, height, seed = self.dims
+        MapView.__init__(self, inv, width, height, seed=seed, ws=self.ws)  # not a room's own __init__
+        self.sphere, self.labels, self.angle, self.args, self.console = keep
+        self.spread0 -= 99.0
+        if sel in self.order:
+            self.sel = self.order.index(sel)
 
     def selected(self) -> Optional[str]:
         return self.order[self.sel] if self.order else None
@@ -447,14 +498,16 @@ class MapView:
             node = self.g.nodes[sid]
             rows += [Text(""), Text("SELECTED", style="label"), Text(node.label, style="bold #fde047")]
             if sid in self.control:
-                _k, ctl, bound = self.control[sid]
-                if ctl.disabled:
-                    rows.append(Text("frozen" + ("" if bound else ", from its first guarded call"), style=f"bold {FROZEN}"))
-                elif bound:
-                    rows.append(Text(f"{ctl.mode} mode" + (": its rules decide every call" if ctl.mode == "block" else ""),
-                                     style=GUARDED if ctl.mode == "block" else "muted"))
+                _k, ctl, bound, in_path = self.control[sid]
+                if not in_path:
+                    rows.append(Text("not wired: nothing stops it yet" + ("" if bound else ", no policy"), style="warn"))
+                    rows.append(Text("x puts it under a guard", style="muted"))
+                elif ctl.disabled:
+                    rows.append(Text("frozen: every call is blocked", style=f"bold {FROZEN}"))
                 else:
-                    rows.append(Text("no policy guards it yet: cslcore setup --agent " + _k, style="muted"))
+                    rows.append(Text(f"guarded · {ctl.mode} mode" + (": its rules decide every call" if ctl.mode == "block"
+                                                                    else ": recorded, not stopped yet"),
+                                     style=GUARDED if ctl.mode == "block" else "muted"))
             ins = [e for e in self.g.edges if e.dst == sid]
             outs = [e for e in self.g.edges if e.src == sid]
             for title, edges, other in (("reached by", ins, "src"), ("reaches", outs, "dst")):
@@ -500,10 +553,11 @@ class MapView:
 class MapRoom(MapView):
     """The map as a room (see venom/rooms.py)."""
 
-    def __init__(self, inv: Inventory, console, seed: Optional[str] = None, ws=None) -> None:
+    def __init__(self, inv: Inventory, console, seed: Optional[str] = None, ws=None, args=None) -> None:
         from .. import VENOM_VERSION
 
         super().__init__(inv, console.width, console.height, seed=seed or VENOM_VERSION, ws=ws)
+        self.args, self.console = args, console
 
     def frame(self, now: float, width: int, height: int = 0) -> Panel:  # type: ignore[override]
         return super().frame(now, width)

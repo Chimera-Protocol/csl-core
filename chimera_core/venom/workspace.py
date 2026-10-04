@@ -8,14 +8,19 @@ The Venom workspace: the folder where `cslcore setup` runs.
     <workspace>/.csl/venom/drafts/       policy drafts
     <workspace>/.csl/venom/exemptions.yaml
     <workspace>/.csl/venom/decisions/    decision logs
+    <workspace>/.csl/venom/wire/         copies of files `cslcore wire` changed, to undo it
 
 This module and probe.py are the only places Venom touches the filesystem. Every write
 here is called from a path that the operator confirmed (or from --yes / non-destructive
-bookkeeping such as saving a scan snapshot and report).
+bookkeeping such as saving a scan snapshot and report). Writes stay inside the workspace,
+with one exception: `change_file`, which applies a change the operator saw as a diff and
+confirmed (wiring a guard into an agent), keeps a copy of the file first and refuses when the
+file changed after the diff was shown.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from datetime import date
@@ -98,6 +103,50 @@ class Workspace:
             return
         if path.exists():
             path.unlink()
+
+    # the one write outside the workspace ------------------------------------------
+    @staticmethod
+    def sha(text: Optional[str]) -> str:
+        return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
+
+    def change_file(self, path: str, before_sha: str, after: str, backup_dir: Path) -> Optional[Dict[str, Any]]:
+        """Apply a confirmed change to a file anywhere (an agent's code, its assistant settings).
+        The current file must still be what the diff was made from (`before_sha`); a copy goes
+        into `backup_dir` (inside the workspace) first. Returns what undo needs."""
+        target = Path(path)
+        current = self.read(target) if target.exists() else None
+        if self.sha(current) != before_sha:
+            raise RuntimeError(f"{path} changed after the diff was shown; nothing was written")
+        if self.plan_only:
+            self.planned.append(f"change {path}")
+            return None
+        copy = None
+        if current is not None:
+            copy = backup_dir / (str(target.resolve()).lstrip("/").replace("/", "__"))
+            self.write_text(copy, current)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_name(target.name + ".csl-tmp")
+        tmp.write_text(after, encoding="utf-8")
+        tmp.replace(target)
+        return {"path": str(target), "backup": self.rel(copy) if copy else None, "after_sha": self.sha(after)}
+
+    def undo_change(self, record: Dict[str, Any]) -> str:
+        """Put a changed file back as it was: 'restored', 'removed' (it did not exist before), or
+        'skipped' when the file changed again since (it is then left alone)."""
+        target = Path(record["path"])
+        current = self.read(target) if target.exists() else None
+        if self.sha(current) != record.get("after_sha"):
+            return "skipped"
+        if record.get("backup"):
+            original = self.read(self.root / record["backup"])
+            if original is None:
+                return "skipped"
+            tmp = target.with_name(target.name + ".csl-tmp")
+            tmp.write_text(original, encoding="utf-8")
+            tmp.replace(target)
+            return "restored"
+        target.unlink()
+        return "removed"
 
     # state --------------------------------------------------------------------
     def load_state(self) -> Dict[str, Any]:

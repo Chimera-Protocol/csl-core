@@ -12,15 +12,12 @@ from chimera_core.venom import rooms
 from chimera_core.venom.render import mapview as M
 from chimera_core.venom.render.theme import THEME
 
-from .conftest import HOST_OPS, render, run_cli, scan_fixture
+from .conftest import HOST_OPS, render, run_cli, scan_fixture, wired_setup
 
 
 @pytest.fixture
 def ws(tmp_path, capsys):
-    ws = tmp_path / "ws"
-    ws.mkdir()
-    run_cli(["setup", "--root", str(HOST_OPS), "--workspace", str(ws), "--yes", "--activate"], capsys)
-    return ws
+    return wired_setup(tmp_path, capsys)
 
 
 def _console(width=130, height=40):
@@ -193,7 +190,8 @@ def test_freeze_on_the_map_stops_the_real_agent(ws, monkeypatch):
     node = next(n for n in v.order if v.g.nodes[n].label == "membership-bot")
     assert v.topo.marks[node] == "frozen"
     text = render(v.frame(time.monotonic(), 130), width=130)
-    assert "FROZEN" in text and "held: membership-bot frozen" in text and "frozen" in text.split("SELECTED")[1]
+    assert "FROZEN" in text and "frozen: every call is blocked" in text.split("SELECTED")[1]
+    assert v.g.top is None  # setup wired the agents: the chain through claude-code:ops is closed
     v.handle("x")  # unfreezing needs no question
     assert not Controls(w).get("membership-bot").disabled and node not in v.topo.marks
     assert g.verify("transfer_funds", {"amount": 5, "to_wallet": "w"}).allowed
@@ -215,17 +213,27 @@ def test_mode_on_the_map(ws, monkeypatch):
     assert "block mode" in render(v.frame(time.monotonic(), 130), width=130).split("SELECTED")[1]
 
 
-def test_an_agent_without_a_policy_is_told_so(tmp_path, capsys, monkeypatch):
+def test_freezing_an_unwired_agent_offers_to_guard_it_first(tmp_path, capsys, monkeypatch):
+    """Nothing is in publisher's call path, so freezing it would stop nothing: the map says so
+    and offers to put it under a guard instead of pretending."""
     ws = tmp_path / "ws"
     ws.mkdir()
     run_cli(["venom", "--root", str(HOST_OPS), "--workspace", str(ws), "--no-anim"], capsys)
     v, w = _map_on(ws, monkeypatch)
-    _select(v, "membership-bot")
+    _select(v, "publisher")
+    text = render(v.frame(time.monotonic(), 130), width=130)
+    assert "not wired: nothing stops it yet" in text.split("SELECTED")[1]
     v.handle("x")
-    assert "no policy guards it yet" in v.pending[2]
+    assert v.pending is None and "is not wired: cslcore wire --agent publisher" in v.message[0]  # no args: a hint
+    v.args = _args(ws)
+    v.handle("x")
+    assert v.pending[0] == "guard" and "freezing it would stop nothing" in v.pending[2]
     v.handle("y")
-    assert "from its first guarded call" in render(v.frame(time.monotonic(), 130), width=130)
+    assert v.external is not None  # runs outside the screen: policy, check, wiring, each asked
+    node = next(n for n in v.order if v.g.nodes[n].label == "publisher")
+    assert node not in v.topo.marks  # no ice on an agent nothing can stop
     v.sel = v.order.index(next(n for n in v.order if v.g.nodes[n].kind == "input"))
+    v.external = None
     v.handle("x")
     assert v.pending is None and "select an agent" in v.message[0]
 

@@ -55,3 +55,16 @@ def run_cli(argv, capsys):
     rc = main(argv)
     out = capsys.readouterr()
     return rc, out.out, out.err
+
+
+def wired_setup(tmp_path, capsys, *extra):
+    """The sample host copied (its files are changed by wiring), set up and wired: each guard
+    really in its agent's call path. Returns the workspace path."""
+    import shutil
+
+    host, ws = tmp_path / "host", tmp_path / "ws"
+    if not host.exists():
+        shutil.copytree(HOST_OPS, host)
+    ws.mkdir(exist_ok=True)
+    run_cli(["setup", "--root", str(host), "--workspace", str(ws), "--yes", "--activate", "--wire", *extra], capsys)
+    return ws

@@ -7,6 +7,7 @@ CSL-Core provides a robust Command Line Interface (CLI) for compiling policies, 
 | Command | What it does |
 |---|---|
 | `cslcore setup` | Guided first install: discovery, findings, policies, mapping, mode, wiring, activation |
+| `cslcore wire` | Put the guard in each agent's call path (a hook or a decorator), diff first; `--undo` |
 | `cslcore venom` | Read-only discovery of the AI agents on this host |
 | `cslcore venom report` | The latest report, or one agent in detail |
 | `cslcore venom map` | The reach map, full screen: chains, dive into an agent, 3D globe |
@@ -168,6 +169,28 @@ The guided, resumable first install. Read-only until you confirm.
 | `--strategy {recommended,choose,templates}` | how to get a policy per agent (default: ask; `templates` with `--yes`) |
 | `--restart` | start the flow from step 1 |
 | `--agent ID` | limit the policy and mapping steps to one agent |
+| `--wire` | with `--yes`: also make the wiring change in each agent whose policy is active (interactively you are asked, with the diff) |
+
+### `cslcore wire`
+
+Puts the guard in each agent's call path, for every agent with an active policy (a guard without
+its policy refuses every call, so agents without one are listed, not wired). Each change is shown as
+a diff and confirmed; each file is copied into `.csl/venom/wire/` first; after a change the host is
+scanned again so the map and the live panel show what is guarded.
+
+| Agent | The change |
+|---|---|
+| Claude Code (a project) | a `PreToolUse` hook for every tool in `<project>/.claude/settings.local.json` |
+| Claude Code (user level) | the same hook in `~/.claude/settings.json` |
+| Python tool functions | the guard at the top of the file and `@_csl_guard.tool("name")` above each tool function |
+| tools that exist only as schemas, JavaScript, other assistants | not wired automatically: the exact snippet, and why |
+
+| Option | Meaning |
+|---|---|
+| `--agent ID` | one agent (key or name) |
+| `--yes` | apply without asking (each diff is still printed) |
+| `--undo` | put the files back as they were (a file changed since is left alone and reported) |
+| `--root PATH` | the folder that was scanned (default: the one the last scan covered) |
 
 ### `cslcore venom`
 

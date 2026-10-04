@@ -88,7 +88,7 @@ def _make(name: str, console, args, inv):
         if inv is None and ws is not None:
             from .watch import _inventory
             inv = _inventory(ws)
-        return MapRoom(inv, console, ws=ws)
+        return MapRoom(inv, console, ws=ws, args=args)
     if name == "watch":
         from .watch import WatchRoom
         return WatchRoom(args, console)

@@ -33,7 +33,7 @@ REPO = HERE.parent.parent
 sys.path.insert(0, str(HERE))
 import capture  # noqa: E402
 
-ALLOWED_NEW_COMMANDS = {"setup", "venom", "studio", "policy", "map", "exempt", "mode", "hook", "watch"}
+ALLOWED_NEW_COMMANDS = {"setup", "venom", "studio", "policy", "map", "exempt", "mode", "hook", "watch", "wire"}
 FROZEN_PATHS = [
     "chimera_core/runtime.py",
     "chimera_core/language",

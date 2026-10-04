@@ -59,6 +59,9 @@ def _setup_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--restart", action="store_true", help="start the flow from step 1")
     p.add_argument("--stop-after", metavar="STEP", help=argparse.SUPPRESS)
     p.add_argument("--agent", metavar="ID", help="limit policy and mapping steps to one agent")
+    p.add_argument("--wire", action="store_true",
+                   help="with --yes: also make the wiring change in each agent (a hook or a decorator); "
+                        "without --yes you are asked, with the diff")
     _shared(p)
 
 
@@ -152,6 +155,13 @@ def register(sub) -> None:
     ex.add_argument("--propose", action="store_true", help="record as proposed; approve later")
     _shared(ex, scan=False)
     ex.set_defaults(func=_lazy("chimera_core.venom.exempt_cmd.cmd_exempt"))
+
+    wi = sub.add_parser("wire", help="Put the guard in each agent's call path (shows the change first; --undo puts it back)")
+    wi.add_argument("--agent", metavar="ID", help="one agent (key or name); default: every agent with an active policy")
+    wi.add_argument("--yes", action="store_true", help="apply without asking (each diff is still printed)")
+    wi.add_argument("--undo", action="store_true", help="put the files cslcore wire changed back as they were")
+    _shared(wi)
+    wi.set_defaults(func=_lazy("chimera_core.venom.wire_cmd.cmd_wire"))
 
     mo = sub.add_parser("mode", help="Per-agent enforcement mode (log or block) and kill switches")
     mo.add_argument("--agent", metavar="ID", help="agent key (as in `cslcore watch`); omit to list every agent")

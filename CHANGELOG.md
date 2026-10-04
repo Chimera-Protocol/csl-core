@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.8]
+
+### Added
+- End to end, for real: the guard goes into each agent's call path. `cslcore wire` (and setup,
+  after activation) shows the change as a diff and makes it when confirmed: a `PreToolUse` hook for
+  every tool in a Claude Code project's `.claude/settings.local.json`, and for Python tool functions
+  (LangChain `@tool`, OpenAI Agents `@function_tool`, CrewAI, plain functions) the guard at the top of
+  the file and `@_csl_guard.tool("name")` above each tool function. Files are copied into the
+  workspace first; `cslcore wire --undo` puts them back; a file changed after its diff was shown is
+  never written. Only agents with an active policy are wired. The host is scanned again afterwards.
+- `guard.tool(name)`: a decorator on a tool function that decides each call before the function
+  runs, keeping its name, docstring and signature (sync and async).
+- `cslcore setup --wire`: with `--yes`, also make the wiring change.
+- `x` on an agent nothing guards yet (on the map and in the live panel) offers to put it under a
+  guard first: a policy drafted from its tools and checked, the wiring change, a new scan, then the
+  freeze. Each step is shown and confirmed.
+
+### Changed
+- The map, the live panel and the setup summary only show an agent as guarded when the scan sees
+  its guard in the call path (a guard in its code, or a cslcore hook for every tool). An active
+  policy alone is "not wired: nothing stops it yet"; freezing such an agent is no longer offered as
+  if it would stop it. Agents under a guard stay on the map even when nothing reaches through them.
+- A Claude Code hook that covers only some tools (a matcher such as `Bash`) is reported as such, and
+  wiring adds one for every tool.
+
 ## [0.6.7]
 
 ### Added

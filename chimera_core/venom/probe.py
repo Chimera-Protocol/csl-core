@@ -58,6 +58,10 @@ class HostProbe:
     def hostname(self) -> str: raise NotImplementedError
     def os_name(self) -> str: raise NotImplementedError
     def home(self) -> str: raise NotImplementedError
+
+    def real_path(self, path: str) -> str:
+        """The file on this machine behind a path in the probe's namespace (the same on a real host)."""
+        return path
     def user(self) -> str: raise NotImplementedError
     def now(self) -> datetime: raise NotImplementedError
 
@@ -330,6 +334,9 @@ class FixtureHostProbe(HostProbe):
 
     def _real(self, path: str) -> Path:
         return self.root / "fs" / path.lstrip("/")
+
+    def real_path(self, path: str) -> str:
+        return str(self._real(path))
 
     def hostname(self) -> str:
         return self.meta.get("hostname", "fixture-host")
