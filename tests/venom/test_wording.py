@@ -28,3 +28,22 @@ def test_inbound_http_is_said_once():
     from chimera_core.venom.analysis.findings import INBOUND
 
     assert f"inbound {INBOUND.get('inbound_http', 'inbound_http')}" == "inbound HTTP"
+
+
+def _help(capsys, *argv):
+    from chimera_core.cli import main
+
+    with pytest.raises(SystemExit):
+        main(list(argv))
+    return capsys.readouterr().out
+
+
+def test_help_starts_with_the_golden_path(capsys):
+    out = _help(capsys, "--help")
+    lines = out.splitlines()
+    assert lines[0] == "Start here: cslcore setup"
+    advanced = out.index("advanced:")
+    for name in ("setup ", "watch ", "limits ", "venom map "):
+        assert out.index(f"  {name}") < advanced
+    assert "hook" not in out  # not listed
+    assert "usage: cslcore hook" in _help(capsys, "hook", "--help")  # but still a command

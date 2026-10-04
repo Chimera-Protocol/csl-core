@@ -635,8 +635,45 @@ def cmd_repl(args: argparse.Namespace) -> int:
 # -----------------------
 # CLI wiring
 # -----------------------
+START = ("setup", "watch", "limits", "venom")  # the golden path, first in --help
+HIDDEN = ("hook",)  # still a command (Claude Code runs it), not listed
+
+
+class _TopParser(argparse.ArgumentParser):
+    """The top-level --help: where to start, the four commands of the golden path, the rest under
+    "advanced". Parsing, the description and every command are as they were."""
+
+    def format_usage(self) -> str:
+        text = super().format_usage()
+        for name in HIDDEN:  # still parsed and run, not listed
+            text = text.replace(f",{name},", ",").replace(f",{name}}}", "}}")
+        return text
+
+    def format_help(self) -> str:
+        sub = next((a for a in self._actions if isinstance(a, argparse._SubParsersAction)), None)
+        if sub is None:
+            return super().format_help()
+        helps = {ca.dest: (ca.help or "") for ca in sub._choices_actions}
+        width = max(len(n) for n in helps) + 4
+
+        def row(name: str, text: str) -> str:
+            return f"  {name.ljust(width)}{text}"
+        lines = ["Start here: cslcore setup", "", self.format_usage().rstrip(), "", self.description or "", ""]
+        names = {"venom": "venom map"}
+        golden = {"setup": "Find your agents and protect them, one Enter at a time",
+                  "watch": "See each call as it happens; approve calls that wait",
+                  "limits": "What each agent may do, in your own numbers",
+                  "venom": "What can reach what on this machine (venom map; venom alone: the scan)"}
+        lines += [row(names.get(n, n), golden[n]) for n in START if n in helps]
+        lines += ["", "advanced:"]
+        lines += [row(n, " ".join(h.split())) for n, h in helps.items() if n not in START and n not in HIDDEN]
+        lines += ["", "options:", "  -h, --help    show this help message and exit",
+                  "  --version     show program's version number and exit", ""]
+        return "\n".join(lines)
+
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
+    p = _TopParser(
         prog="cslcore",
         description="CSL-Core CLI — deterministic safety for AI policies",
     )
