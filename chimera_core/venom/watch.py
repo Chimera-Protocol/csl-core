@@ -219,6 +219,7 @@ class ControlPanel:
         self.limits_request: Optional[str] = None  # an agent whose limits change (outside the screen)
         self.wire_request: Optional[str] = None  # an agent to wire (outside the screen)
         self.rescan_request = False  # after unwiring: scan again, so every view shows it
+        self.approval_index = 0
         self.topo = None
         self.topo_size: Optional[Tuple[int, int]] = None
 
@@ -244,6 +245,16 @@ class ControlPanel:
             return True
         agent = next((a for a in self.inv.agents if agent_key(a) == key), None)
         return agent is None or agent.guard.status != "none"
+
+    def approvals(self) -> list:
+        """Calls waiting for a person's approval (approvals.Approvals), oldest first."""
+        if self.ws is None:
+            return []
+        from .approvals import Approvals
+        try:
+            return Approvals(self.ws).pending()
+        except OSError:
+            return []
 
     def wired_here(self, key: str) -> bool:
         """Whether `cslcore wire` (or the board) changed this agent's files, so it can be undone."""
@@ -290,6 +301,8 @@ class ControlPanel:
     def crumbs(self) -> List[str]:
         if self.view == "help":
             return ["Help"]
+        if self.view == "approvals":
+            return ["Approvals"]
         if self.focus == "rules" or self.view == "rule":
             out = ["Rules"]
             cur = self.current_rule()
@@ -308,6 +321,8 @@ class ControlPanel:
             return [("Enter", "done"), ("Esc", "cancel")]
         if self.view == "help":
             return [("Esc", "back")]
+        if self.view == "approvals":
+            return [("↑↓", "request"), ("y", "approve"), ("n", "deny"), ("Esc", "back")]
         if self.view == "tools":
             return [("↑↓", "tool"), ("space", "disable / enable"), ("e", "exempt tool"), ("Esc", "back")]
         if self.view == "rule":
@@ -317,6 +332,9 @@ class ControlPanel:
         out = [("↑↓", "select"), ("Enter", "tools"), ("l", "limits"), ("w", "wire"), ("m", "mode"), ("M", "all"),
                ("x", "freeze"), ("e", "exempt"),
                ("/", "search"), ("Tab", "rules"), ("g", "stream" if self.map_on else "map"), ("f", "full map"), ("?", "help")]
+        waiting = len(self.approvals())
+        if waiting:
+            out.insert(0, ("a", f"{waiting} waiting for approval"))
         out.append(("Esc", "clear search") if self.query else ("q", "quit"))
         return out
 
@@ -362,6 +380,12 @@ class ControlPanel:
             self.focus = "rules" if self.focus == "agents" else "agents"
             self.view = "live"
             return True
+        if key in ("a", "A") and self.view in ("live", "approvals"):
+            self.view = "live" if self.view == "approvals" else "approvals"
+            self.approval_index = 0
+            return True
+        if self.view == "approvals":
+            return self._keys_approvals(key)
         if self.view == "tools":
             return self._keys_tools(key)
         if self.view == "rule":
@@ -460,6 +484,28 @@ class ControlPanel:
             self.tool_index = 0
         return True
 
+    def _keys_approvals(self, key: str) -> bool:
+        from .approvals import TTL
+
+        items = self.approvals()
+        if not items:
+            self.view = "live"
+            self.message = ("nothing is waiting for approval", "muted")
+            return True
+        self.approval_index = max(0, min(self.approval_index, len(items) - 1))
+        r = items[self.approval_index]
+        what = f"{r['tool']} of {r['agent']}" + (f" ({_shown(r)})" if r.get("shown") else "")
+        if key in ("up", "k"):
+            self.approval_index = max(0, self.approval_index - 1)
+        elif key in ("down", "j"):
+            self.approval_index = min(len(items) - 1, self.approval_index + 1)
+        elif key in ("y", "Y", "enter"):
+            self.pending = ("approve", r["id"], f"Approve {what}? the same call runs once if it comes again within "
+                                                f"{TTL // 60} minutes")
+        elif key in ("n", "N", "d"):
+            self.pending = ("deny", r["id"], f"Deny {what}? it stays stopped")
+        return True
+
     def _keys_tools(self, key: str) -> bool:
         agent = self.current()
         if not agent:
@@ -523,6 +569,16 @@ class ControlPanel:
             return
         if action == "guard":
             self.guard_request = target
+            return
+        if action in ("approve", "deny"):
+            from .approvals import Approvals
+            from .controls import _who
+            ok = Approvals(self.ws).decide(target, action == "approve", _who())
+            self.message = (("approved: the call runs once when it comes again" if action == "approve"
+                             else "denied: it stays stopped", "ok" if action == "approve" else "muted") if ok
+                            else ("that request is no longer waiting", "warn"))
+            if ok:
+                self.controls._audit("*", action, target)
             return
         if action == "unwire":
             from . import wiring
@@ -655,6 +711,26 @@ def agents_pane(model: WatchModel, inv: Optional[Inventory], states: Dict[str, s
 RISK_ORDER = {c: i for i, c in enumerate(["DESTRUCTIVE", "SPEND", "EXEC", "IDENTITY", "UNCLASSIFIED", "EXTERNAL", "WRITE", "READ", "?"])}
 
 
+def _shown(r: dict) -> str:
+    return ", ".join(f"{k}={v}" for k, v in sorted((r.get("shown") or {}).items()) if k not in ("agent_id", "tool"))
+
+
+def approvals_pane(panel: "ControlPanel") -> Table:
+    t = Table(box=None, show_header=True, header_style="label", pad_edge=False, padding=(0, 2, 0, 0))
+    t.add_column("", no_wrap=True)
+    t.add_column("AGENT", style="head", no_wrap=True)
+    t.add_column("TOOL", style="text", no_wrap=True)
+    t.add_column("CALL", style="muted")
+    t.add_column("SINCE", style="muted", no_wrap=True)
+    items = panel.approvals()
+    for i, r in enumerate(items):
+        mark = Text("▸", style="brand") if i == panel.approval_index else Text(" ")
+        t.add_row(mark, r["agent"], r["tool"], _shown(r) or "·", str(r.get("at", ""))[11:16])
+    if not items:
+        t.add_row("", Text("nothing is waiting", style="muted"), "", "", "")
+    return t
+
+
 def tools_pane(panel: "ControlPanel", agent: str, rows: int = 12) -> Table:
     t = Table(box=None, show_header=True, header_style="label", pad_edge=False, padding=(0, 1, 0, 0), expand=True)
     t.add_column(f"TOOLS · {agent}", no_wrap=True, overflow="ellipsis", ratio=3)
@@ -682,6 +758,7 @@ def help_pane() -> Table:
     for k, v in (("↑ ↓", "move"), ("Enter", "open (an agent's tools, a rule's actions)"), ("Esc", "back one level"),
                  ("Tab", "switch between agents and rules"), ("/", "search agents"),
                  ("m / M", "switch the agent / ALL agents between LOG and BLOCK"),
+                 ("a", "calls waiting for a person's approval: y approves (it runs once), n denies"),
                  ("l", "the agent's limits: change them; its policy, mapping and check follow"),
                  ("w", "wire the agent (the guard into its call path), or unwire it (its files as they were)"),
                  ("x", "freeze the agent (blocks every action in any mode); x again unfreezes it"),
@@ -868,6 +945,9 @@ def render(model: WatchModel, inv: Optional[Inventory], states: Dict[str, str], 
     elif panel is not None and panel.view == "rule":
         right = Panel(rule_pane(panel), title=Text(" rule ", style="label"), title_align="left", box=box.ROUNDED,
                       border_style="brand.dim", padding=(0, 1))
+    elif panel is not None and panel.view == "approvals":
+        right = Panel(approvals_pane(panel), title=Text(" waiting for approval ", style="label"), title_align="left",
+                      box=box.ROUNDED, border_style="warn", padding=(0, 1))
     elif panel is not None and panel.view == "help":
         right = Panel(help_pane(), title=Text(" keys ", style="label"), box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))
     body = Layout()

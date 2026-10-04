@@ -215,5 +215,7 @@ def show_check(console, ws, agent, lim=None, compact: bool = False) -> bool:
     report = check.run(ws, agent, lim)
     if report.cases and not ws.plan_only:
         store_check(ws, agent_key(agent), report)
-    check.show(console, report, agent.display_name, compact=compact)
+    from .board import approval_note
+
+    check.show(console, report, agent.display_name, compact=compact, approval=approval_note(None, ws, agent))
     return report.ok or not report.cases

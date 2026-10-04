@@ -62,8 +62,9 @@ def test_init_apply_and_check_in_ci(repo, capsys):
     assert "billing mode block: stops what its limits do not allow" in flat
     mod = _load(root / "desk/agents.py")
     assert mod.charge_card(customer_id="c", amount=50) == "charged"
-    with pytest.raises(PermissionError):
-        mod.charge_card(customer_id="c", amount=150)  # over 50: needs an approval
+    from chimera_core.venom.observe import ApprovalPending
+
+    assert isinstance(mod.charge_card(customer_id="c", amount=150), ApprovalPending)  # over 50: needs an approval
     rc, out, _ = _apply(ws, capsys, "--check")
     assert rc == 0 and "not what the file says" not in out
     # a pull request changes the file: CI says so, and nothing changes until it is applied

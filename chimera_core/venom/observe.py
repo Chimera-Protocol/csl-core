@@ -76,6 +76,29 @@ class DecisionLogger:
         return rec
 
 
+class ApprovalRequired(PermissionError):
+    """The call needs a person's approval; a request is waiting in cslcore watch."""
+
+    def __init__(self, tool: str, request_id: str) -> None:
+        super().__init__(f"{tool} needs a person's approval (request {request_id}, in cslcore watch)")
+        self.tool, self.request_id = tool, request_id
+
+
+class ApprovalPending(str):
+    """What a wired tool returns instead of running when it needs a person's approval: readable
+    text for the agent (and its model), and isinstance-checkable for code."""
+
+    def __new__(cls, tool: str, request_id: str) -> "ApprovalPending":
+        from .approvals import TTL
+
+        text = (f"CSL-Core: {tool} was not run. It needs a person's approval (request {request_id}). "
+                f"Approve it in cslcore watch (key a); then the same call with the same arguments runs "
+                f"once within {TTL // 60} minutes.")
+        obj = super().__new__(cls, text)
+        obj.tool, obj.request_id = tool, request_id
+        return obj
+
+
 class VenomGuard:
     """A guard, a mapping and a decision logger, following the live control plane."""
 
@@ -170,8 +193,14 @@ class VenomGuard:
     def guard(self) -> ChimeraGuard:
         return self.log_guard if self.mode == "log" else self.block_guard
 
-    def verify(self, tool_name: str, args: Optional[Dict[str, Any]] = None, context: Optional[Dict[str, Any]] = None) -> GuardResult:
-        """Decide one tool call. `allowed` is False only when the call must not run."""
+    def verify(self, tool_name: str, args: Optional[Dict[str, Any]] = None, context: Optional[Dict[str, Any]] = None,
+               request_approval: bool = False) -> GuardResult:
+        """Decide one tool call. `allowed` is False only when the call must not run.
+
+        In block mode a call that only an approval would let through is marked `__approval__`; one
+        a person approved in cslcore watch (exactly this call, recently, not used yet) runs once.
+        With `request_approval` a waiting request is recorded and named in the warnings
+        ("approval:ID")."""
         self._reload_if_changed()
         ctl = self.controls.refresh()
         mode = ctl.mode
@@ -201,6 +230,22 @@ class VenomGuard:
             result = guard.verify(ctx)
         except ChimeraError as e:
             result = e.result or GuardResult(allowed=False, violations=[str(e)], violated_rule_ids=[e.constraint_name])
+        if mode == "block" and not result.allowed and (context or {}).get("approval") != "YES":
+            approved = self._approval_band(tool_name, args or {}, context or {})
+            if approved is not None:
+                ctx_yes, by_approval = approved
+                rid = self._approvals().consume(self.agent_id, tool_name, args or {}) if self.ws is not None else None
+                if rid is not None:
+                    ms = (time.perf_counter() - t0) * 1000
+                    self.logger.record(tool_name, "ALLOW", ["__approved__"], ms, ctx_yes, mode=mode)
+                    return GuardResult(allowed=True, warnings=[f"approved:{rid}"], triggered_rule_ids=["__approved__"])
+                warnings = list(result.warnings or [])
+                if request_approval and self.ws is not None:
+                    rid = self._approvals().request(self.agent_id, tool_name, args or {}, self.logger.values(ctx),
+                                                    list(result.violated_rule_ids))
+                    warnings.append(f"approval:{rid}")
+                result = GuardResult(allowed=False, violations=list(result.violations) + ["needs a person's approval"],
+                                     violated_rule_ids=list(result.violated_rule_ids) + ["__approval__"], warnings=warnings)
         ms = (time.perf_counter() - t0) * 1000
         violated = list(result.violated_rule_ids)
         if not violated and not result.allowed:
@@ -212,10 +257,29 @@ class VenomGuard:
         self.logger.record(tool_name, decision, violated, ms, ctx, mode=mode)
         return result
 
+    def _approvals(self):
+        from .approvals import Approvals
+        return Approvals(self.ws)
+
+    def _approval_band(self, tool_name: str, args: Dict[str, Any], context: Dict[str, Any]):
+        """(the mapped call with an approval, True) when an approval alone would let it through;
+        None when it stops either way. Decides only: nothing is recorded."""
+        try:
+            ctx_yes = self.map_call(tool_name, dict(args), {**context, "approval": "YES"})
+            if "approval" not in ctx_yes:
+                return None  # this policy has no approval: nothing to ask for
+            return (ctx_yes, True) if self.block_guard.verify(ctx_yes).allowed else None
+        except Exception:
+            return None
+
     def check(self, tool_name: str, args: Optional[Dict[str, Any]] = None, context: Optional[Dict[str, Any]] = None) -> GuardResult:
-        """verify(), raising PermissionError when the call must not run."""
-        result = self.verify(tool_name, args, context)
+        """verify(), raising PermissionError when the call must not run: ApprovalRequired (a
+        PermissionError) when a person can approve it in cslcore watch."""
+        result = self.verify(tool_name, args, context, request_approval=True)
         if not result.allowed:
+            rid = next((w.split(":", 1)[1] for w in result.warnings or [] if str(w).startswith("approval:")), None)
+            if rid is not None:
+                raise ApprovalRequired(tool_name, rid)
             raise PermissionError(f"blocked by policy: {', '.join(result.violated_rule_ids) or 'violation'}")
         return result
 
@@ -247,13 +311,19 @@ class VenomGuard:
             if inspect.iscoroutinefunction(fn):
                 @functools.wraps(fn)
                 async def guarded_async(*args, **kwargs):
-                    self.check(name, arguments(args, kwargs))
+                    try:
+                        self.check(name, arguments(args, kwargs))
+                    except ApprovalRequired as e:
+                        return ApprovalPending(e.tool, e.request_id)
                     return await fn(*args, **kwargs)
                 return guarded_async
 
             @functools.wraps(fn)
             def guarded(*args, **kwargs):
-                self.check(name, arguments(args, kwargs))
+                try:
+                    self.check(name, arguments(args, kwargs))
+                except ApprovalRequired as e:  # the function does not run; the agent is told why
+                    return ApprovalPending(e.tool, e.request_id)
                 return fn(*args, **kwargs)
             return guarded
         return wrap

@@ -341,8 +341,9 @@ def _calls(n: int, one: str, many: str) -> str:
     return f"{n} sample call {one}" if n == 1 else f"{n} sample calls {many}"
 
 
-def show(console, report: Report, name: str = "", compact: bool = False) -> None:
-    """The check for one agent: a line, and the table (compact: the table only when a call is wrong)."""
+def show(console, report: Report, name: str = "", compact: bool = False, approval: str = "") -> None:
+    """The check for one agent: a line, and the table (compact: the table only when a call is wrong).
+    `approval`: where a call that needs one gets it on this agent (board.approval_note)."""
     title = name or report.agent
     if not report.cases:
         console.print(Text.assemble(("  check ", "muted"), (title, "head"), (f"   {report.note}", "muted")))
@@ -355,7 +356,11 @@ def show(console, report: Report, name: str = "", compact: bool = False) -> None
                                     "muted" if not bad else "high")))
     console.print(head)
     if compact and not bad:
+        if approval and "no place" in approval and any(c.approval for c in report.cases):
+            console.print(Text("    " + approval, style="warn"))  # never hidden: those calls stop
         return
     console.print(Padding(table(report), (0, 0, 0, 4)))
     console.print(Text("    decided by the active policy and mapping in block mode; nothing ran\n"
                        "    a stopped call stays stopped with an approval, unless it says \"without approval\"", style="muted"))
+    if approval and any(c.approval for c in report.cases):
+        console.print(Text("    " + approval, style="warn" if "no place" in approval else "muted"))

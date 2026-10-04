@@ -377,14 +377,30 @@ def wire_plan(args, ws, agent: Agent):
     return wiring.plan_for(agent, agent_key(agent), ws, probe)
 
 
-def run_check(console, ws, agent: Agent, lim: Optional[L.Limits] = None, compact: bool = False) -> bool:
+def approval_note(args, ws, agent: Agent) -> str:
+    """Where a call that needs an approval gets it, on this agent as it is wired."""
+    from argparse import Namespace
+
+    plan = wire_plan(args if args is not None else Namespace(), ws, agent)
+    if agent.kind == "assistant" and plan.kind in ("hook", "done"):
+        return ("with approval: Claude Code asks you before it runs" if plan.kind == "done"
+                else "with approval: Claude Code will ask you, once it is wired")
+    if plan.kind == "done":
+        return "with approval: the call waits; a person approves it in cslcore watch (a), then it runs once"
+    if plan.kind == "code" and plan.changes:
+        return "with approval: once wired, the call waits for a person in cslcore watch (a)"
+    return ("with approval: needs approval, but this agent has no place to approve yet (its code needs "
+            "guard.check), so such calls stop")
+
+
+def run_check(console, ws, agent: Agent, lim: Optional[L.Limits] = None, compact: bool = False, args=None) -> bool:
     from . import check
     from .policy.draft import agent_key
 
     report = check.run(ws, agent, lim)
     if report.cases:
         store_check(ws, agent_key(agent), report)
-    check.show(console, report, agent_key(agent), compact=compact)
+    check.show(console, report, agent_key(agent), compact=compact, approval=approval_note(args, ws, agent))
     return report.ok or not report.cases
 
 
@@ -431,7 +447,7 @@ def protect(ui, console, args, ws, agent: Agent, *, ask: bool = True) -> bool:
                 _probe, root = scan_probe(args, ws)
                 rescan(args, console, ws, root)
                 console.print(Text.assemble(("  ✓ wired ", "ok"), (agent.display_name, "head")))
-    return run_check(console, ws, agent, lim)
+    return run_check(console, ws, agent, lim, args=args)
 
 
 def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
@@ -485,7 +501,7 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
             rescan(args, console, ws, root)
     console.print()
     for a in ready:
-        run_check(console, ws, a, compact=True)
+        run_check(console, ws, a, compact=True, args=args)
     return len(ready)
 
 

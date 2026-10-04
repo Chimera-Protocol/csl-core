@@ -79,9 +79,12 @@ def test_own_numbers_for_money_and_other_numbers(ws, capsys):
     assert "limit never above 1,000" in flat and "recipients never above 5" in flat
     mod = _load(host / "fs/srv/backoffice/agent.py")
     assert _call(mod.transfer_funds, amount=50_000, to_wallet="w") == "sent 50000"
-    for amount in (200_000, 500_000):  # above the free amount without an approval, and above the maximum
-        with pytest.raises(PermissionError):
-            _call(mod.transfer_funds, amount=amount, to_wallet="w")
+    from chimera_core.venom.observe import ApprovalPending
+
+    pending = _call(mod.transfer_funds, amount=200_000, to_wallet="w")  # above the free amount: waits for a person
+    assert isinstance(pending, ApprovalPending) and "not run" in pending
+    with pytest.raises(PermissionError):  # above the maximum: stops, approval or not
+        _call(mod.transfer_funds, amount=500_000, to_wallet="w")
     assert _call(mod.export_rows, table="sales", limit=500) == "exported 500"
     with pytest.raises(PermissionError):
         _call(mod.export_rows, table="sales", limit=5000)

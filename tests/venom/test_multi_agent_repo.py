@@ -132,8 +132,9 @@ def test_two_agents_in_one_file_each_keep_their_own_policy(repo, capsys):
     assert call(mod.charge_card, customer_id="c", amount=40) == "charged"
     with pytest.raises(PermissionError):
         call(mod.charge_card, customer_id="c", amount=500)  # billing's own limits
-    with pytest.raises(PermissionError):
-        call(mod.delete_ticket, ticket_id="t")  # helpdesk: deleting needs an approval
+    from chimera_core.venom.observe import ApprovalPending
+
+    assert isinstance(call(mod.delete_ticket, ticket_id="t"), ApprovalPending)  # helpdesk: deleting needs an approval
     # wiring again changes nothing
     rc, out, _ = run_cli(["wire", "--root", str(root), "--workspace", str(ws), "--yes"], capsys)
     assert (root / "desk/agents.py").read_text() == text

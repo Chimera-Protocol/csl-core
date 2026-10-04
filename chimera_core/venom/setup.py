@@ -1125,7 +1125,9 @@ class Flow:
                 self.console.print(Text("  Check: sample calls decided by each active policy", style="brand"))
                 shown = True
             self.console.print()
-            check.show(self.console, report, st.get("key", a.display_name))
+            from .board import approval_note
+            check.show(self.console, report, st.get("key", a.display_name), compact=report.ok,
+                       approval=approval_note(self.args, self.ws, a))
 
     def summary(self) -> Panel:
         """Each agent as it really is: protected only when its guard is in its call path, in block

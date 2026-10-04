@@ -7,7 +7,8 @@ settings.json:
       "command": "cslcore hook --agent claude-code-ops --policy policies/claude-code-ops.csl --mapping policies/claude_code_ops_mapping.py --workspace /srv/ops"}]}]}
 
 Reads the hook event (JSON) on stdin. In block mode a violation denies the call with the
-violated rule names; in log mode the call proceeds and the decision is recorded. Any
+violated rule names; a call that only needs a person's approval answers "ask", so Claude Code
+asks the person; in log mode the call proceeds and the decision is recorded. Any
 internal failure denies in block mode (fail closed) and is logged in log mode.
 """
 
@@ -19,11 +20,15 @@ import sys
 from .observe import venom_guard
 
 
-def _deny(reason: str) -> int:
-    out = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+def _decide(decision: str, reason: str) -> int:
+    out = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": decision,
                                   "permissionDecisionReason": f"CSL-Core: {reason}"}}
     sys.stdout.write(json.dumps(out) + "\n")
     return 0
+
+
+def _deny(reason: str) -> int:
+    return _decide("deny", reason)
 
 
 def cmd_hook(args) -> int:
@@ -44,6 +49,9 @@ def cmd_hook(args) -> int:
             return 0
         return _deny(f"guard unavailable ({type(e).__name__}); failing closed")
     result = guard.verify(tool, tool_input, {"session": event.get("session_id")})
+    if not result.allowed and "__approval__" in result.violated_rule_ids:
+        rules = [r for r in result.violated_rule_ids if not r.startswith("__")]
+        return _decide("ask", "needs your approval (" + (", ".join(rules) or "policy") + ")")
     if not result.allowed:  # block mode violation, or an agent / tool disabled by the operator
         return _deny("blocked by " + (", ".join(result.violated_rule_ids) or "policy"))
     return 0
