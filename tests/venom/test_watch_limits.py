@@ -10,6 +10,8 @@ import sys
 
 import pytest
 
+from chimera_core.venom.observe import Blocked
+
 from .conftest import HOST_OPS, run_cli
 from .test_limits import OPS_AGENT
 
@@ -62,8 +64,7 @@ def _call(fn, **kw):
 def test_l_changes_the_limits_of_a_running_agent(room, monkeypatch):
     r, host, _ws = room
     agent = _load(host / "fs/srv/backoffice/agent.py")  # running before the change
-    with pytest.raises(PermissionError):  # standard limits: above 100 needs an approval
-        _call(agent.transfer_funds, amount=1_500, to_wallet="w")
+    assert isinstance(_call(agent.transfer_funds, amount=1_500, to_wallet="w"), Blocked)  # standard limits: above 100 needs an approval
     r.handle("l")
     assert r.external is not None
     # money limits (Enter keeps them), one change, done; no extra tool; block mode; back to the panel
@@ -71,8 +72,7 @@ def test_l_changes_the_limits_of_a_running_agent(room, monkeypatch):
     r.external()
     assert "new limits active" in r.panel.message[0]
     assert _call(agent.transfer_funds, amount=1_500, to_wallet="w") == "sent 1500"  # same process, no restart
-    with pytest.raises(PermissionError):
-        _call(agent.transfer_funds, amount=4_500, to_wallet="w")
+    assert isinstance(_call(agent.transfer_funds, amount=4_500, to_wallet="w"), Blocked)
 
 
 def test_w_unwires_and_wires_again(room, monkeypatch):

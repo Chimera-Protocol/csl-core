@@ -27,7 +27,7 @@ from pathlib import Path
 import re
 import time
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from ..mapping import MappingError
 from ..runtime import ChimeraError, ChimeraGuard, GuardResult, RuntimeConfig
@@ -84,19 +84,51 @@ class ApprovalRequired(PermissionError):
         self.tool, self.request_id = tool, request_id
 
 
+class Blocked(str):
+    """What a wired framework tool (LangChain, OpenAI Agents, CrewAI) returns instead of running when
+    its limits stop the call: the agent loop goes on and the model reads why. Plain functions raise
+    PermissionError instead (on_block="raise", as in 0.6.8)."""
+
+    def __new__(cls, tool: str, reason: Optional[str] = None) -> "Blocked":
+        # one argument: frameworks rebuild a str subclass from its text (type(x)(text), copy)
+        text = tool if reason is None else (f"CSL-Core: {tool} was not run: {reason}. Ask the operator to change "
+                                            "the limits if this is expected.")
+        obj = super().__new__(cls, text)
+        obj.tool, obj.reason = (tool, reason) if reason is not None else ("", "")
+        return obj
+
+    def __reduce__(self):
+        return (str, (str(self),))
+
+
+RULE_WHY = re.compile(r"(?m)^\s*//\s*(.+?)\s*\n\s*STATE_CONSTRAINT\s+(\w+)")
+INTERNAL_WHY = {"__agent_disabled__": "the operator froze this agent",
+                "__tool_disabled__": "the operator turned this tool off",
+                "__mapping__": "its arguments could not be read safely", "__blocked__": "the policy does not allow it"}
+
+
+def rule_reasons(policy_text: str) -> Dict[str, str]:
+    """Each rule's own sentence (the comment above it in a policy made from limits)."""
+    return {name: why for why, name in RULE_WHY.findall(policy_text or "")}
+
+
 class ApprovalPending(str):
     """What a wired tool returns instead of running when it needs a person's approval: readable
     text for the agent (and its model), and isinstance-checkable for code."""
 
-    def __new__(cls, tool: str, request_id: str) -> "ApprovalPending":
+    def __new__(cls, tool: str, request_id: Optional[str] = None) -> "ApprovalPending":
         from .approvals import TTL
 
-        text = (f"CSL-Core: {tool} was not run. It needs a person's approval (request {request_id}). "
-                f"Approve it in cslcore watch (key a); then the same call with the same arguments runs "
-                f"once within {TTL // 60} minutes.")
+        text = tool if request_id is None else (
+            f"CSL-Core: {tool} was not run. It needs a person's approval (request {request_id}). "
+            f"Approve it in cslcore watch (key a); then the same call with the same arguments runs "
+            f"once within {TTL // 60} minutes.")
         obj = super().__new__(cls, text)
-        obj.tool, obj.request_id = tool, request_id
+        obj.tool, obj.request_id = (tool, request_id) if request_id is not None else ("", "")
         return obj
+
+    def __reduce__(self):
+        return (str, (str(self),))
 
 
 class VenomGuard:
@@ -280,14 +312,34 @@ class VenomGuard:
             rid = next((w.split(":", 1)[1] for w in result.warnings or [] if str(w).startswith("approval:")), None)
             if rid is not None:
                 raise ApprovalRequired(tool_name, rid)
-            raise PermissionError(f"blocked by policy: {', '.join(result.violated_rule_ids) or 'violation'}")
+            err = PermissionError(f"blocked by policy: {', '.join(result.violated_rule_ids) or 'violation'}")
+            err.rule_ids = list(result.violated_rule_ids)  # type: ignore[attr-defined]
+            raise err
         return result
 
-    def tool(self, name: str) -> Callable:
+    def reasons(self, rule_ids) -> str:
+        """The violated rules in words, for a person or a model to read."""
+        text = self.ws.read(self.policy_path) if self.ws is not None and self.policy_path is not None else ""
+        why = rule_reasons(text or "")
+        out: List[str] = []
+        firm = [r for r in rule_ids or [] if "approval" not in r]
+        for r in firm or list(rule_ids or []):  # a firm stop is said without the approval rules beside it
+            if r == "__approval__":
+                continue
+            w = INTERNAL_WHY.get(r) or why.get(r) or r.replace("_", " ")
+            if w not in out:
+                out.append(w)
+        return "; ".join(out) or "the policy does not allow it"
+
+    def tool(self, name: str, on_block: str = "raise") -> Callable:
         """Decorator for a tool function: the policy decides every call before the function runs.
         It keeps the function's name, docstring and signature, so frameworks that read them
         (LangChain's @tool, OpenAI Agents' @function_tool) see the same tool. Put it directly
-        above `def`, under the framework's own decorator."""
+        above `def`, under the framework's own decorator.
+
+        on_block="return" (what cslcore wire writes under a framework's decorator): a stopped call
+        returns Blocked, readable text, so the agent loop goes on and the model sees why. The
+        default "raise" keeps PermissionError for plain functions, as in 0.6.8."""
         import functools
         import inspect
 
@@ -308,23 +360,29 @@ class VenomGuard:
                         out[k] = v
                 return out
 
-            if inspect.iscoroutinefunction(fn):
-                @functools.wraps(fn)
-                async def guarded_async(*args, **kwargs):
-                    try:
-                        self.check(name, arguments(args, kwargs))
-                    except ApprovalRequired as e:
-                        return ApprovalPending(e.tool, e.request_id)
-                    return await fn(*args, **kwargs)
-                return guarded_async
-
-            @functools.wraps(fn)
-            def guarded(*args, **kwargs):
+            def decided(args, kwargs):
+                """None when the call may run; else what the tool returns instead (or raises)."""
                 try:
                     self.check(name, arguments(args, kwargs))
                 except ApprovalRequired as e:  # the function does not run; the agent is told why
                     return ApprovalPending(e.tool, e.request_id)
-                return fn(*args, **kwargs)
+                except PermissionError as e:
+                    if on_block != "return":
+                        raise
+                    return Blocked(name, self.reasons(getattr(e, "rule_ids", [])))
+                return None
+
+            if inspect.iscoroutinefunction(fn):
+                @functools.wraps(fn)
+                async def guarded_async(*args, **kwargs):
+                    instead = decided(args, kwargs)
+                    return instead if instead is not None else await fn(*args, **kwargs)
+                return guarded_async
+
+            @functools.wraps(fn)
+            def guarded(*args, **kwargs):
+                instead = decided(args, kwargs)
+                return instead if instead is not None else fn(*args, **kwargs)
             return guarded
         return wrap
 

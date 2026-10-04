@@ -11,6 +11,7 @@ import shutil
 import pytest
 
 from chimera_core.venom import board as B
+from chimera_core.venom.observe import Blocked
 from chimera_core.venom import setup as S
 from chimera_core.venom.workspace import Workspace
 
@@ -108,8 +109,7 @@ def test_one_agent_then_the_rest_with_one_key(host, monkeypatch, capsys):
         return fn.invoke(kw) if hasattr(fn, "invoke") else fn(**kw)
 
     assert call(mod.transfer_funds, amount=900, to_wallet="w") == "sent 900"
-    with pytest.raises(PermissionError):
-        call(mod.transfer_funds, amount=9_000, to_wallet="w")
+    assert isinstance(call(mod.transfer_funds, amount=9_000, to_wallet="w"), Blocked)
     for key in ("devhelper", "ingest-worker", "claude-code-ops", "claude-code-sandbox"):
         assert rows[key].protected, (key, rows[key].wired, rows[key].check, rows[key].mode)
     assert rows["publisher"].wired == "manual" and not rows["publisher"].protected

@@ -11,6 +11,8 @@ import sys
 
 import pytest
 
+from chimera_core.venom.observe import Blocked
+
 from .conftest import HOST_OPS, run_cli
 
 PAYOUTS = '''"""Pays members out of the treasury."""
@@ -83,7 +85,8 @@ def test_a_python_agent_from_discovery_to_a_real_stop(host, tmp_path, capsys, mo
                           "--mode", "block", "--wire"], capsys)
     assert rc == 0 and "wired" in out
     text = code.read_text()
-    assert '@_csl_guard.tool("transfer_funds")' in text and '@_csl_guard.tool("check_balance")' in text
+    assert '@_csl_guard.tool("transfer_funds", on_block="return")' in text  # under LangChain's @tool
+    assert '@_csl_guard.tool("check_balance", on_block="return")' in text
     assert text.index("@tool\n@_csl_guard.tool") >= 0  # under the framework's own decorator
     wired = _agent(ws, "payouts")
     assert wired["guard"]["status"] == "wired"
@@ -96,8 +99,8 @@ def test_a_python_agent_from_discovery_to_a_real_stop(host, tmp_path, capsys, mo
     if hasattr(pay, "invoke"):  # a real LangChain tool: it still sees the function's own schema
         assert pay.name == "transfer_funds" and set(pay.args) == {"amount", "to_wallet"} and "treasury" in pay.description
     assert _call(pay, amount=5, to_wallet="w1") == "sent 5 to w1"
-    with pytest.raises(PermissionError, match="blocked by policy"):
-        _call(pay, amount=900_000_000, to_wallet="w1")
+    stopped = _call(pay, amount=900_000_000, to_wallet="w1")  # a LangChain tool: readable, the loop goes on
+    assert isinstance(stopped, Blocked) and "was not run" in stopped and "never above" in stopped
     log = [json.loads(line) for line in (ws / ".csl/venom/decisions/payouts.jsonl").read_text().splitlines()]
     assert [r["decision"] for r in log] == ["ALLOW", "BLOCK"] and "w1" not in json.dumps(log)
 
@@ -120,8 +123,8 @@ def test_a_python_agent_from_discovery_to_a_real_stop(host, tmp_path, capsys, mo
     assert v.pending[0] == "disable"
     v.handle("y")
     assert Controls(w).get("payouts").disabled
-    with pytest.raises(PermissionError, match="agent_disabled"):
-        _call(pay, amount=5, to_wallet="w1")
+    frozen = _call(pay, amount=5, to_wallet="w1")
+    assert isinstance(frozen, Blocked) and "the operator froze this agent" in frozen
     v.handle("x")  # and back
     assert _call(pay, amount=5, to_wallet="w1") == "sent 5 to w1"
 

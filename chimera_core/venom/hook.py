@@ -50,8 +50,8 @@ def cmd_hook(args) -> int:
         return _deny(f"guard unavailable ({type(e).__name__}); failing closed")
     result = guard.verify(tool, tool_input, {"session": event.get("session_id")})
     if not result.allowed and "__approval__" in result.violated_rule_ids:
-        rules = [r for r in result.violated_rule_ids if not r.startswith("__")]
-        return _decide("ask", "needs your approval (" + (", ".join(rules) or "policy") + ")")
+        return _decide("ask", "needs your approval: " + guard.reasons(result.violated_rule_ids))
     if not result.allowed:  # block mode violation, or an agent / tool disabled by the operator
-        return _deny("blocked by " + (", ".join(result.violated_rule_ids) or "policy"))
+        return _deny(f"not run: {guard.reasons(result.violated_rule_ids)} ("
+                     + (", ".join(result.violated_rule_ids) or "policy") + ")")
     return 0

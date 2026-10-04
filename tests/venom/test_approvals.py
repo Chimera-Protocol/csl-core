@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from chimera_core.venom import watch as W
+from chimera_core.venom.observe import Blocked
 from chimera_core.venom.controls import Controls
 from chimera_core.venom.observe import ApprovalPending
 from chimera_core.venom.workspace import Workspace
@@ -66,8 +67,7 @@ def test_a_waiting_call_is_approved_in_watch_and_runs_once(env):
     assert isinstance(pending, ApprovalPending) and pending.tool == "transfer_funds" and "not run" in pending
     again = _call(agent.transfer_funds, amount=500, to_wallet="w")
     assert again.request_id == pending.request_id  # one request per call, not one per try
-    with pytest.raises(PermissionError):  # above the maximum: no approval can let it through
-        _call(agent.transfer_funds, amount=5_000, to_wallet="w")
+    assert isinstance(_call(agent.transfer_funds, amount=5_000, to_wallet="w"), Blocked)  # above the maximum: no approval can let it through
     stored = (ws / ".csl/venom/approvals.json").read_text()
     assert '"w"' not in stored and "to_wallet" not in stored  # the arguments are never written
 

@@ -7,6 +7,8 @@ from __future__ import annotations
 import importlib.util
 import pytest
 
+from chimera_core.venom.observe import Blocked
+
 from .conftest import run_cli
 
 FILES = {
@@ -123,15 +125,15 @@ def test_two_agents_in_one_file_each_keep_their_own_policy(repo, capsys):
     assert rc == 0
     text = (root / "desk/agents.py").read_text()
     assert '_csl_guard = venom_guard("billing"' in text and '_csl_guard_helpdesk = venom_guard("helpdesk"' in text
-    assert '@_csl_guard.tool("charge_card")' in text and '@_csl_guard_helpdesk.tool("delete_ticket")' in text
+    assert '@_csl_guard.tool("charge_card", on_block="return")' in text
+    assert '@_csl_guard_helpdesk.tool("delete_ticket", on_block="return")' in text
     assert text.count("from chimera_core.venom.observe import venom_guard") == 1
     mod = _load(root / "desk/agents.py")
     def call(fn, **kw):  # plain functions here (the fallback when the Agents SDK is absent)
         return fn(**kw)
 
     assert call(mod.charge_card, customer_id="c", amount=40) == "charged"
-    with pytest.raises(PermissionError):
-        call(mod.charge_card, customer_id="c", amount=500)  # billing's own limits
+    assert isinstance(call(mod.charge_card, customer_id="c", amount=500), Blocked)  # billing's own limits
     from chimera_core.venom.observe import ApprovalPending
 
     assert isinstance(call(mod.delete_ticket, ticket_id="t"), ApprovalPending)  # helpdesk: deleting needs an approval

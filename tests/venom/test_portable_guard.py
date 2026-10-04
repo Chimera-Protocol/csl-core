@@ -44,7 +44,8 @@ out = [agent.transfer_funds(amount=50, to_wallet="w")]
 for call in (lambda: agent.transfer_funds(amount=900, to_wallet="w"),
              lambda: agent.write_file(path=sys.argv[2], text="x")):
     try:
-        out.append(call())
+        r = call()
+        out.append("BLOCKED" if "was not run" in str(r) else r)  # a framework tool returns Blocked
     except PermissionError:
         out.append("BLOCKED")
 print("|".join(out))

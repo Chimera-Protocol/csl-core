@@ -175,6 +175,36 @@ def _wrapper(fn) -> Optional[str]:
     return None
 
 
+FRAMEWORK_MODULES = ("langchain", "langgraph", "agents", "crewai", "llama_index", "semantic_kernel", "autogen",
+                     "pydantic_ai", "smolagents", "strands")
+
+
+def _framework_names(tree: ast.AST) -> set:
+    """Names imported from an agent framework in this file (`from langchain_core.tools import tool`,
+    `from agents import function_tool as ft`, `import crewai`)."""
+    names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module and node.level == 0 \
+                and node.module.split(".")[0].startswith(FRAMEWORK_MODULES):
+            names |= {a.asname or a.name for a in node.names}
+        elif isinstance(node, ast.Import):
+            names |= {(a.asname or a.name).split(".")[0] for a in node.names
+                      if a.name.split(".")[0].startswith(FRAMEWORK_MODULES)}
+    return names
+
+
+def _under_framework(fn, framework_names: set) -> bool:
+    """A tool registered by a framework's decorator (LangChain @tool, OpenAI Agents @function_tool,
+    CrewAI @tool): a stopped call returns readable text there, so the agent loop goes on. A decorator
+    of the file's own (a plain function) keeps raising PermissionError, as in 0.6.8."""
+    for d in fn.decorator_list:
+        target = d.func if isinstance(d, ast.Call) else d
+        root = ast.unparse(target).split(".", 1)[0]
+        if root in framework_names and "_csl_guard" not in ast.unparse(d):
+            return True
+    return False
+
+
 def _guard_var(source: str, key: str) -> str:
     """The guard variable for this agent in a file: its own if the file has one already; the plain
     `_csl_guard` if no other agent's guard is there; else one named after the agent, so two agents
@@ -252,6 +282,7 @@ def _plan_code(agent: Agent, key: str, ws: Workspace, probe) -> Plan:
         lines = before.splitlines(keepends=True)
         inserts: List[tuple] = []  # (line index, text)
         var = _guard_var(before, key)
+        frameworks = _framework_names(tree)
         for fn in _defs(tree):
             names = [n for n in _tool_name_of(fn) if n in wanted and n not in found]
             if not names:
@@ -265,7 +296,8 @@ def _plan_code(agent: Agent, key: str, ws: Workspace, probe) -> Plan:
                 continue
             row = fn.lineno - 1
             indent = lines[row][: len(lines[row]) - len(lines[row].lstrip())]
-            inserts.append((row, f'{indent}@{var}.tool({json.dumps(names[0])})  {MARK}\n'))
+            framed = ', on_block="return"' if _under_framework(fn, frameworks) else ""
+            inserts.append((row, f'{indent}@{var}.tool({json.dumps(names[0])}{framed})  {MARK}\n'))
         if not inserts:
             continue
         if f"{var} = venom_guard(" not in before:
