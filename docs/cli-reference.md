@@ -7,7 +7,9 @@ CSL-Core provides a robust Command Line Interface (CLI) for compiling policies, 
 | Command | What it does |
 |---|---|
 | `cslcore setup` | Guided first install: discovery, findings, policies, mapping, mode, wiring, activation |
-| `cslcore wire` | Put the guard in each agent's call path (a hook or a decorator), diff first; `--undo` |
+| `cslcore wire` | Put the guard in each agent's call path (a hook or a decorator), diff first; `--diff`, `--undo` |
+| `cslcore limits` | What each agent may do, in your own numbers; the policy, mapping and check follow |
+| `cslcore apply` | Make `csl-limits.ini` (kept in the repository) the active policies; `--check` for CI |
 | `cslcore venom` | Read-only discovery of the AI agents on this host |
 | `cslcore venom report` | The latest report, or one agent in detail |
 | `cslcore venom map` | The reach map, full screen: chains, dive into an agent, 3D globe |
@@ -189,8 +191,44 @@ scanned again so the map and the live panel show what is guarded.
 |---|---|
 | `--agent ID` | one agent (key or name) |
 | `--yes` | apply without asking (each diff is still printed) |
+| `--diff` | show the whole change for each agent and make none (long diffs are cut otherwise) |
 | `--undo` | put the files back as they were (a file changed since is left alone and reported) |
 | `--root PATH` | the folder that was scanned (default: the one the last scan covered) |
+
+Each diff comes after one line: how many lines in how many files, whether any existing line is
+rewritten, and the undo command. Before a Python agent is wired, the interpreter it runs with (its
+project's virtual environment, else the Python running cslcore) must import csl-core; if it cannot,
+the install command is shown and you are asked (a scripted run skips that agent). The guard line is
+`venom_guard(KEY, workspace="<relative>", near=__file__)`: the workspace is `CSL_WORKSPACE` when set,
+else the path relative to the agent's file, else the nearest `.csl` above it; with none, every call
+is refused.
+
+### `cslcore limits`
+
+| Option | Meaning |
+|---|---|
+| (none) | every agent, its limits tool by tool, and whether it is guarded |
+| `--agent ID` | one agent |
+| `--set TOOL=FREE..MAX` | money: free up to FREE, with an approval up to MAX, never above (`100k..300k`, `..1000`) |
+| `--set TOOL.PARAM=FREE..MAX` | any numeric argument (a list: its length) |
+| `--decide TOOL=allow\|approval\|block\|standard` | what happens to one tool |
+| `--add-tool NAME:KIND[:AMOUNT_PARAM]` | a tool the scan did not see |
+| `--scope FOLDER`, `--profile standard\|strict` | where it may write; strict allows only what is listed |
+| `--check` | decide sample calls with the active policy and mapping: what runs, what stops (exit 3 if wrong) |
+| `--yes` | activate without asking (the diff is still printed) |
+
+### `cslcore apply`
+
+`csl-limits.ini` keeps a repository's limits, one section per agent, in the words of `cslcore limits`
+(`transfer_funds = 1k..5k`, `export_rows.limit = ..1000`, `delete_customer = block`, `profile`,
+`mode`, `scope`, `commands`, `destinations`, `extra_tools`).
+
+| Option | Meaning |
+|---|---|
+| (none) | scan, make each policy, check it, show the diff, activate it, run the check |
+| `--init` | write the file from the limits each agent has now (`--force` to write it again) |
+| `--check` | change nothing; exit 3 when a policy made from the file fails the gate, the mapping test or the check; exit 1 when an active policy is not what the file says |
+| `--wire`, `--yes`, `--file PATH` | also wire; do not ask; another file |
 
 ### `cslcore venom`
 
@@ -256,6 +294,9 @@ The live management panel. `--refresh SECONDS` sets the table refresh, `--once` 
 | arrows, `/` | select and search agents |
 | `m` / `M` | log or block for the agent / for every agent |
 | `x` | freeze the agent: every action is blocked in any mode until `x` again (`d` still works) |
+| `l` | change the agent's limits; its policy, mapping and check follow, running agents switch on their next call |
+| `w` | wire the agent, or unwire it (its files as they were) |
+| `a` | calls waiting for a person's approval: `y` approves (the same call runs once within 10 minutes), `n` denies |
 | `e` | exempt the agent, with a reason |
 | Enter | the agent's tools: disable or exempt one |
 | Tab | rules ranked by would-block: `e` exempts an agent from a rule, `o` opens it in the studio |

@@ -25,10 +25,14 @@ pip install csl-core
 cslcore setup
 ```
 
-`cslcore setup` is the whole first install, one step per screen: it scans the machine, explains
-what it found, drafts and verifies a policy per agent, tests every mapping, lets you choose log or
-block mode, and shows the one change each agent needs. It is read-only until you confirm, resumable
-at any step, and writes only inside the folder you run it in.
+`cslcore setup` is the whole first install: it scans the machine, explains what it found, and opens
+the protection board, the riskiest agents first. Enter gives every agent standard limits, a policy
+made from them and checked with Z3, and the change that puts the guard in its call path, shown as a
+diff with a one-line summary before anything is written. A number opens one agent instead: its
+limits in your own numbers (amounts, any numeric argument, allow, approval or block per tool), the
+policy, the wiring and a check that decides sample calls with the real policy and shows what runs
+and what stops. Until you confirm a wiring change it writes only inside the folder you run it in.
+It is resumable at any step, and `cslcore setup` later opens the board where you left it.
 
 Then watch it run:
 
@@ -44,7 +48,8 @@ uvx csl-core venom
 
 The scan on its own: read-only, about a second. Add `--share` to get a card of your machine's reach
 map to post (no host name, user names or paths on it; `--anonymize` also hides agent names). To try
-the whole flow on a sample host instead of your machine:
+the whole flow on a sample host instead of your machine, from a clone of this repository (the sample
+host and the traffic script are in the repository, not in the package):
 
 ```bash
 cslcore setup --root tests/venom/fixtures/host_ops --workspace /tmp/csl-demo
@@ -127,10 +132,14 @@ assistant that reads web content and runs commands without a rule).
 </p>
 
 Ten resumable steps: scope, discovery, inventory, findings with what to do about each, exemptions,
-policies, verification, mapping, enforcement mode and wiring, activation. Per agent you keep the
-policy it already uses, draft one from risk-class templates, write it in the studio, or let your own
-assistant draft it. Every draft passes the same gate (parse, validate, Z3, diff, your confirmation)
-before it becomes active.
+policies (the protection board), verification, mapping, enforcement mode and wiring, activation. On
+the board each agent shows its limits, policy, wiring, mode and check; Enter gives the agents
+without a policy standard protection, a number runs one agent's loop, `s` leaves an agent untouched,
+and `o` offers the other ways: keep the policy it already uses, write it in the studio or an editor,
+or let your own assistant draft it. Every policy passes the same gate (parse, validate, Z3, the
+mapping test) before it becomes active. An agent activated for the first time starts in block mode
+unless you chose log; agents already running in log mode keep it. Setup ends with the check per
+agent and the commands that undo or loosen each step.
 
 Then the guard goes into each agent's call path for real, once its policy is active: setup shows the
 change as a diff and makes it when you confirm (`--wire` with `--yes`), or later `cslcore wire`.
@@ -141,11 +150,27 @@ change as a diff and makes it when you confirm (`--wire` with `--yes`), or later
   `@_csl_guard.tool("name")` directly above each tool function, under the framework's own decorator.
   The tool keeps its name, docstring and signature, so the framework sees the same tool.
 
+Before a Python agent is wired, setup checks that the interpreter it runs with (its project's
+virtual environment, when it has one) can import csl-core, and offers the install command if not.
+The guard line finds its workspace relative to the agent's file, through `CSL_WORKSPACE`, or in the
+nearest `.csl` folder above it, so a committed repository works in a clone, in CI and on a server.
+
 A tool that exists only as a schema (the model asks for it, your own code runs it) cannot be wired
 automatically; it gets the exact `guard.check` line instead, and the summary says it is not wired.
 Each changed file is copied into the workspace first, and `cslcore wire --undo` puts it back. The
 map and the live panel only show an agent as guarded when the scan sees its guard in the call path;
 `x` on an agent nothing guards yet offers to put it under one, then freezes it.
+
+**Limits, in your own numbers.** `cslcore limits` shows and changes what each agent may do
+(`--set transfer_funds=100k..300k`, `--set export_rows.limit=..1000`, `--decide delete_user=block`),
+makes the policy again, checks it and runs the check. A repository can keep them in
+`csl-limits.ini`, reviewed in pull requests: `cslcore apply` makes them active, and
+`cslcore apply --check` in CI fails when a policy made from the file would not hold.
+
+**Approvals are real.** A call over the free amount does not simply stop: Claude Code asks you
+(the hook answers "ask"), and a wired Python tool returns `ApprovalPending` and waits in
+`cslcore watch` (key `a`); once you approve it there, the same call runs once within ten minutes.
+What no approval can allow (above the maximum, a destructive command) still stops.
 
 ### 3. Write and prove: `cslcore studio`
 
@@ -182,7 +207,8 @@ and `destination_allowed` pass every trick family. Guide: [MAPPING.md](docs/veno
 The live panel: agents with their mode and block rate, the decision stream, and rules ranked by how
 often they would block, the ones to tune before switching to block. Switch an agent between log and
 block (`m`), disable an agent or a single tool (kill switch), exempt an agent from a rule with a
-recorded reason, or open the rule in the studio. Changes reach running agents on their next call,
+recorded reason, or open the rule in the studio. `l` changes an agent's limits, `w` wires or
+unwires it, `a` lists the calls waiting for your approval. Changes reach running agents on their next call,
 without a restart, and every change is recorded in `.csl/venom/audit.jsonl`. The same controls are
 on the command line: `cslcore mode`.
 
@@ -298,6 +324,9 @@ never activated by the assistant; activation stays with you.
 | `cslcore setup` | Guided first install, resumable |
 | `cslcore venom` | Read-only discovery; `venom report --agent NAME` for one agent, `--check` for CI |
 | `cslcore venom map` | The reach map, full screen: chains, dive into an agent, 3D globe |
+| `cslcore limits` | What each agent may do, in your own numbers; `--check` decides sample calls |
+| `cslcore apply` | Make `csl-limits.ini` active; `--check` for CI, `--init` writes the file |
+| `cslcore wire` | Put the guard in each agent's call path (`--diff` shows the change, `--undo` reverts) |
 | `cslcore studio` | Write, prove (Z3, TLA+), bind and go live, in the terminal |
 | `cslcore watch` | Live management panel |
 | `cslcore map` | Generate mappings and run the mapping test (`--test`, `--mapping`, `--cases`) |
