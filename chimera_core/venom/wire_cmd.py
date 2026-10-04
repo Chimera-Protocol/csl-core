@@ -5,6 +5,7 @@
     cslcore wire --agent KEY       one agent
     cslcore wire --yes             apply without asking (each diff is still printed)
     cslcore wire --undo [--agent KEY]   put the files back as they were
+    cslcore wire --agent KEY --diff     the whole change, without making it
 
 Only agents with an active policy are wired: a guard without its policy refuses every call.
 After a change the host is scanned again, so the map and the live panel show what is guarded.
@@ -78,7 +79,35 @@ def env_ready(console, args, ws, agent, plan: wiring.Plan, ask=None) -> bool:
     return ask(f"Wire {agent.display_name} anyway? it stops at import until csl-core is installed there", False)
 
 
-def show_plan(console, plan: wiring.Plan) -> None:
+DIFF_LINES = 30  # a longer diff is cut here; cslcore wire --agent KEY --diff shows all of it
+
+
+def plan_summary(plan: wiring.Plan) -> str:
+    """One line before the diff: how many files and lines, whether anything existing changes, undo."""
+    from .render.words import n
+
+    added = removed = 0
+    only_marked = True
+    for ch in plan.changes:
+        for line in ch.diff().splitlines():
+            if line.startswith("+") and not line.startswith("+++"):
+                added += 1
+                if line[1:].strip() and wiring.MARK not in line:
+                    only_marked = False
+            elif line.startswith("-") and not line.startswith("---"):
+                removed += 1
+    files = len(plan.changes)
+    text = f"{n(added, 'line')} added in {n(files, 'file')}"
+    if removed:
+        text += f", {n(removed, 'existing line')} rewritten"
+    if plan.kind == "code" and not removed and only_marked:
+        text += "; function bodies and existing lines are not touched"
+    elif plan.kind == "hook":
+        text += "; one PreToolUse hook entry, the other settings are kept"
+    return text + f"; undo: cslcore wire --undo --agent {plan.key}"
+
+
+def show_plan(console, plan: wiring.Plan, full: bool = False, ws=None) -> None:
     head = Text.assemble(("  ", ""), (plan.agent, "head"))
     if plan.kind == "hook":
         head.append("  a hook: every tool call is decided first", style="muted")
@@ -86,8 +115,27 @@ def show_plan(console, plan: wiring.Plan) -> None:
         head.append(f"  {len(plan.wrapped)} tool function{'s' if len(plan.wrapped) != 1 else ''} wrapped: "
                     f"{', '.join(plan.wrapped)}", style="muted")
     console.print(head)
+    if plan.changes:
+        console.print(Text("    " + plan_summary(plan), style="text"))
+    budget = None if full else DIFF_LINES
+    hidden = 0
     for ch in plan.changes:
-        console.print(Syntax(ch.diff(), "diff", theme="ansi_dark", background_color="default", word_wrap=True))
+        lines = ch.diff().splitlines()
+        if budget is not None:
+            shown, hidden = lines[:max(0, budget)], hidden + max(0, len(lines) - max(0, budget))
+            budget -= len(shown)
+        else:
+            shown = lines
+        if shown:
+            console.print(Syntax("\n".join(shown), "diff", theme="ansi_dark", background_color="default", word_wrap=True))
+    if hidden:
+        where = ""
+        if ws is not None and not ws.plan_only:
+            path = ws.venom / "wire" / f"{plan.key}.diff"
+            ws.write_text(path, "".join(ch.diff() for ch in plan.changes))
+            where = f" (also in {ws.rel(path)})"
+        console.print(Text(f"    … {hidden} more diff lines · all of it: cslcore wire --agent {plan.key} --diff{where}",
+                           style="muted"))
     if plan.note:
         console.print(Text("    " + plan.note, style="warn" if plan.kind == "manual" else "muted"))
     if getattr(plan, "requires", ""):
@@ -139,10 +187,12 @@ def cmd_wire(args) -> int:
         if plan.kind == "done":
             console.print(Text.assemble(("  ", ""), (a.display_name, "head"), (f"  {plan.note}", "ok")))
             continue
-        show_plan(console, plan)
+        show_plan(console, plan, full=bool(getattr(args, "diff", False)), ws=ws)
         if plan.kind == "manual" or not plan.changes:
             manual.append(plan)
             continue
+        if getattr(args, "diff", False):
+            continue  # --diff shows the whole change and makes none
         interactive = sys.stdin.isatty() and not getattr(args, "yes", False)
         if not env_ready(console, args, ws, a, plan, (lambda q, d: confirm(console, q, False, default=d)) if interactive
                          else None):
@@ -156,6 +206,9 @@ def cmd_wire(args) -> int:
                 continue
             applied.append((plan, current_mode(ws, key)))
         console.print()
+    if getattr(args, "diff", False):
+        console.print(Text("  nothing was changed (--diff); without it: cslcore wire", style="muted"))
+        return EXIT_OK
     if applied:
         rescan(args, console, ws, root)
         console.print(Text("  WIRED", style="label"))
@@ -203,7 +256,7 @@ def guard_one(console, args, ws, agent) -> bool:
         console.print(Text("  " + plan.note, style="warn"))
         return False
     if plan.kind == "hook" or plan.changes:
-        show_plan(console, plan)
+        show_plan(console, plan, ws=ws)
         if not env_ready(console, args, ws, agent, plan, lambda q, d: confirm(console, q, False, default=d)):
             console.print("  [muted]not wired[/muted]")
             return False

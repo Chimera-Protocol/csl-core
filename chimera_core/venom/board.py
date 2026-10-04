@@ -437,7 +437,7 @@ def protect(ui, console, args, ws, agent: Agent, *, ask: bool = True) -> bool:
     if plan.kind == "manual":
         console.print(Text("  " + plan.note, style="warn"))
     elif plan.changes:
-        show_plan(console, plan)
+        show_plan(console, plan, ws=ws)
         from .wire_cmd import env_ready
         if not env_ready(console, args, ws, agent, plan, ui.ask):
             console.print("  [muted]not wired[/muted]")
@@ -499,7 +499,7 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
     if todo:
         console.print()
         for p in todo:
-            show_plan(console, p)
+            show_plan(console, p, ws=ws)
         if ui.ask(f"Wire {plural(len(todo), 'agent')}? (undo any time: cslcore wire --undo)", True):
             probe, root = scan_probe(args, ws)
             wiring.apply_many([(agent_of[p.key], p) for p in todo], ws, probe, on_error=lambda p, e: console.print(

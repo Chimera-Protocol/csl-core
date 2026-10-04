@@ -167,6 +167,7 @@ def register(sub) -> None:
     wi.add_argument("--agent", metavar="ID", help="one agent (key or name); default: every agent with an active policy")
     wi.add_argument("--yes", action="store_true", help="apply without asking (each diff is still printed)")
     wi.add_argument("--undo", action="store_true", help="put the files cslcore wire changed back as they were")
+    wi.add_argument("--diff", action="store_true", help="show the whole change for each agent, make none")
     _shared(wi)
     wi.set_defaults(func=_lazy("chimera_core.venom.wire_cmd.cmd_wire"))
 

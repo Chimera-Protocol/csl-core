@@ -319,7 +319,7 @@ def _wire(args, console, ws, agent: Agent) -> None:
         if plan.kind == "manual":
             console.print(Text("  " + plan.note, style="warn"))
         return
-    show_plan(console, plan)
+    show_plan(console, plan, ws=ws)
     from .wire_cmd import env_ready
 
     interactive = not getattr(args, "yes", False)

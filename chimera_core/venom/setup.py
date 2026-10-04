@@ -912,7 +912,7 @@ class Flow:
 
             chosen = []
             for p in todo:
-                show_plan(self.console, p)
+                show_plan(self.console, p, ws=self.ws)
                 if not env_ready(self.console, self.args, self.ws, agent_of[p.key], p,
                                  self.ask if self.interactive else None):
                     continue

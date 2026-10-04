@@ -1159,7 +1159,7 @@ class WatchRoom:
                     self.console.print(Text("  " + (plan.note or "nothing to change"), style="warn"))
                     self.panel.message = (f"{key} cannot be wired automatically (see .csl/venom/wiring.md)", "warn")
                 else:
-                    show_plan(self.console, plan)
+                    show_plan(self.console, plan, ws=self.ws)
                     from .wire_cmd import env_ready
                     if not env_ready(self.console, self.args, self.ws, agent, plan, ui.ask):
                         self.panel.message = (f"{key} not wired: csl-core is not installed where it runs", "warn")
