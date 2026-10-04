@@ -180,6 +180,8 @@ def register(sub) -> None:
                     help="a tool the scan did not see (risk: spend, shell, sql, write, send, destroy, other)")
     li.add_argument("--scope", metavar="FOLDER", action="append", default=[], help="another folder the agent may write under")
     li.add_argument("--profile", choices=["standard", "strict"], help="standard: harmful actions stop; strict: only what is listed")
+    li.add_argument("--check", action="store_true",
+                    help="decide sample calls with the active policy: what runs and what stops, against the limits")
     li.add_argument("--yes", action="store_true", help="activate without asking (the diff is still printed)")
     _shared(li)
     li.set_defaults(func=_lazy("chimera_core.venom.limits_cmd.cmd_limits"))

@@ -7,9 +7,11 @@
     cslcore limits --agent payments --decide delete_customer=block
     cslcore limits --agent payments --add-tool wire_transfer:spend:amount
     cslcore limits --agent payments --profile strict
+    cslcore limits --check                           sample calls decided by the active policies
 
 A change makes the policy again from the limits, checks it (parse, validate, Z3), shows the diff,
-and after confirmation activates it and its mapping. Guards that are running pick it up on their
+and after confirmation activates it and its mapping, then decides sample calls with it (what runs,
+what stops) against the limits. Guards that are running pick it up on their
 next call. Policies written by hand (in the studio or an editor) are not overwritten: their limits
 are edited there.
 """
@@ -21,7 +23,7 @@ from typing import List
 from rich.table import Table
 from rich.text import Text
 
-from .commands import EXIT_OK, EXIT_USAGE, console_for, workspace_for
+from .commands import EXIT_CHECK_FAILED, EXIT_OK, EXIT_USAGE, console_for, workspace_for
 from .policy import limits as L
 
 MADE_FROM_LIMITS = "made from its limits"
@@ -126,13 +128,20 @@ def cmd_limits(args) -> int:
         console.print("  [warn]no scan in this workspace yet: run cslcore venom (or cslcore setup) first[/warn]")
         return EXIT_USAGE
     want = getattr(args, "agent", None)
+    checking = bool(getattr(args, "check", False))
     if not want:
+        failed = 0
         for a in inv.agents:
             if a.tools:
-                show_agent(console, ws, a, limits_of(ws, args, a))
+                if checking:
+                    failed += not show_check(console, ws, a)
+                else:
+                    show_agent(console, ws, a, limits_of(ws, args, a))
                 console.print()
-        console.print(Text("  change one: cslcore limits --agent NAME --set TOOL=FREE..MAX", style="muted"))
-        return EXIT_OK
+        if not checking:
+            console.print(Text("  change one: cslcore limits --agent NAME --set TOOL=FREE..MAX   "
+                               "check them: cslcore limits --check", style="muted"))
+        return EXIT_CHECK_FAILED if failed else EXIT_OK
     agent = next((a for a in inv.agents if want in (agent_key(a), a.display_name, a.id)), None)
     if agent is None:
         console.print(f"[high]no agent matches '{want}'[/high]")
@@ -169,5 +178,19 @@ def cmd_limits(args) -> int:
         if not apply_limits(console, ws, args, agent, lim, bool(getattr(args, "yes", False))):
             return EXIT_OK
         console.print()
-    show_agent(console, ws, agent, lim)
+    if not checking:
+        show_agent(console, ws, agent, lim)
+    if changed or checking:
+        if changed:
+            console.print()
+        return EXIT_OK if show_check(console, ws, agent, lim) else EXIT_CHECK_FAILED
     return EXIT_OK
+
+
+def show_check(console, ws, agent, lim=None) -> bool:
+    """The check table for one agent; False when a sample call is not decided as its limits say."""
+    from . import check
+
+    report = check.run(ws, agent, lim)
+    check.show(console, report, agent.display_name)
+    return report.ok or not report.cases

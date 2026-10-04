@@ -1032,6 +1032,7 @@ class Flow:
             self.console.print("  [muted]stopped; progress is saved. Run cslcore setup to continue.[/muted]")
             return EXIT_INCOMPLETE
         self.wire_now()
+        self.check_all()
         self.console.print()
         self.console.print(self.summary())
         from .rooms import ask_next, interactive
@@ -1040,6 +1041,27 @@ class Flow:
             if pick in ("w", "m"):
                 self.open_room("watch" if pick == "w" else "map")
         return EXIT_OK
+
+    def check_all(self) -> None:
+        """Sample calls for every agent with a policy made from its limits, decided by that policy:
+        what runs and what stops, against what the operator set."""
+        from . import check
+
+        agents = {a.id: a for a in self.load_inventory().agents}
+        shown = False
+        for aid, st in sorted(self.agents_state().items(), key=lambda kv: kv[1].get("key", "")):
+            a = agents.get(aid)
+            if a is None or not st.get("policy"):
+                continue
+            report = check.run(self.ws, a)
+            if not report.cases:
+                continue
+            if not shown:
+                self.console.print()
+                self.console.print(Text("  Check: sample calls decided by each active policy", style="brand"))
+                shown = True
+            self.console.print()
+            check.show(self.console, report, st.get("key", a.display_name))
 
     def summary(self) -> Panel:
         from .controls import Controls
