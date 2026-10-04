@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.7]
+
 ### Added
 - The map controls what it shows, as the live panel does: `x` freezes the selected agent (its
   veins go cold, a chain through it is shown as held) and `m` switches it between log and block
