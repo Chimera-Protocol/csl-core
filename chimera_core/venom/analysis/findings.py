@@ -111,7 +111,8 @@ def v09(inv, ctx):
     for a in inv.agents:
         for t in a.tools:
             if t.risk_class in ("DESTRUCTIVE", "SPEND") and t.coverage in ("unguarded", "wired_no_rule"):
-                out.append(_f("V09", "medium", f"{t.risk_class.lower()} tool {t.name} of {a.display_name} is not covered by any rule",
+                what = "moves money" if t.risk_class == "SPEND" else "deletes or changes irreversibly"
+                out.append(_f("V09", "high", f"{a.display_name}: {t.name} {what} and no rule covers it",
                               a, t.name, rec="add a rule for this tool (block, limit or approval)"))
     return out
 

@@ -105,7 +105,8 @@ def state_label(a: Agent) -> Text:
     if a.state == "scheduled":
         sched = next((t.schedule for t in a.triggers if t.type == "time" and t.schedule), None)
         return Text(f"{glyph} {sched or 'scheduled'}", style="scheduled")
-    return Text(f"{glyph} {a.state}", style=a.state if a.state in ("running", "stopped", "configured") else "muted")
+    return Text(f"{glyph} {STATE_WORDS.get(a.state, a.state)}",
+                style=a.state if a.state in ("running", "stopped", "configured") else "muted")
 
 
 def coverage_bar(ratio: Optional[float], width: int = 22) -> Text:
@@ -143,13 +144,13 @@ def header(inv: Inventory, version: str, subtitle: Optional[str] = None) -> Pane
     dur = f"{h.duration_ms / 1000:.1f}s"
     scope = "read-only"
     if h.mode == "folder":
-        scope = f"folder {h.scope} · read-only"
+        scope = f"folder {_home(h.scope)} · read-only"
     elif h.mode == "fixture":
         scope = "fixture host · read-only"
     line = Text(" · ".join(x for x in [h.name, h.os, when, dur, scope] if x), style="text")
     if h.partial:
         line.append(" · partial (time budget)", style="warn")
-    title = Text.assemble((" CSL-Core Venom ", "brand"), (version + " ", "muted"))
+    title = Text.assemble((" CSL-Core ", "brand"), (version + " ", "muted"))
     if subtitle:
         title.append(f"· {subtitle} ", style="muted")
     return Panel(line, title=title, title_align="left", box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))
@@ -175,6 +176,18 @@ def discovery_line(inv: Inventory) -> Group:
     return Group(t, labeled(sub))
 
 
+def _home(path) -> str:
+    """A path as people read it: ~ for the home folder."""
+    from pathlib import Path
+
+    p, home = str(path), str(Path.home())
+    return "~" + p[len(home):] if p == home or p.startswith(home + "/") else p
+
+
+# "stopped" on a screen is kept for calls a policy stopped; an agent that is not running says so
+STATE_WORDS = {"stopped": "not running"}
+
+
 def agents_line(inv: Inventory) -> Text:
     counts = {s: 0 for s in ("running", "stopped", "scheduled", "configured")}
     exempt = 0
@@ -187,7 +200,7 @@ def agents_line(inv: Inventory) -> Text:
     t.append(f"{len(inv.agents)} total", style="head")
     for s in ("running", "stopped", "scheduled", "configured"):
         if counts[s]:
-            t.append(f"   {STATE_GLYPH[s]} {counts[s]} {s}", style=s)
+            t.append(f"   {STATE_GLYPH[s]} {counts[s]} {STATE_WORDS.get(s, s)}", style=s)
     if exempt:
         t.append(f"   {STATE_GLYPH['exempt']} {exempt} exempt", style="exempt")
     return t
@@ -504,7 +517,7 @@ class ScanProgress:
             else:
                 icon = Text("·", style="muted")
             rows.add_row(icon, Text(l, style="text" if st != "pending" else "muted"), Text(self.detail[l], style="muted"))
-        title = Text.assemble((" CSL-Core Venom ", "brand"), (self.version + " ", "muted"), ("· discovering ", "muted"))
+        title = Text.assemble((" CSL-Core ", "brand"), (self.version + " ", "muted"), ("· discovering ", "muted"))
         return Panel(rows, title=title, title_align="left", box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))
 
 

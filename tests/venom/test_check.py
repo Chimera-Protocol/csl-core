@@ -108,7 +108,7 @@ def test_every_kind_is_decided_as_its_limits_say(env):
         for v in c.args.values():
             assert not (isinstance(v, str) and re.search(r"\b(rm|curl|sudo|drop|delete|select)\b", v, re.I))
     # and setup shows the table at its end
-    assert "Check: sample calls decided by each active policy" in out
+    assert "CHECK   sample calls decided by each agent's policy" in out
     assert "devhelper" in out and "as its limits say" in out
 
 

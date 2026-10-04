@@ -79,6 +79,18 @@ def env_ready(console, args, ws, agent, plan: wiring.Plan, ask=None) -> bool:
     return ask(f"Wire {agent.display_name} anyway? it stops at import until csl-core is installed there", False)
 
 
+def shown_path(path: str) -> str:
+    """A file as people read it: relative to the current folder when it is inside it, else with ~."""
+    from pathlib import Path
+
+    p = Path(path).resolve()
+    try:
+        return str(p.relative_to(Path.cwd().resolve()))
+    except ValueError:
+        home = Path.home().resolve()
+        return "~/" + str(p.relative_to(home)) if p.is_relative_to(home) else str(p)
+
+
 DIFF_LINES = 30  # a longer diff is cut here; cslcore wire --agent KEY --diff shows all of it
 
 
@@ -120,7 +132,7 @@ def show_plan(console, plan: wiring.Plan, full: bool = False, ws=None) -> None:
     budget = None if full else DIFF_LINES
     hidden = 0
     for ch in plan.changes:
-        lines = ch.diff().splitlines()
+        lines = ch.diff(shown_path(ch.path)).splitlines()
         if budget is not None:
             shown, hidden = lines[:max(0, budget)], hidden + max(0, len(lines) - max(0, budget))
             budget -= len(shown)

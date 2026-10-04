@@ -83,7 +83,7 @@ def test_home_screen(tmp_path, capsys):
     from chimera_core.venom.setup import Flow
     f = Flow(argparse.Namespace(workspace=str(ws), root=str(HOST_OPS), yes=False, no_color=True, plan_only=False))
     text = render(f.home_panel(), width=80)
-    for part in ("6 agents discovered", "5 with a policy", "LOG by default", "none yet", "5 high findings",
+    for part in ("6 agents discovered", "5 with a policy", "LOG by default", "none yet", "6 high findings",
                  "scan again", "live management panel"):
         assert part in text, part
 

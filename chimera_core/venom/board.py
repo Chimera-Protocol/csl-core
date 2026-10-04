@@ -238,7 +238,8 @@ class TerminalUI:
     def text_input(self, question: str, default: str = "") -> str:
         from rich.markup import escape
         from rich.prompt import Prompt
-        return Prompt.ask(f"  {escape(question)}", default=default, show_default=bool(default), console=self.console)
+        return Prompt.ask(f"  {escape(question)}", default=default, show_default=bool(default) and "Enter" not in question,
+                          console=self.console)
 
 
 # ---------------------------------------------------------------------------
@@ -353,14 +354,14 @@ def make_policy(console, ws, agent: Agent, lim: L.Limits) -> Optional[str]:
         if not old:
             from .controls import mode_on_activation
             mode_on_activation(ws, key, True)
-        console.print(Text.assemble(("  ✓ policy ", "ok"), (ws.rel(path), "head"),
-                                    (f"  {plural(gate.rules, 'rule')}, Z3: no contradictions", "muted")))
+        console.print(Text.assemble(("  ✓ ", "ok"), (key, "head"),
+                                    (f"  a policy of {plural(gate.rules, 'rule')}, checked: its rules never contradict", "muted")))
     plan = bind(ws, path, [agent])
     res = plan.results[0] if plan.results else None
     if res is None or not res.ok:
-        console.print(f"  [high]the mapping did not pass its test: {res.message if res else 'no result'}[/high]")
+        console.print(f"  [high]{key}: some of its calls could not be read safely, so it is not activated "
+                      f"(cslcore map --agent {key} --test shows which)[/high]")
         return None
-    console.print(Text.assemble(("  ✓ mapping ", "ok"), (f"{res.message}", "muted")))
     return ws.rel(path)
 
 
@@ -469,9 +470,9 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
         kinds = kinds_of(a, L.load(ws, agent_key(a)))
         console.print(Text.assemble(("    ", ""), (agent_key(a), "head"), (f"  {', '.join(WORDS[k] for k in kinds)}", "muted")))
     chosen = getattr(args, "mode", None)  # --mode; else a first activation starts in block (controls)
-    console.print(Text(f"    standard limits, a policy for each checked with Z3 (in the workspace only), "
-                       f"{chosen or 'block'} mode, then the wiring changes below, which you confirm. "
-                       "Change any of it later: a number here, cslcore limits, cslcore mode", style="muted"))
+    console.print(Text(f"    standard limits and a policy for each (kept in .csl/), {chosen or 'block'} mode, then "
+                       "the change that puts each guard in place, which you confirm. Change any of it later with "
+                       "cslcore limits", style="muted"))
     if ws.plan_only:
         console.print("  [muted]--plan-only: nothing is written[/muted]")
         return 0
@@ -568,7 +569,9 @@ def run(ui, console, args, ws, agents: List[Agent], setup_state: Optional[Dict[s
             console.print(Text.assemble(("  ", ""), ("c", "brand"), ("  continue without it", "muted")))
         else:
             console.print(Text.assemble(("  ", ""), ("Enter", "brand"), ("  continue", "muted")))
-        pick = (ui.text_input("choice", "a" if open_rows else "") or "").strip().lower()
+        question = (f"Enter to protect the {plural(len(open_rows), 'agent')}, a number for one, c to continue"
+                    if open_rows else "Enter to continue, or a number for one agent")
+        pick = (ui.text_input(question, "a" if open_rows else "") or "").strip().lower()
         if not pick or pick == "c":
             return rows
         if pick == "a" and open_rows:

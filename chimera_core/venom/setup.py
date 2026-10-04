@@ -55,7 +55,7 @@ TITLES = {
     "policies": "Policies", "verify": "Verify", "map": "Map", "wire": "Mode & wiring", "activate": "Activate",
 }
 EXIT_INCOMPLETE = 5
-PAUSE_AFTER = {"inventory", "findings", "policies", "map", "wire"}
+PAUSE_AFTER = {"findings", "policies", "map", "wire"}  # the inventory and its findings: one screen, one Enter
 
 
 def _now() -> str:
@@ -64,6 +64,12 @@ def _now() -> str:
 
 class StopFlow(Exception):
     """The operator chose to stop; progress is saved."""
+
+
+def short_home(path: str) -> str:
+    """A full path with ~ for the home folder."""
+    p, home = str(path), str(Path.home())
+    return "~" + p[len(home):] if p == home or p.startswith(home + "/") else p
 
 
 def short(path: str) -> str:
@@ -131,6 +137,23 @@ class Flow:
         return self.setup.setdefault("agents", {})
 
     # -- interaction ----------------------------------------------------------------------
+    def has_content(self, step: str) -> bool:
+        """Whether a step has anything to show or ask. Exemptions without a proposal, and verify,
+        map, wiring and activation once the board did their work, are left out entirely."""
+        states = self.agents_state()
+        open_ = [st for st in states.values() if not st.get("protected") and not st.get("skipped")]
+        if step == "exemptions":
+            return any(e.status in ("proposed", "approved") for e in self.ws.load_exemptions())
+        if step == "verify":
+            return any(st.get("draft") or st.get("adopted") for st in open_)
+        if step == "map":
+            return any((st.get("draft") or st.get("policy")) and st.get("verified") is not False for st in open_)
+        if step == "wire":
+            return any(st.get("mapping") or st.get("adopted") for st in open_)
+        if step == "activate":
+            return any(st.get("draft") and st.get("verified") for st in states.values())
+        return True
+
     def header(self, step: str) -> None:
         i = STEPS.index(step) + 1
         bar = Text()
@@ -180,7 +203,8 @@ class Flow:
         if not self.interactive:
             return default
         from rich.prompt import Prompt
-        return Prompt.ask(f"  {escape(question)}", default=default, show_default=bool(default), console=self.console)
+        return Prompt.ask(f"  {escape(question)}", default=default, show_default=bool(default) and "Enter" not in question,
+                          console=self.console)
 
     # -- inventory ------------------------------------------------------------------------
     def load_inventory(self) -> Inventory:
@@ -225,15 +249,22 @@ class Flow:
 
     # -- steps ----------------------------------------------------------------------------
     def scope(self) -> bool:
+        import os
+
         root = getattr(self.args, "root", None)
-        where = "this machine" if not root else f"the folder {root}"
+        if not root:
+            where = "this machine"
+        else:
+            full = os.path.abspath(root)
+            where = f"this folder ({short_home(full)})" if full == os.getcwd() else f"the folder {short_home(full)}"
         body = grid(
             ("reads", Text.assemble(("code (parsed, never run), assistant and MCP configs, cron / systemd / launchd, "
                                      "the process list, run history and existing .csl policies", "text"))),
             ("never", "changes what it reads, runs discovered code, or reads credential values, prompts or transcripts"),
-            ("writes", f"only {self.ws.root}/.csl/venom and {self.ws.root}/policies, and only after you confirm"),
+            ("writes", f"only {short_home(str(self.ws.root / '.csl'))}/ (kept out of git), and an agent's own files only "
+                       "after you see the change and confirm it"),
         )
-        self.console.print(Panel(Group(Text.assemble(("Venom looks at ", "text"), (where, "head"), (".", "text")), Text(""), body),
+        self.console.print(Panel(Group(Text.assemble(("CSL-Core looks at ", "text"), (where, "head"), (".", "text")), Text(""), body),
                                  title=Text(f" CSL-Core setup {VENOM_VERSION} ", style="brand"), title_align="left",
                                  box=box.ROUNDED, border_style="brand.dim", padding=(0, 1)))
         if self.ws.plan_only:
@@ -312,7 +343,7 @@ class Flow:
             t.add_column(width=1, no_wrap=True)
             t.add_column(width=4, no_wrap=True)
             t.add_column(overflow="fold")
-            t.add_row(Text(SEV_GLYPH[f.severity], style=f.severity), Text(f.id, style="label"), Text(f.summary, style="head"))
+            t.add_row(Text(SEV_GLYPH[f.severity], style=f.severity), "", Text(f.summary, style="head"))
             if why:
                 t.add_row("", Text("why", style="label"), Text(why, style="text"))
             t.add_row("", Text("do", style="label"), Text(fix or f.recommendation or "", style="text"))
@@ -323,8 +354,7 @@ class Flow:
             for f in inv.findings:
                 if f not in shown:
                     by_id[f.id] = by_id.get(f.id, 0) + 1
-            summary = ", ".join(f"{fid} ×{n}" for fid, n in sorted(by_id.items()))
-            self.console.print(Text(f"  {rest} more ({summary}): .csl/venom/reports/latest.md", style="muted"))
+            self.console.print(Text(f"  {rest} more in .csl/venom/reports/latest.md", style="muted"))
         return True
 
     def exemptions(self) -> bool:
@@ -683,10 +713,11 @@ class Flow:
         inv = self.load_inventory()
         by_id = {a.id: a for a in inv.agents}
         ok = True
-        self.console.print(Text("  Every mapping is tested with case variants, unknown values, missing keys, wrong types "
-                                "and range edges, and every derived check (path in scope, command allowlisted, "
-                                "destination allowed) with bypass tricks. None of them may end in ALLOW.", style="muted"))
-        self.console.print()
+        if getattr(self.args, "verbose", False):
+            self.console.print(Text("  Every mapping is tested with case variants, unknown values, missing keys, wrong "
+                                    "types and range edges, and every derived check (path in scope, command allowlisted, "
+                                    "destination allowed) with bypass tricks. None of them may end in ALLOW.", style="muted"))
+            self.console.print()
         mapped = 0
         for aid, st in self.agents_state().items():
             rel = st.get("draft") or st.get("policy")
@@ -1083,11 +1114,16 @@ class Flow:
             self.setup["cycle"] = int(self.setup.get("cycle", 0)) + 1
             completed = []
         start = next((i for i, s in enumerate(STEPS) if s not in completed), 0)
+        self.board_done = False
         if start > 0:
             self.console.print(Text.assemble(("  resuming at step ", "muted"), (f"{start + 1} {TITLES[STEPS[start]]}", "brand")))
         stop_after = getattr(self.args, "stop_after", None)
         try:
             for step in STEPS[start:]:
+                if not self.has_content(step):  # nothing to show: no header, no paragraph, no pause
+                    if not self.ws.plan_only:
+                        self.done(step)
+                    continue
                 self.header(step)
                 ok = getattr(self, step)()
                 if not ok:
@@ -1116,12 +1152,18 @@ class Flow:
         return EXIT_OK
 
     def check_all(self) -> None:
-        """Sample calls for every agent with a policy made from its limits, decided by that policy:
-        what runs and what stops, against what the operator set."""
+        """The check table at the end: for every agent with a policy made from its limits, sample
+        calls decided by that policy (nothing runs), what runs and what stops."""
         from . import check
+        from .board import approval_note, store_check
 
         agents = {a.id: a for a in self.load_inventory().agents}
-        shown = False
+        t = Table(box=None, show_header=True, header_style="label", pad_edge=False, padding=(0, 2, 0, 0))
+        t.add_column("AGENT", style="head", no_wrap=True)
+        t.add_column("RUNS", style="ok")
+        t.add_column("STOPS", style="text")
+        t.add_column("", no_wrap=True)
+        notes = []
         for aid, st in sorted(self.agents_state().items(), key=lambda kv: kv[1].get("key", "")):
             a = agents.get(aid)
             if a is None or not st.get("policy"):
@@ -1129,17 +1171,28 @@ class Flow:
             report = check.run(self.ws, a)
             if not report.cases:
                 continue
+            key = st.get("key", D.agent_key(a))
             if not self.ws.plan_only:
-                from .board import store_check
-                store_check(self.ws, st.get("key", D.agent_key(a)), report)
-            if not shown:
-                self.console.print()
-                self.console.print(Text("  Check: sample calls decided by each active policy", style="brand"))
-                shown = True
-            self.console.print()
-            from .board import approval_note
-            check.show(self.console, report, st.get("key", a.display_name), compact=report.ok,
-                       approval=approval_note(self.args, self.ws, a))
+                store_check(self.ws, key, report)
+            runs = [c for c in report.cases if c.expected == check.RUNS]
+            stops = [c for c in report.cases if c.expected == check.STOPPED]
+
+            def sample(cases):
+                shown = list(dict.fromkeys(f"{c.tool}: {c.what}" for c in cases))
+                return "\n".join(shown[:2]) + (f"\n+ {len(shown) - 2} more" if len(shown) > 2 else "")
+            t.add_row(key, sample(runs) or "·", sample(stops) or "·",
+                      Text("✓ as its limits say", style="ok") if report.ok
+                      else Text(f"✗ {len(report.failed)} not as its limits say", style="high"))
+            note = approval_note(self.args, self.ws, a)
+            if "no place" in note and any(c.approval for c in report.cases):
+                notes.append(f"{key}: {note}")
+        if not t.rows:
+            return
+        self.console.print()
+        self.console.print(Text("  CHECK   sample calls decided by each agent's policy (nothing ran)", style="label"))
+        self.console.print(Padding(t, (0, 0, 0, 2)))
+        for n in notes:
+            self.console.print(Text("  " + n, style="warn"))
 
     def summary(self) -> Panel:
         """Each agent as it really is: protected only when its guard is in its call path, in block
@@ -1150,7 +1203,8 @@ class Flow:
         rows.add_column(style="head", no_wrap=True)
         rows.add_column(no_wrap=True)
         rows.add_column(style="muted", overflow="fold")
-        waiting = protected = recording = 0
+        waiting = protected = 0
+        recording: List[str] = []
         inv = self.load_inventory()
         agents = {a.id: a for a in inv.agents}
         for aid, st in sorted(self.agents_state().items(), key=lambda kv: kv[1].get("key", "")):
@@ -1158,59 +1212,52 @@ class Flow:
             a = agents.get(aid)
             if st.get("policy") and a is not None:
                 r = B.row_for(self.ws, a, self.agents_state(), self.args, inv.policies)
-                where = short(st["policy"]) + (" (adopted)" if st.get("adopted") else "")
                 if r.frozen:
-                    rows.add_row(key, Text("frozen", style="high"), f"{where} · every call is blocked until unfrozen")
+                    rows.add_row(key, Text("frozen", style="high"), "every call is stopped until it is unfrozen")
                 elif r.policy == "adopted" or (r.own and not r.policy):
                     protected += 1
-                    rows.add_row(key, Text("its own guard", style="ok"), f"{where} · enforced by its own code")
+                    rows.add_row(key, Text("its own guard", style="ok"), "its own code enforces its policy")
                 elif r.wired in ("wired", "partly") and r.mode == "block":
                     protected += r.wired == "wired"
-                    check = {"ok": " · check ✓", "failed": " · check ✗: cslcore limits --agent " + key + " --check"}
                     rows.add_row(key, Text("protected" if r.wired == "wired" else "partly", style="ok" if r.wired == "wired"
                                            else "warn"),
-                                 f"{where} · block mode: stops what its limits do not allow{check.get(r.check, '')}"
-                                 + (f" · {r.wiring_note}" if r.wired == "partly" else ""))
+                                 "stops what its limits do not allow" + (f" · {r.wiring_note}" if r.wired == "partly" else ""))
                 elif r.wired in ("wired", "partly"):
-                    recording += 1
-                    rows.add_row(key, Text("recording only", style="warn"),
-                                 f"{where} · log mode: its calls are recorded, nothing is stopped · "
-                                 f"to stop: cslcore mode --agent {key} block")
+                    recording.append(key)
+                    rows.add_row(key, Text("records only", style="warn"), "nothing is stopped yet")
                 elif r.wired == "manual":
                     rows.add_row(key, Text("wire by hand", style="warn"),
-                                 f"{where} · {r.wiring_note or 'see .csl/venom/wiring.md'}")
+                                 r.wiring_note or "see .csl/venom/wiring.md")
                 else:
-                    rows.add_row(key, Text("not wired", style="warn"),
-                                 f"{where} · nothing stops it yet: cslcore wire --agent {key}")
+                    rows.add_row(key, Text("not wired", style="warn"), f"nothing stops it yet: cslcore wire --agent {key}")
             elif st.get("draft"):
-                rows.add_row(key, Text("draft", style="warn"), f"{st['draft']} · activate: cslcore policy activate {key} (or ctrl+l in cslcore studio)")
+                rows.add_row(key, Text("draft", style="warn"), f"not active yet: cslcore policy activate {key}")
             elif st.get("assistant"):
                 waiting += 1
                 rows.add_row(key, Text("waiting", style="warn"), "for your assistant's draft")
             elif st.get("skipped"):
-                rows.add_row(key, Text("skipped", style="muted"), "")
+                rows.add_row(key, Text("skipped", style="muted"), "left untouched")
         total = len(self.agents_state())
-        head = f" setup complete · {protected} of {total} protected" + (f" · {recording} recording only" if recording else "") + " "
+        head = f" setup complete · {protected} of {total} protected "
         good = not waiting and protected == total
         title = Text(head if not waiting else head.rstrip() + ", agents waiting ", style="ok" if good else "warn")
-        undo = Group(
-            Text.assemble(("Undo or loosen, any time (running agents follow on their next call):", "muted")),
-            Text.assemble(("  ", ""), ("cslcore mode --agent NAME log", "brand"),
-                          ("            record only, stop nothing (", "muted"), ("--all log", "brand"), (" for every agent)", "muted")),
-            Text.assemble(("  ", ""), ("cslcore limits --agent NAME --set TOOL=FREE..MAX", "brand"),
-                          ("   raise a limit; ", "muted"), ("--decide TOOL=allow", "brand"), (" lets a tool run", "muted")),
-            Text.assemble(("  ", ""), ("cslcore wire --undo --agent NAME", "brand"),
-                          ("         take the guard out: its files go back as they were", "muted")),
-            Text.assemble(("  ", ""), ("cslcore mode --agent NAME --disable", "brand"),
-                          ("      the other way: stop every call at once", "muted")))
-        body = Group(rows, Text(""), undo, Text(""),
-                     Text.assemble(("Next: ", "muted"), ("cslcore setup", "brand"),
-                                   ("    the protection board (b): limits, wiring and checks per agent", "muted")),
-                     Text.assemble(("      ", ""), ("cslcore watch", "brand"),
-                                   ("    live decisions; l limits, w wiring, m mode, x freeze", "muted")),
-                     Text.assemble(("      ", ""), ("cslcore studio", "brand"),
-                                   ("   edit a policy, check it with Z3 and TLA+, go live", "muted")))
-        return Panel(body, title=title, title_align="left", box=box.ROUNDED, border_style="ok" if good else "warn", padding=(0, 1))
+        lines = [rows, Text("")]
+        for key in recording:  # one line each: how to make it stop what its limits do not allow
+            lines.append(Text.assemble((f"{key} records only; block it: ", "warn"), (f"cslcore mode --agent {key} block", "brand"),
+                                       (" (or m in watch)", "muted")))
+        if recording:
+            lines.append(Text(""))
+        lines += [Text.assemble(("Undo all of it: ", "muted"), ("cslcore wire --undo", "brand"),
+                                ("   every changed file goes back as it was", "muted")),
+                  Text(""),
+                  Text.assemble(("Next: ", "muted"), ("cslcore watch", "brand"),
+                                ("    see each call as it happens, approve calls that wait", "muted")),
+                  Text.assemble(("      ", ""), ("cslcore limits", "brand"),
+                                ("   what each agent may do, in your own numbers", "muted")),
+                  Text.assemble(("      ", ""), ("cslcore venom map", "brand"),
+                                ("   what can reach what on this machine", "muted"))]
+        return Panel(Group(*lines), title=title, title_align="left", box=box.ROUNDED,
+                     border_style="ok" if good else "warn", padding=(0, 1))
 
 
 def wiring_count(plan) -> str:

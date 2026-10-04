@@ -44,10 +44,11 @@ class Change:
     after: str
     why: str
 
-    def diff(self) -> str:
+    def diff(self, label: Optional[str] = None) -> str:
         a = (self.before or "").splitlines(keepends=True)
         b = self.after.splitlines(keepends=True)
-        return "".join(difflib.unified_diff(a, b, fromfile=self.shown, tofile=self.shown, n=2))
+        name = label or self.shown
+        return "".join(difflib.unified_diff(a, b, fromfile=name, tofile=name, n=2))
 
 
 @dataclass

@@ -926,7 +926,9 @@ def render(model: WatchModel, inv: Optional[Inventory], states: Dict[str, str], 
     root["header"].update(Panel(head, title=title, title_align="left",
                                 box=box.ROUNDED, border_style="brand.dim", padding=(0, 1)))
     agents_focus = panel is not None and panel.focus == "agents" and panel.view in ("live", "tools")
-    left = Panel(agents_pane(model, inv, states, width, panel, rows=body_h - 3), box=box.ROUNDED,
+    recording = log_only(panel)
+    pane = agents_pane(model, inv, states, width, panel, rows=body_h - 3 - len(recording))
+    left = Panel(Group(pane, *recording) if recording else pane, box=box.ROUNDED,
                  border_style="brand.dim" if agents_focus else "muted", padding=(0, 1))
     wide = width >= 110
     right = Panel(stream_pane(model, body_h - 3, wide), box=box.ROUNDED, border_style="muted", padding=(0, 1))
@@ -997,6 +999,20 @@ def _states(inv: Optional[Inventory], probe=None) -> Dict[str, str]:
             state = "running" if any(a.entrypoint in line for line in running) else ("scheduled" if a.state == "scheduled" else "stopped")
         states[agent_key(a)] = state
     return states
+
+
+def log_only(panel: Optional["ControlPanel"], limit: int = 3) -> List[Text]:
+    """One line for each wired agent in log mode: it records only, and how to make it stop."""
+    if panel is None or panel.ws is None:
+        return []
+    from .bindings import Bindings
+
+    out = []
+    for key in sorted(Bindings(panel.ws).all()):
+        if panel.controls.get(key).mode == "log" and panel.in_path(key) and not panel.controls.get(key).disabled:
+            out.append(Text.assemble((f"{key} records only; block it: ", "warn"),
+                                     (f"cslcore mode --agent {key} block", "brand"), (" (or m)", "muted")))
+    return out[:limit]
 
 
 def _modes(ws) -> Dict[str, str]:

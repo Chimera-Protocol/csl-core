@@ -51,6 +51,7 @@ VENOM_DESCRIPTION = (
 
 def _setup_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--yes", action="store_true", help="non-interactive: accept defaults (never approves exemptions or activates policies)")
+    p.add_argument("--verbose", action="store_true", help="show how each step checks what it does")
     p.add_argument("--activate", action="store_true", help="activate drafts that pass the gate (explicit; --yes alone never activates)")
     p.add_argument("--mode", choices=["log", "block"], help="default enforcement mode for all agents (default: ask; log with --yes)")
     p.add_argument("--strategy", choices=["recommended", "choose", "templates"],

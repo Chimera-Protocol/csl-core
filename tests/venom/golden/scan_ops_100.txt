@@ -1,22 +1,22 @@
-╭─  CSL-Core Venom 0.6.0  ─────────────────────────────────────────────────────────────────────────╮
+╭─  CSL-Core 0.6.0  ───────────────────────────────────────────────────────────────────────────────╮
 │ ops-01 · linux · 2026-10-01 14:22 · 1.2s · fixture host · read-only                              │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
   Discovery   ✓ code  ✓ config  ✓ triggers  ✓ runtime  ✓ history  ✓ policies
               5 files · 1 parse error · 0 paths not readable
 
-  AGENTS      6 total   ● 4 running   ○ 1 stopped   ◷ 1 scheduled
+  AGENTS      6 total   ● 4 running   ○ 1 not running   ◷ 1 scheduled
 
   Agent               State         Runs 7d Tools   Top access     Guard     
   claude-code:sandbox ● running         n/a     9   EXEC  Bash     none      
   ingest-worker       ● running           7     4   EXEC  run_com… none      
   publisher           ◷ daily 06:00     n/a     2   EXT   post_to… none      
+  membership-bot      ○ not running     n/a     2   SPEND transfe… no rule   
   claude-code:ops     ● running           3    29   EXEC  Bash     no rule   
-  membership-bot      ○ stopped         n/a     2   SPEND transfe… no rule   
   rogue/agent.py      ● running         n/a     0   -              none      
 
   COVERAGE    ░░░░░░░░░░░░░░░░░░░░░░    0%   0 of 46 tools guarded · 31 wired without a rule
 
-  FINDINGS    ▲ 5 high   ■ 9 medium   ● 1 low
+  FINDINGS    ▲ 6 high   ■ 8 medium   ● 1 low
    ▲ V01  ingest-worker runs as root
    ▲ V02  claude-code:sandbox can execute commands without a guard (Bash)
    ▲ V02  ingest-worker can execute commands without a guard (run_command)
