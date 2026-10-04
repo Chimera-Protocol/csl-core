@@ -78,7 +78,7 @@ def test_the_line_has_no_absolute_path(repo):
     text = (repo / "app/agent.py").read_text()
     line = next(ln for ln in text.splitlines() if "venom_guard(" in ln and "import" not in ln)
     assert 'workspace=".."' in line and "near=__file__" in line and str(repo) not in line
-    mapping = (repo / "policies/repo_mapping.py").read_text()
+    mapping = (repo / ".csl/policies/repo_mapping.py").read_text()
     assert str(repo) not in mapping.split("SCOPE_ROOTS", 1)[1].splitlines()[0]
 
 
@@ -110,8 +110,7 @@ def test_csl_workspace_overrides_and_old_absolute_lines_still_work(repo, tmp_pat
     assert _clean_run(clone / "app", clone / "app/n.txt", cwd, home) == "sent 50|BLOCKED|written"
     # CSL_WORKSPACE points somewhere else: that workspace is used
     moved = tmp_path / "ws-elsewhere"
-    shutil.copytree(clone / ".csl", moved / ".csl")
-    shutil.copytree(clone / "policies", moved / "policies")
+    shutil.copytree(clone / ".csl", moved / ".csl")  # the workspace, its policies inside it
     shutil.rmtree(clone / ".csl")
     assert _clean_run(clone / "app", clone / "app/n.txt", cwd, home, CSL_WORKSPACE=str(moved)).startswith("sent 50|BLOCKED")
 

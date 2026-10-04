@@ -24,7 +24,7 @@ def ws(tmp_path, capsys, monkeypatch):
 
 def _guard(name, mode=None):
     from chimera_core.venom.observe import venom_guard
-    return venom_guard(name, policy=f"policies/{name}.csl", mapping=f"policies/{name.replace('-', '_')}_mapping.py", mode=mode)
+    return venom_guard(name, policy=f".csl/policies/{name}.csl", mapping=f".csl/policies/{name.replace('-', '_')}_mapping.py", mode=mode)
 
 
 def _panel(ws):
@@ -162,7 +162,7 @@ def test_open_rule_policy_requests_the_studio(ws):
     p.handle("enter")
     p.handle("o")
     path, agent = p.studio_request
-    assert agent == "membership-bot" and path.endswith("policies/membership-bot.csl")
+    assert agent == "membership-bot" and path.endswith(".csl/policies/membership-bot.csl")
     assert p.editor_request is None and not list(ws.drafts.glob("*.csl"))  # the studio makes its own draft
 
 

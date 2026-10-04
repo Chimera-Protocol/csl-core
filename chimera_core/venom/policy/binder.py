@@ -88,7 +88,7 @@ def bind(ws, policy: Path, agents: List[Agent], *, write: bool = True, policy_te
         from .limits import load as load_limits
 
         spec = build_spec(agent, ref, load_limits(ws, key))
-        m = mapping_rel(key)
+        m = mapping_rel(key, ws)
         code = codegen.generate(spec, rel, str((ws.root / m).parent))
         mod = types.ModuleType("_venom_bind_mapping")
         mod.__file__ = str(ws.root / m)  # the generated code reads its scope roots from its own place

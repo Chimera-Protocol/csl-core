@@ -32,7 +32,7 @@ def test_existing_setup_detected_and_adopted(migrated):
     assert "Existing CSL-Core setup found" in out and "adopted, not copied" in out
     state = json.loads((ws / ".csl/venom/state.json").read_text())
     assert list(state["adopted"].values()) == [str(POLICY.resolve())]
-    assert not list((ws / "policies").glob("*.csl"))  # nothing copied
+    assert not list((ws / ".csl/policies").glob("*.csl"))  # nothing copied
     assert state["modes"]["payments-agent"]["mode"] == "block"  # it already enforces: kept in block
     wiring = (ws / ".csl/venom/wiring.md").read_text()
     assert 'observe(' in wiring and 'load_guard("policies/agent_tool_guard.csl")' in wiring

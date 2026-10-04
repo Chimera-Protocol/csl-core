@@ -37,7 +37,7 @@ def policy_path_for(ws, agent: str) -> Tuple[Optional[Path], str]:
     for aid, path in adopted.items():
         if aid.endswith(agent) or Path(path).stem == agent:
             return None, f"{agent} uses an adopted policy ({Path(path).name}); edit it in your repository"
-    return None, f"{agent} has no workspace policy (policies/{agent}.csl)"
+    return None, f"{agent} has no workspace policy (.csl/policies/{agent}.csl)"
 
 
 def _block(text: str, rule: str) -> Optional[Tuple[int, int]]:

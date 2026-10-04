@@ -96,14 +96,14 @@ from chimera_core import load_guard
 import anthropic
 app = FastAPI()
 SYSTEM_PROMPT = "You are a careful assistant that only reads data."
-g = load_guard("policies/p.csl")
+g = load_guard(".csl/policies/p.csl")
 @app.post("/webhooks/slack/events")
 def events(): return anthropic.Anthropic().messages.create(model="claude-sonnet-4-5")
 ''')
     assert cf.model_ids == ["claude-sonnet-4-5"]
     assert cf.prompt.present and cf.prompt.length == 49 and len(cf.prompt.sha256) == 16
     assert [(r.path, r.handler) for r in cf.routes] == [("/webhooks/slack/events", "events")]
-    assert cf.guard_calls[0][0] == "load_guard" and cf.guard_calls[0][2] == "policies/p.csl"
+    assert cf.guard_calls[0][0] == "load_guard" and cf.guard_calls[0][2] == ".csl/policies/p.csl"
 
 
 def test_b2_parse_errors_counted_and_decoys_skipped(ops_inv):

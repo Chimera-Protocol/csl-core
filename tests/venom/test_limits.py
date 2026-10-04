@@ -104,7 +104,7 @@ def test_limits_flags_in_setup_and_wrong_input(tmp_path, capsys):
     rc, out, _ = run_cli(["setup", "--root", str(host), "--workspace", str(ws), "--yes", "--activate",
                           "--limit", "backoffice.transfer_funds=1m..2m", "--limit", "backoffice.export_rows.limit=..250"], capsys)
     assert rc == 0 and "transfer_funds: free up to 1,000,000, never above 2,000,000" in out
-    policy = (ws / "policies/backoffice.csl").read_text()
+    policy = (ws / ".csl/policies/backoffice.csl").read_text()
     assert "amount <= 2000000" in policy and "limit <= 250" in policy
     rc, out, _ = run_cli(["limits", "--agent", "backoffice", "--set", "transfer_funds=300..100", "--workspace", str(ws),
                           "--root", str(host)], capsys)

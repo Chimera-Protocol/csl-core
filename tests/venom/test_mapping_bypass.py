@@ -63,7 +63,7 @@ def test_generated_mappings_pass_the_tricks(ws, capsys):
     assert rc == 0 and "0 fail-open" in out and "BYPASS TRICKS" in out
     for family in ("chaining", "credentials"):  # strict profile: listed commands and destinations only
         assert family in out
-    code = (ws / "policies" / "claude_code_ops_mapping.py").read_text()
+    code = (ws / ".csl/policies" / "claude_code_ops_mapping.py").read_text()
     # writes are judged by the path classifier (tested in tests/test_actions.py), commands by the allowlist
     assert "args_path_class(" in code and "command_allowed(" in code and "posixpath" not in code
 

@@ -105,7 +105,7 @@ def test_b15_yes_never_approves_or_activates(tmp_path, capsys):
     run_cli(["exempt", "add", "code:/srv/publisher", "--reason", "trusted", "--propose", "--workspace", str(ws)], capsys)
     rc, out, ws = _setup(tmp_path, capsys, "--yes")
     assert rc == 5  # stopped at Activate: drafts wait for an explicit activation
-    assert not (ws / "policies").exists() or not list((ws / "policies").glob("*.csl"))
+    assert not (ws / ".csl/policies").exists() or not list((ws / ".csl/policies").glob("*.csl"))
     assert list((ws / ".csl/venom/drafts").glob("*.csl"))
     assert "status: proposed" in (ws / ".csl/venom/exemptions.yaml").read_text()
 
@@ -119,7 +119,7 @@ def test_b18_log_mode_records_would_block(tmp_path, capsys, monkeypatch):
     _, _, ws = _setup(tmp_path, capsys, "--yes", "--activate", "--mode", "log")
     monkeypatch.chdir(ws)
     from chimera_core.venom.observe import venom_guard
-    g = venom_guard("membership-bot", policy="policies/membership-bot.csl", mapping="policies/membership_bot_mapping.py")
+    g = venom_guard("membership-bot", policy=".csl/policies/membership-bot.csl", mapping=".csl/policies/membership_bot_mapping.py")
     r = g.verify("transfer_funds", {"amount": 500, "to_wallet": SENTINEL})
     assert r.allowed and "transfer_funds_approval_over_100" in r.violated_rule_ids
     g.verify("transfer_funds", {"amount": SENTINEL})
@@ -135,12 +135,12 @@ def test_b18_block_mode_and_hook(tmp_path, capsys, monkeypatch):
     run_cli(["mode", "--agent", "claude-code-ops", "block", "--workspace", str(ws)], capsys)
     event = {"tool_name": "Write", "tool_input": {"file_path": "/etc/motd", "content": SENTINEL}, "session_id": "s"}
     monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(event)))
-    rc, out, err = run_cli(["hook", "--agent", "claude-code-ops", "--policy", "policies/claude-code-ops.csl",
-                            "--mapping", "policies/claude_code_ops_mapping.py", "--workspace", str(ws)], capsys)
+    rc, out, err = run_cli(["hook", "--agent", "claude-code-ops", "--policy", ".csl/policies/claude-code-ops.csl",
+                            "--mapping", ".csl/policies/claude_code_ops_mapping.py", "--workspace", str(ws)], capsys)
     assert rc == 0 and json.loads(out)["hookSpecificOutput"]["permissionDecision"] == "deny"
     monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps({"tool_name": "Read", "tool_input": {"file_path": "/etc/hosts"}})))
-    rc, out, err = run_cli(["hook", "--agent", "claude-code-ops", "--policy", "policies/claude-code-ops.csl",
-                            "--mapping", "policies/claude_code_ops_mapping.py", "--workspace", str(ws)], capsys)
+    rc, out, err = run_cli(["hook", "--agent", "claude-code-ops", "--policy", ".csl/policies/claude-code-ops.csl",
+                            "--mapping", ".csl/policies/claude_code_ops_mapping.py", "--workspace", str(ws)], capsys)
     assert rc == 0 and out.strip() == ""
     log = (ws / ".csl/venom/decisions/claude-code-ops.jsonl").read_text()
     assert SENTINEL not in log and '"BLOCK"' in log and '"ALLOW"' in log
@@ -174,7 +174,7 @@ def test_b18_logger_overhead(tmp_path, capsys, monkeypatch):
     _, _, ws = _setup(tmp_path, capsys, "--yes", "--activate")
     monkeypatch.chdir(ws)
     from chimera_core.venom.observe import venom_guard
-    g = venom_guard("membership-bot", policy="policies/membership-bot.csl", mapping="policies/membership_bot_mapping.py")
+    g = venom_guard("membership-bot", policy=".csl/policies/membership-bot.csl", mapping=".csl/policies/membership_bot_mapping.py")
     ctx = g.map_call("transfer_funds", {"amount": 50}, {})
     plain, logged = [], []
     for _ in range(300):
@@ -195,13 +195,13 @@ def test_bindings_bind_and_follow_live(tmp_path, capsys, monkeypatch):
 
     _, _, ws = _setup(tmp_path, capsys, "--yes", "--activate")
     b = Bindings(Workspace(ws))
-    assert b.get("membership-bot").explicit and b.get("membership-bot").policy == "policies/membership-bot.csl"
+    assert b.get("membership-bot").explicit and b.get("membership-bot").policy == ".csl/policies/membership-bot.csl"
     monkeypatch.chdir(ws)
     g = venom_guard("membership-bot", mode="block")  # no paths: resolved from the binding
     assert not g.verify("transfer_funds", {"amount": 5000, "to_wallet": "w"}).allowed
     # a looser shared policy, bound with the CLI: the running guard switches on its next call
-    loose = ws / "policies" / "loose.csl"
-    loose.write_text((ws / "policies/membership-bot.csl").read_text().replace("amount <= 1000", "amount <= 9000")
+    loose = ws / ".csl/policies" / "loose.csl"
+    loose.write_text((ws / ".csl/policies/membership-bot.csl").read_text().replace("amount <= 1000", "amount <= 9000")
                      .replace('DOMAIN VenomMembershipBot', 'DOMAIN Loose'))
     rc, out, _ = run_cli(["policy", "bind", str(loose), "--agent", "membership-bot", "--yes",
                           "--root", str(HOST_OPS), "--workspace", str(ws)], capsys)
@@ -215,10 +215,10 @@ def test_bind_many_to_one_shared_policy(tmp_path, capsys):
     from chimera_core.venom.workspace import Workspace
 
     _, _, ws = _setup(tmp_path, capsys, "--yes", "--activate")
-    rc, out, _ = run_cli(["policy", "bind", str(ws / "policies/claude-code-ops.csl"), "--match", "claude-code-*", "--yes",
+    rc, out, _ = run_cli(["policy", "bind", str(ws / ".csl/policies/claude-code-ops.csl"), "--match", "claude-code-*", "--yes",
                           "--root", str(HOST_OPS), "--workspace", str(ws)], capsys)
     assert rc == 0, out
-    text = (ws / "policies/claude-code-ops.csl").read_text()
+    text = (ws / ".csl/policies/claude-code-ops.csl").read_text()
     assert '"claude-code-sandbox"' in text  # added to agent_id, re-verified
     b = Bindings(Workspace(ws))
-    assert b.agents_of("policies/claude-code-ops.csl") == ["claude-code-ops", "claude-code-sandbox"]
+    assert b.agents_of(".csl/policies/claude-code-ops.csl") == ["claude-code-ops", "claude-code-sandbox"]

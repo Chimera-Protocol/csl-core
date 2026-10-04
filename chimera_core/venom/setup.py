@@ -695,7 +695,7 @@ class Flow:
                 continue  # the board bound its policy and tested its mapping already
             mapped += 1
             text = self.policy_text(rel) or ""
-            final_rel = rel if st.get("adopted") and not st.get("draft") else f"policies/{st['key']}.csl"
+            final_rel = rel if st.get("adopted") and not st.get("draft") else self.ws.rel(self.ws.policies / f"{st['key']}.csl")
             ref = read_policy(rel if Path(rel).is_absolute() else str(self.ws.root / rel), text, "draft")
             spec = build_spec(a, ref, L.load(self.ws, D.agent_key(a)))
             if st.get("adopted") and self.interactive:
@@ -853,7 +853,7 @@ class Flow:
             if st.get("adopted"):
                 sn = observe_snippet(a, key, short(str(self.ws.root)))
             else:
-                sn = snippet_for(a, key, f"policies/{key}.csl", st["mapping"], short(str(self.ws.root)))
+                sn = snippet_for(a, key, self.ws.rel(self.ws.policies / f"{key}.csl"), st["mapping"], short(str(self.ws.root)))
             snippets.append(sn)
             out.append(f"## {a.display_name}\n\n{sn.title}\n\n```{sn.language}\n{sn.code}\n```\n\n" + " ".join(sn.notes) + "\n")
             plan = wiring.plan_for(a, key, self.ws, probe)

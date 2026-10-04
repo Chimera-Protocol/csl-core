@@ -34,8 +34,10 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
 
-def mapping_rel(agent: str) -> str:
-    return f"policies/{agent.replace('-', '_')}_mapping.py"
+def mapping_rel(agent: str, ws: Optional[Workspace] = None) -> str:
+    """Where an agent's generated mapping lives, relative to the workspace (beside its policies)."""
+    base = ws.rel(ws.policies) if ws is not None else ".csl/policies"
+    return f"{base}/{agent.replace('-', '_')}_mapping.py"
 
 
 class Bindings:
@@ -50,9 +52,9 @@ class Bindings:
                 out[agent] = Binding(agent, b["policy"], b.get("mapping"), True)
         # convention for workspaces made before explicit bindings: policies/<agent>.csl with its mapping
         for p in sorted(self.ws.policies.glob("*.csl")) if self.ws.policies.is_dir() else []:
-            m = mapping_rel(p.stem)
+            m = mapping_rel(p.stem, self.ws)
             if p.stem not in out and (self.ws.root / m).exists():
-                out[p.stem] = Binding(p.stem, f"policies/{p.name}", m, False)
+                out[p.stem] = Binding(p.stem, self.ws.rel(p), m, False)
         setup = (state.get("setup") or {}).get("agents") or {}
         for aid, st in setup.items():
             key = st.get("key")

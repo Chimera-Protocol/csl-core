@@ -82,7 +82,7 @@ DOMAIN Broken {
     rc, out, _ = run_cli(["policy", "activate", "broken", "--yes", *_args(tmp_path)], capsys)
     assert rc == 4
     assert "CONTRADICTION" in out and "cannot be activated" in out
-    assert not (tmp_path / "policies" / "broken.csl").exists()
+    assert not (tmp_path / ".csl/policies" / "broken.csl").exists()
 
 
 def test_b13_declining_and_plan_only_write_nothing(tmp_path, capsys):
@@ -99,7 +99,7 @@ def test_b13_activate_then_guarded(tmp_path, capsys):
     _prime(tmp_path, capsys)
     run_cli(["policy", "fix", "membership-bot", "--yes", *_args(tmp_path)], capsys)
     rc, out, _ = run_cli(["policy", "activate", "membership", "--yes", *_args(tmp_path)], capsys)
-    assert rc == 0 and (tmp_path / "policies/membership.csl").exists()
+    assert rc == 0 and (tmp_path / ".csl/policies/membership.csl").exists()
     assert not (tmp_path / ".csl/venom/drafts/membership.csl").exists()
     inv = scan_fixture(HOST_OPS, tmp_path).inventory
     bot = inv.agent("membership-bot")
@@ -109,7 +109,7 @@ def test_b13_activate_then_guarded(tmp_path, capsys):
 
 def test_b13_extend_adds_rules_for_uncovered_tools(tmp_path, capsys):
     _prime(tmp_path, capsys)
-    ws_pol = tmp_path / "policies"
+    ws_pol = tmp_path / ".csl/policies"
     ws_pol.mkdir()
     (ws_pol / "ingest-worker.csl").write_text('''CONFIG {
   ENFORCEMENT_MODE: BLOCK

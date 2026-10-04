@@ -19,8 +19,8 @@ from chimera_core.venom.model import Agent, Inventory, Tool
 
 from .conftest import HOST_OPS, run_cli
 
-HOOK = ["hook", "--agent", "claude-code-ops", "--policy", "policies/claude-code-ops.csl",
-        "--mapping", "policies/claude_code_ops_mapping.py"]
+HOOK = ["hook", "--agent", "claude-code-ops", "--policy", ".csl/policies/claude-code-ops.csl",
+        "--mapping", ".csl/policies/claude_code_ops_mapping.py"]
 
 
 @pytest.fixture
@@ -61,7 +61,7 @@ def test_a_tool_the_agent_never_had_is_denied(wired):
     go through membership-bot's guard, which only knows the tools it was mapped for."""
     from chimera_core.venom.observe import venom_guard
 
-    g = venom_guard("membership-bot", policy="policies/membership-bot.csl", mapping="policies/membership_bot_mapping.py")
+    g = venom_guard("membership-bot", policy=".csl/policies/membership-bot.csl", mapping=".csl/policies/membership_bot_mapping.py")
     for tool in ("run_command", "refund_member"):
         r = g.verify(tool, {"amount": 5})
         assert not r.allowed and r.violated_rule_ids == ["__mapping__"]
@@ -69,7 +69,7 @@ def test_a_tool_the_agent_never_had_is_denied(wired):
 
 
 def test_the_guard_fails_closed_when_its_policy_is_gone(wired, capsys, monkeypatch):
-    (wired / "policies/claude-code-ops.csl").unlink()
+    (wired / ".csl/policies/claude-code-ops.csl").unlink()
     out = _hook(monkeypatch, capsys, "Read", {"file_path": "/srv/ops/a"})
     assert out["permissionDecision"] == "deny" and "failing closed" in out["permissionDecisionReason"]
 

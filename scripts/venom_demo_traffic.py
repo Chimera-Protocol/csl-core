@@ -47,8 +47,9 @@ def main() -> int:
     guards = {}
     for st in (state.get("setup") or {}).get("agents", {}).values():
         key = st.get("key")
-        if key in CALLS and st.get("mapping") and (ws / "policies" / f"{key}.csl").exists():
-            guards[key] = venom_guard(key, policy=f"policies/{key}.csl", mapping=st["mapping"], workspace=str(ws))
+        policy = st.get("policy") or f".csl/policies/{key}.csl"
+        if key in CALLS and st.get("mapping") and (ws / policy).exists():
+            guards[key] = venom_guard(key, policy=policy, mapping=st["mapping"], workspace=str(ws))
     if not guards:
         print("no wired demo agents found; run: cslcore setup --root tests/venom/fixtures/host_ops --workspace", ws)
         return 2

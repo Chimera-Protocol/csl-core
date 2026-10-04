@@ -76,7 +76,13 @@ class Workspace:
 
     # layout -----------------------------------------------------------------
     @property
-    def policies(self) -> Path: return self.root / "policies"
+    def policies(self) -> Path:
+        """Active policies and their mappings: .csl/policies (0.6.9). A workspace made before keeps
+        policies/ in its root, recognised by a generated mapping in it, and goes on using it."""
+        legacy = self.root / "policies"
+        if not (self.root / ".csl" / "policies").exists() and legacy.is_dir() and any(legacy.glob("*_mapping.py")):
+            return legacy
+        return self.root / ".csl" / "policies"
     @property
     def venom(self) -> Path: return self.root / ".csl" / "venom"
     @property
@@ -110,12 +116,24 @@ class Workspace:
             self.planned.append(self.rel(path))
             return None
         path.parent.mkdir(parents=True, exist_ok=True)
+        self._ignore_csl(path)
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(text, encoding="utf-8")
         tmp.replace(path)
         if path.parent == self.policies and path.suffix in (".csl", ".py"):
             self.bump()
         return path
+
+    def _ignore_csl(self, path: Path) -> None:
+        """.csl/ is this machine's workspace (state, policies, logs): kept out of the repository by its
+        own .gitignore. What a team commits is csl-limits.ini (cslcore apply makes .csl/ from it)."""
+        csl = self.root / ".csl"
+        ignore = csl / ".gitignore"
+        if not ignore.exists() and Path(path).resolve().is_relative_to(csl.resolve() if csl.exists() else csl):
+            try:
+                ignore.write_text("# the workspace of this machine; commit csl-limits.ini instead\n*\n", encoding="utf-8")
+            except OSError:
+                pass
 
     def append_line(self, path: Path, line: str) -> None:
         """Append one line (decision logs). Always inside the workspace (checked once per file)."""

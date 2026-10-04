@@ -53,10 +53,10 @@ def test_init_apply_and_check_in_ci(repo, capsys):
     rc, out, _ = _apply(ws, capsys, "--check")  # CI: nothing active there, the file itself is checked
     flat = " ".join(out.split())
     assert rc == 0 and "not active in this workspace" in flat and "as its limits say" in flat
-    assert not (ws / "policies/billing.csl").exists()
+    assert not (ws / ".csl/policies/billing.csl").exists()
     rc, out, _ = _apply(ws, capsys, "--yes", "--wire")
     assert rc == 0, out
-    assert "amount <= 200" in (ws / "policies/billing.csl").read_text()
+    assert "amount <= 200" in (ws / ".csl/policies/billing.csl").read_text()
     flat = " ".join(out.split())
     assert "as its limits say" in flat and "not as its limits say" not in flat
     assert "billing mode block: stops what its limits do not allow" in flat
@@ -69,9 +69,9 @@ def test_init_apply_and_check_in_ci(repo, capsys):
     assert rc == 0 and "not what the file says" not in out
     # a pull request changes the file: CI says so, and nothing changes until it is applied
     (root / "csl-limits.ini").write_text(ini.replace("charge_card = 50..200", "charge_card = 50..300"))
-    before = (ws / "policies/billing.csl").read_text()
+    before = (ws / ".csl/policies/billing.csl").read_text()
     rc, out, _ = _apply(ws, capsys, "--check")
-    assert rc == 1 and "billing" in out and (ws / "policies/billing.csl").read_text() == before
+    assert rc == 1 and "billing" in out and (ws / ".csl/policies/billing.csl").read_text() == before
 
 
 def test_wrong_names_are_refused(repo, capsys):

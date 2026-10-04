@@ -134,7 +134,7 @@ def test_board_opens_where_it_was_left(host, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "1 of 7 protected" in " ".join(out.split())
     # a changed policy is no longer the one that was checked
-    pol = ws / "policies/backoffice.csl"
+    pol = ws / ".csl/policies/backoffice.csl"
     pol.write_text(pol.read_text() + "\n")
     assert _rows(host_dir, ws)["backoffice"].check == ""
 
@@ -160,7 +160,7 @@ def test_skip_leaves_an_agent_untouched(host, monkeypatch, capsys):
     assert flow.policies()
     state = json.loads((ws / ".csl/venom/state.json").read_text())
     assert agent_file.read_text() == before
-    assert not (ws / "policies/backoffice.csl").exists()
+    assert not (ws / ".csl/policies/backoffice.csl").exists()
     assert "backoffice" not in (state.get("limits") or {})
     assert "backoffice" not in (state.get("modes") or {}) and "backoffice" not in (state.get("wiring") or {})
     assert "backoffice" not in (state.get("bindings") or {})
@@ -170,4 +170,4 @@ def test_skip_leaves_an_agent_untouched(host, monkeypatch, capsys):
     for step in ("verify", "map", "wire", "activate"):
         assert getattr(flow, step)()
     flow.wire_now()
-    assert agent_file.read_text() == before and not (ws / "policies/backoffice.csl").exists()
+    assert agent_file.read_text() == before and not (ws / ".csl/policies/backoffice.csl").exists()

@@ -106,7 +106,7 @@ def test_new_policy_bound_to_several_agents(ws):
     assert res.ok, res.message
     assert sorted(res.bound) == ["claude-code-ops", "claude-code-sandbox"]
     from chimera_core.venom.bindings import Bindings
-    assert Bindings(ws).agents_of("policies/shared-claude.csl") == ["claude-code-ops", "claude-code-sandbox"]
+    assert Bindings(ws).agents_of(".csl/policies/shared-claude.csl") == ["claude-code-ops", "claude-code-sandbox"]
 
 
 def test_fit_and_replay(ws, capsys):
@@ -149,7 +149,7 @@ def test_app_keys_end_to_end(ws):
             assert "live:" in str(app.query_one("#status").render())
             await pilot.press("ctrl+q")
     asyncio.run(asyncio.wait_for(drive(), 60))
-    assert json.loads((ws.venom / "state.json").read_text())["bindings"]["publisher"]["policy"] == "policies/publisher.csl"
+    assert json.loads((ws.venom / "state.json").read_text())["bindings"]["publisher"]["policy"] == ".csl/policies/publisher.csl"
 
 
 def test_setup_policy_step_opens_studio_and_continues(tmp_path, capsys, monkeypatch):
@@ -180,8 +180,8 @@ def test_setup_policy_step_opens_studio_and_continues(tmp_path, capsys, monkeypa
     key = "membership-bot"
     assert seen["agent"] == key and seen["path"].endswith(f"drafts/{key}.csl")
     st = flow.setup["agents"][agent.id]
-    assert st["policy"] == f"policies/{key}.csl" and "draft" not in st
-    assert json.loads((root / ".csl/venom/state.json").read_text())["bindings"][key]["policy"] == f"policies/{key}.csl"
+    assert st["policy"] == f".csl/policies/{key}.csl" and "draft" not in st
+    assert json.loads((root / ".csl/venom/state.json").read_text())["bindings"][key]["policy"] == f".csl/policies/{key}.csl"
 
 
 def test_setup_verify_offers_a_studio_review(tmp_path, capsys, monkeypatch):
@@ -212,5 +212,5 @@ def test_setup_verify_offers_a_studio_review(tmp_path, capsys, monkeypatch):
     assert flow.verify()
     assert len(opened) == 1
     st = next(st for st in flow.agents_state().values() if st.get("key") == opened[0])
-    assert st["policy"] == f"policies/{opened[0]}.csl" and "draft" not in st
+    assert st["policy"] == f".csl/policies/{opened[0]}.csl" and "draft" not in st
     assert "1 rules" not in capsys.readouterr().out

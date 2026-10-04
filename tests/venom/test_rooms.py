@@ -184,7 +184,7 @@ def test_freeze_on_the_map_stops_the_real_agent(ws, monkeypatch):
     v.handle("x")
     v.handle("y")
     assert Controls(w).get("membership-bot").disabled
-    g = venom_guard("membership-bot", policy="policies/membership-bot.csl", mapping="policies/membership_bot_mapping.py")
+    g = venom_guard("membership-bot", policy=".csl/policies/membership-bot.csl", mapping=".csl/policies/membership_bot_mapping.py")
     r = g.verify("transfer_funds", {"amount": 5, "to_wallet": "w"})
     assert not r.allowed and r.violated_rule_ids == ["__agent_disabled__"]  # the map's x is enforcement
     node = next(n for n in v.order if v.g.nodes[n].label == "membership-bot")

@@ -80,7 +80,7 @@ def test_b14_generated_mapping_has_no_fail_open(tmp_path, capsys):
     args = _setup_policy(tmp_path, capsys)
     rc, out, _ = run_cli(["map", "--agent", "membership-bot", "--yes", *args], capsys)
     assert rc == 0 and "0 fail-open" in out
-    path = tmp_path / "policies" / "membership_bot_mapping.py"
+    path = tmp_path / ".csl/policies" / "membership_bot_mapping.py"
     assert path.exists()
     rc, out, _ = run_cli(["map", "--agent", "membership-bot", "--test", *args], capsys)
     assert rc == 0 and "0 fail-open" in out and "membership_bot_mapping.py" in out

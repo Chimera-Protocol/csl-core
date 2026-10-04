@@ -134,7 +134,7 @@ def test_limits_change_is_checked_right_away(env, capsys):
 
 def test_a_mapping_that_does_not_classify_is_caught(env, capsys):
     host, ws, _ = env
-    mapping = ws / "policies/devhelper_mapping.py"
+    mapping = ws / ".csl/policies/devhelper_mapping.py"
     text = mapping.read_text()
     assert "args_command_class(args, SCOPE_ROOTS)" in text
     mapping.write_text(text.replace("args_command_class(args, SCOPE_ROOTS)", '"OK"'))  # never looks at the command
@@ -149,7 +149,7 @@ def test_a_mapping_that_does_not_classify_is_caught(env, capsys):
 
 def test_a_policy_missing_a_rule_is_caught(env):
     _host, ws, _ = env
-    policy = ws / "policies/devhelper.csl"
+    policy = ws / ".csl/policies/devhelper.csl"
     text = policy.read_text()
     text2 = re.sub(r'(?s)\n\s*STATE_CONSTRAINT write_file_in_scope \{.*?\n\s*\}\n', "\n", text)
     assert text2 != text
@@ -161,7 +161,7 @@ def test_a_policy_missing_a_rule_is_caught(env):
 
 def test_a_hand_written_policy_is_left_to_the_studio(env):
     _host, ws, _ = env
-    policy = ws / "policies/devhelper.csl"
+    policy = ws / ".csl/policies/devhelper.csl"
     policy.write_text(policy.read_text().replace("made from its limits", "written by me"))
     w, agent = _agent(ws)
     report = check.run(w, agent)

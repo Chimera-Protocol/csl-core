@@ -24,7 +24,7 @@ def wired(tmp_path, capsys, monkeypatch):
 
 def _guard(name):
     from chimera_core.venom.observe import venom_guard
-    return venom_guard(name, policy=f"policies/{name}.csl", mapping=f"policies/{name.replace('-', '_')}_mapping.py")
+    return venom_guard(name, policy=f".csl/policies/{name}.csl", mapping=f".csl/policies/{name.replace('-', '_')}_mapping.py")
 
 
 def _panel(ws):
@@ -92,8 +92,8 @@ def test_tool_kill_switch_covers_mcp_alias_and_hook(wired, capsys, monkeypatch):
     assert g.verify("Read", {"file_path": "/srv/ops/a"}).allowed
     event = {"tool_name": "mcp__fs__read_file", "tool_input": {"path": "/etc/hosts"}}
     monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(event)))
-    rc, out, _ = run_cli(["hook", "--agent", "claude-code-ops", "--policy", "policies/claude-code-ops.csl",
-                          "--mapping", "policies/claude_code_ops_mapping.py"], capsys)
+    rc, out, _ = run_cli(["hook", "--agent", "claude-code-ops", "--policy", ".csl/policies/claude-code-ops.csl",
+                          "--mapping", ".csl/policies/claude_code_ops_mapping.py"], capsys)
     assert json.loads(out)["hookSpecificOutput"]["permissionDecision"] == "deny"
     p.handle(" ")  # enable again
     assert "read_file" not in Controls(wired).get("claude-code-ops").disabled_tools

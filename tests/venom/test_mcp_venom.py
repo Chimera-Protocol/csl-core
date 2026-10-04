@@ -48,7 +48,7 @@ def test_b16_save_draft_only_to_drafts_and_proposals_only(ws):
     text = draft_for(inv.agent("membership-bot")).text
     out = T.save_draft("../../policies/membership-bot", text, "try to escape", workspace=str(ws))
     assert out.startswith("SAVED")
-    assert not (ws / "policies").exists()
+    assert not (ws / ".csl/policies").exists()
     assert list((ws / ".csl/venom/drafts").glob("*.csl"))
     out = T.propose_exemption("code:/srv/publisher", "agent", "trusted", workspace=str(ws))
     assert "PROPOSED" in out
@@ -76,5 +76,5 @@ def test_b16_end_to_end_with_mcp_client(ws, capsys, monkeypatch):
     assert saved.startswith("SAVED")
     rc, out, _ = run_cli(["setup", "--root", str(HOST_OPS), "--workspace", str(ws), "--yes", "--activate", "--agent", "membership-bot"], capsys)
     assert rc == 0
-    active = (ws / "policies/membership-bot.csl").read_text()
+    active = (ws / ".csl/policies/membership-bot.csl").read_text()
     assert "amount <= 250" in active and "AI assistant via MCP" in active
