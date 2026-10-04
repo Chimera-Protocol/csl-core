@@ -81,6 +81,34 @@ def cslcore_command() -> str:
 # ---------------------------------------------------------------------------
 
 def plan_for(agent: Agent, key: str, ws: Workspace, probe, command: Optional[str] = None) -> Plan:
+    plan = _plan_for(agent, key, ws, probe, command)
+    return _inside_scan(plan, ws)
+
+
+def _inside_scan(plan: Plan, ws: Workspace) -> Plan:
+    """Only files inside the folder the last scan covered are changed (`--root`). A scan record
+    that names files elsewhere (a workspace copied from another folder, an old scan) changes
+    nothing there."""
+    import os
+
+    root = ws.load_state().get("scan_root")
+    if not root or not plan.changes:
+        return plan
+    real_root = os.path.realpath(root)
+    outside = [ch for ch in plan.changes
+               if os.path.commonpath([os.path.realpath(ch.path), real_root]) != real_root]
+    if not outside:
+        return plan
+    plan.changes = [ch for ch in plan.changes if ch not in outside]
+    note = (f"{', '.join(ch.shown for ch in outside)}: outside the scanned folder ({root}), not changed; "
+            "scan again (cslcore setup) if the agent moved")
+    plan.note = (plan.note + "; " if plan.note else "") + note
+    if not plan.changes:
+        plan.kind = "manual"
+    return plan
+
+
+def _plan_for(agent: Agent, key: str, ws: Workspace, probe, command: Optional[str] = None) -> Plan:
     product = agent.framework[0] if agent.framework else ""
     if agent.kind == "assistant" and product == "claude-code":
         return _plan_hook(agent, key, ws, probe, command or cslcore_command())

@@ -67,8 +67,8 @@ def test_l_changes_the_limits_of_a_running_agent(room, monkeypatch):
     assert isinstance(_call(agent.transfer_funds, amount=1_500, to_wallet="w"), Blocked)  # standard limits: above 100 needs an approval
     r.handle("l")
     assert r.external is not None
-    # money limits (Enter keeps them), one change, done; no extra tool; block mode; back to the panel
-    _answers(monkeypatch, ["", "", "transfer_funds=2k..4k", "", "", "block", ""])
+    # tool 3 (transfer_funds), 5 (limit its numbers), amount 2k..4k, go on; block mode; back to the panel
+    _answers(monkeypatch, ["3", "5", "2k", "4k", "", "block", ""])
     r.external()
     assert "new limits active" in r.panel.message[0]
     assert _call(agent.transfer_funds, amount=1_500, to_wallet="w") == "sent 1500"  # same process, no restart

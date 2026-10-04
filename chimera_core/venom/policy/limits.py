@@ -282,7 +282,7 @@ def describe(lim: Limits) -> List[Tuple[str, str, str]]:
         if tl.decide == "block":
             what = "blocked"
         elif tl.decide == "allow":
-            what = "allowed, recorded"
+            what = "runs, every call recorded"
         elif tl.kind == "spend" and tl.amount_param:
             lo, hi = tl.allow_up_to, tl.never_above
             what = (f"up to {lo:,} freely, up to {hi:,} with approval, never above {hi:,}" if lo < hi
@@ -301,7 +301,7 @@ def describe(lim: Limits) -> List[Tuple[str, str, str]]:
         elif tl.kind == "send":
             what = "only listed destinations" if (lim.profile == "strict" or lim.destinations) else "anyone, recorded"
         elif tl.kind == "other":
-            what = "needs approval" if lim.profile == "strict" else "allowed, recorded (not classified)"
+            what = "needs approval" if lim.profile == "strict" else "runs, every call recorded"
         else:
             what = "needs approval"
         if tl.decide == "approval" and tl.kind != "spend":

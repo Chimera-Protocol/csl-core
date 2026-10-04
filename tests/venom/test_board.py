@@ -88,8 +88,7 @@ def test_riskiest_first_and_honest_about_what_is_not_protected(host):
 
 def test_log_mode_is_never_shown_as_protected(host, monkeypatch, capsys):
     host_dir, ws = host
-    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "", "", "c"],
-                 choices=["l", "log"])
+    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "c"], choices=["l", "log"])
     assert flow.policies()
     r = _rows(host_dir, ws)["backoffice"]
     assert r.wired == "wired" and r.mode == "log" and not r.protected and "recording only" in str(r.state)
@@ -97,9 +96,9 @@ def test_log_mode_is_never_shown_as_protected(host, monkeypatch, capsys):
 
 def test_one_agent_then_the_rest_with_one_key(host, monkeypatch, capsys):
     host_dir, ws = host
-    # the payments agent: its money limits (Enter keeps them), one change, Enter twice; then a; then Enter
-    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "transfer_funds=1k..5k", "", "",
-                                             "a", ""], choices=["l", "block", "block"])
+    # the payments agent: its tool 3 (transfer_funds), 5 (limit its numbers), amount 1k..5k, go on; then Enter (a)
+    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "3", "5", "1k", "5k", "", "a"],
+                 choices=["l", "block"])
     assert flow.policies()
     rows = _rows(host_dir, ws)
     bo = rows["backoffice"]
@@ -125,8 +124,7 @@ def test_one_agent_then_the_rest_with_one_key(host, monkeypatch, capsys):
 def test_board_opens_where_it_was_left(host, monkeypatch, capsys):
     host_dir, ws = host
     # one agent, then c: leave the board without standard protection for the rest (Enter would give it)
-    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "", "", "c"],
-                 choices=["l", "block"])
+    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "c"], choices=["l", "block"])
     assert flow.policies()
     capsys.readouterr()
     flow = _flow(host_dir, ws, monkeypatch, ["c"])
@@ -171,3 +169,72 @@ def test_skip_leaves_an_agent_untouched(host, monkeypatch, capsys):
         assert getattr(flow, step)()
     flow.wire_now()
     assert agent_file.read_text() == before and not (ws / ".csl/policies/backoffice.csl").exists()
+
+
+def test_limits_for_data_and_any_number_from_menus(host, monkeypatch, capsys):
+    """Not only money: a row count (export_rows.limit) and a list's length (notify.recipients) get
+    limits from the menu, and a tool can be set to never run; no syntax to type."""
+    host_dir, ws = host
+    # backoffice: 1 export_rows, 2 notify, 3 transfer_funds
+    answers = [_number(host_dir, ws, "backoffice"),
+               "1", "5", "100", "1000",   # export_rows: limit its numbers, limit 100 free, never above 1000
+               "2", "5", "5", "5",        # notify: recipients, at most 5
+               "3", "3",                  # transfer_funds: never runs
+               "", "c"]
+    flow = _flow(host_dir, ws, monkeypatch, answers, choices=["l", "block"])
+    assert flow.policies()
+    out = capsys.readouterr().out
+    flat = " ".join(out.split())
+    for line in ("set an agent's limits yourself", "change what that tool may do, and limit its numbers",
+                 "limit its numbers: limit", "never runs", "NUMBERS IT TAKES"):
+        assert line in flat, line
+    policy = (ws / ".csl/policies/backoffice.csl").read_text()
+    assert "limit <= 1000" in policy and "recipients <= 5" in policy
+    mod = _load(host_dir / "fs/srv/backoffice/agent.py")
+
+    def call(fn, **kw):
+        return fn.invoke(kw) if hasattr(fn, "invoke") else fn(**kw)
+
+    assert call(mod.export_rows, table="t", limit=50) == "exported 50"
+    assert isinstance(call(mod.export_rows, table="t", limit=5000), Blocked)
+    assert isinstance(call(mod.notify, recipients=[f"p{i}" for i in range(9)], message="hi"), Blocked)
+    assert isinstance(call(mod.transfer_funds, amount=1, to_wallet="w"), Blocked)
+
+
+def test_the_choices_are_spelled_out(host, monkeypatch, capsys):
+    host_dir, ws = host
+    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "devhelper"), "c"], choices=["s"])
+    assert flow.policies()
+    flat = " ".join(capsys.readouterr().out.split())
+    assert "Enter protect them with standard limits" in flat and "c continue without protecting" in flat
+    assert "l set its limits now" in flat and "o other ways" in flat and "s skip: change nothing for this agent" in flat
+
+
+def test_an_older_cslcore_draft_is_not_called_yours(host, monkeypatch, capsys):
+    host_dir, ws = host
+    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "c"], choices=["l", "block"])
+    assert flow.policies()
+    pol = ws / ".csl/policies/backoffice.csl"
+    pol.write_text(pol.read_text().replace("made from its limits", "drafted").replace("Generated by CSL-Core Venom",
+                                                                                         "Generated by CSL-Core Venom 0.6.8;"))
+    r = _rows(host_dir, ws)["backoffice"]
+    assert r.policy == "older" and "yours" not in str(B.table([r], 120).columns[4]._cells)
+
+
+def test_wiring_never_touches_files_outside_the_scanned_folder(tmp_path, capsys):
+    """A workspace copied from another folder still names the original files in its scan record:
+    wiring from it changes nothing there."""
+    import json
+
+    original = tmp_path / "original"
+    (original / ".git").mkdir(parents=True)
+    (original / "agent.py").write_text(OPS_AGENT)
+    ws = tmp_path / "copy"
+    ws.mkdir()
+    run_cli(["setup", "--root", str(original), "--workspace", str(ws), "--yes", "--activate", "--no-anim"], capsys)
+    state = json.loads((ws / ".csl/venom/state.json").read_text())
+    state["scan_root"] = str(ws)  # as after copying the workspace elsewhere
+    (ws / ".csl/venom/state.json").write_text(json.dumps(state))
+    rc, out, _ = run_cli(["wire", "--yes", "--workspace", str(ws)], capsys)
+    assert (original / "agent.py").read_text() == OPS_AGENT
+    assert "outside the scanned folder" in " ".join(out.split())

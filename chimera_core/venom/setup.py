@@ -1054,15 +1054,18 @@ class Flow:
                                     (f" · {('BLOCK' if default == 'log' else 'LOG')}: {', '.join(other)}" if other else "", "text"))),
             ("decisions", f"{model.total:,} recorded · {day:,} in the last 24 hours · "
              f"{(model.flagged / model.total * 100) if model.total else 0:.0f}% would block or blocked" if model.total
-             else "none yet: wire an agent (see .csl/venom/wiring.md)"),
+             else "none yet"),
             ("last scan", f"{inv.host.scanned_at.replace('T', ' ')[:16]} · " + (f"{high} high findings" if high else "no high findings")),
         ]
         if model.total and model.flagged / model.total > 0.2:
             nxt = "many calls would be blocked: tune the top rules in the panel (w, then Tab)"
         elif model.total and default == "log":
             nxt = "decisions look settled? switch agents to block in the panel (m or M)"
+        elif not model.total and self._unprotected(inv):
+            n = self._unprotected(inv)
+            nxt = f"b, then Enter: protect {plural(n, 'agent')} not protected yet (you see each change to your code first)"
         elif not model.total:
-            nxt = "wire your agents (one change each, .csl/venom/wiring.md), then watch them in the panel"
+            nxt = "run your agent; then w shows each call, and a waits for your approval"
         else:
             nxt = "scan again to pick up new agents and tools (s)"
         rows.append(("next", Text(nxt, style="brand")))
@@ -1072,6 +1075,14 @@ class Flow:
         return Panel(Group(grid(*rows, label_width=10), Text(""), menu),
                      title=Text(f" CSL-Core {VENOM_VERSION} · {self.ws.root.name} ", style="brand"), title_align="left",
                      box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))
+
+    def _unprotected(self, inv) -> int:
+        """Agents that need a policy and are not protected (policy, wiring, block mode, check)."""
+        from . import board as B
+
+        agents = [a for a in inv.agents if D.needs_policy(a)]
+        rows = B.rows_for(self.ws, agents, self.agents_state(), self.args, inv.policies)
+        return sum(1 for r in rows if not r.protected and not r.skipped)
 
     def home(self) -> Optional[int]:
         """Returns an exit code to stop, or None to start a new setup cycle."""
