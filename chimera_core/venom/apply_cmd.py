@@ -40,6 +40,7 @@ from rich.text import Text
 from .commands import EXIT_CHECK_FAILED, EXIT_OK, EXIT_USAGE, console_for, workspace_for
 from .model import Agent
 from .policy import limits as L
+from .render.words import n as _n
 
 FILE = "csl-limits.ini"
 EXIT_DIFFERS = 1
@@ -286,7 +287,7 @@ def _check_file(console, agent: Agent, key: str, lim: L.Limits, text: str) -> bo
     report, fail_open = check.run_text(agent, lim, text)
     if fail_open:
         console.print(Text.assemble(("  ✗ ", "high"), (key, "head"),
-                                    (f"   its mapping would be fail-open in {fail_open} cases", "high")))
+                                    (f"   its mapping would be fail-open in {_n(fail_open, 'case')}", "high")))
         return False
     check.show(console, report, key, compact=True)
     return report.ok
@@ -352,5 +353,5 @@ def _init(args, console, ws, path: Path) -> int:
         return EXIT_OK
     path.write_text(text, encoding="utf-8")
     console.print(Text.assemble(("  ✓ wrote ", "ok"), (str(path), "head"),
-                                (f"  {len(rows)} agents · edit it, then: cslcore apply", "muted")))
+                                (f"  {_n(len(rows), 'agent')} · edit it, then: cslcore apply", "muted")))
     return EXIT_OK

@@ -6,6 +6,7 @@ from typing import List, Tuple
 
 from ..analysis.coverage import link_policies, suggest, tool_variable
 from ..model import Agent, PolicyRef
+from ..render.words import n as _n
 
 
 def fit(agent: Agent, policy: PolicyRef) -> Tuple[float, str]:
@@ -24,7 +25,7 @@ def fit(agent: Agent, policy: PolicyRef) -> Tuple[float, str]:
     score = (exact + 0.7 * close) / len(tools) * 0.8 + min(shared, 5) / 5 * 0.2
     parts = []
     if exact or close:
-        parts.append(f"{exact + close} of {len(tools)} tools named")
+        parts.append(f"{exact + close} of {_n(len(tools), 'tool')} named")
     if close:
         parts.append(f"{close} with spelling differences (fixable)")
     if shared:

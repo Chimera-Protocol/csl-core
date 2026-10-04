@@ -6,6 +6,7 @@ agent. Agent-like processes that match nothing become kind `unmanaged`.
 
 from __future__ import annotations
 
+import re
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath
@@ -20,6 +21,7 @@ from .layers.processes import (
 )
 from .layers.triggers import TriggerScan, humanize_cron, referenced_paths, route_trigger_type
 from .model import Agent, Credential, Evidence, PromptInfo, RunStats, Trigger
+from .render.words import n as _n
 
 
 @dataclass
@@ -48,6 +50,29 @@ def _unique_names(agents: List[Agent]) -> None:
         if seen[a.display_name] > 1 and a.project:
             parent = PurePosixPath(a.project).parent.name
             a.display_name = f"{parent}/{a.display_name}"
+
+
+LAUNCHERS = {"sh", "bash", "zsh", "dash", "fish", "ksh", "env", "nohup", "exec", "node", "npx", "uv", "uvx", "pipx",
+             "poetry", "run", "-m", "-c", "sudo", "nice", "time"}
+
+
+def _process_name(args: str) -> str:
+    """A readable name for an agent-like process: its script (`app/agent.py`), else the first word that
+    is not a shell, launcher or interpreter (never `bin/zsh`), else what made it look like an agent."""
+    words = [w.strip("'\"") for w in args.split()]
+    script = next((w for w in words if w.endswith((".py", ".js", ".ts", ".mjs"))), None)
+    if script is None:
+        for w in words:
+            base = PurePosixPath(w).name
+            if not w or w.startswith("-") or base in LAUNCHERS or re.match(r"python[\d.]*$|node\d*$", base):
+                continue
+            script = w
+            break
+    if script is None:
+        m = AGENT_CLI.search(args)
+        return m.group(0).strip() if m else "agent process"
+    sp = PurePosixPath(script)
+    return f"{sp.parent.name}/{sp.name}" if sp.parent.name and sp.parent.name not in ("bin", "sbin", ".") else sp.name
 
 
 def _within(path: str, folder: str) -> bool:
@@ -221,7 +246,7 @@ def build_code_agents(probe, files: List[CodeFile], roots: List[str], cfg: Confi
                 if policy and policy not in a.guard.policy_ids:
                     a.guard.policy_ids.append(policy)
             a.evidence.append(Evidence("code", f.path, None, ", ".join(filter(None, [
-                f"{len(f.tools)} tools" if f.tools else "", "entrypoint" if f is entry else "",
+                f"{_n(len(f.tools), 'tool')}" if f.tools else "", "entrypoint" if f is entry else "",
             ])) or None))
         pc = cfg.projects.get(project)
         for p in [pc] if pc else []:
@@ -351,9 +376,7 @@ def attach_runtime(agents: List[Agent], rt: RuntimeScan, probe, home: str, cfg: 
                 new.append(target)
                 agents.append(target)
         if target is None and AGENT_CLI.search(args) and not is_mcp:
-            script = next((x for x in args.split() if x.endswith(".py")), args.split()[0])
-            sp = PurePosixPath(script)
-            target = Agent(id=f"unmanaged:{p.pid}", display_name=f"{sp.parent.name}/{sp.name}" if sp.parent.name else sp.name, kind="unmanaged",
+            target = Agent(id=f"unmanaged:{p.pid}", display_name=_process_name(args), kind="unmanaged",
                            entrypoint=args[:160])
             new.append(target)
             agents.append(target)

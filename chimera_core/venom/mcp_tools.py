@@ -19,6 +19,7 @@ from .model import Exemption, Inventory
 from .policy import draft as D
 from .policy.gate import verify_text
 from .workspace import Workspace
+from .render.words import n as _n
 
 LIMIT = 3900
 
@@ -52,8 +53,8 @@ def _find(inv: Inventory, agent_id: str):
 def inventory(workspace: str = ".", root: Optional[str] = None) -> str:
     inv = _inv(workspace, root)
     c = inv.coverage
-    lines = [f"# Venom inventory: {inv.host.name} ({inv.host.os}), {len(inv.agents)} agents",
-             f"Coverage: {c.guarded} of {c.tools_total - c.exempt} tools guarded, {c.wired_no_rule} wired without a rule, "
+    lines = [f"# Venom inventory: {inv.host.name} ({inv.host.os}), {_n(len(inv.agents), 'agent')}",
+             f"Coverage: {c.guarded} of {_n(c.tools_total - c.exempt, 'tool')} guarded, {c.wired_no_rule} wired without a rule, "
              f"{c.unguarded} unguarded, {c.exempt} exempt.", "", "| agent | kind | state | tools | riskiest | guard |", "|---|---|---|---|---|---|"]
     order = ["DESTRUCTIVE", "SPEND", "EXEC", "IDENTITY", "UNCLASSIFIED", "EXTERNAL", "WRITE", "READ"]
     for a in inv.agents[:25]:
@@ -138,7 +139,7 @@ def save_draft(agent_id: str, csl_content: str, note: str = "", workspace: str =
     if not verify_text(text).ok:
         text = csl_content
     ws.write_text(path, text)
-    return (f"SAVED to {ws.rel(path)}: {g.rules} rules, {g.variables} variables, Z3: no contradictions.\n"
+    return (f"SAVED to {ws.rel(path)}: {_n(g.rules, 'rule')}, {_n(g.variables, 'variable')}, Z3: no contradictions.\n"
             f"Not active. The operator reviews it with `cslcore policy diff {key}` and activates it with "
             f"`cslcore policy activate {key}` (or continues `cslcore setup`).")
 

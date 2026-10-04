@@ -35,6 +35,7 @@ from ..model import Agent, Inventory
 from ..reach import ReachGraph, build
 from .topo import AGENT, CHAIN, FROZEN, GUARDED, IMPACT_STYLE, INPUT, Sphere, Then, Topo, ViewCanvas, Zoom
 from .web import Canvas, _walk
+from .words import n as _n
 
 RISK_COLOR = {"READ": "#94a3b8", "WRITE": "#fbbf24", "EXTERNAL": "#7dd3fc", "IDENTITY": "#f0abfc",
               "EXEC": "#f87171", "SPEND": "#fb923c", "DESTRUCTIVE": "#f87171", "UNCLASSIFIED": "#e879f9"}
@@ -523,7 +524,7 @@ class MapView:
         self._sync(now)
         g = self.g
         head = Text.assemble((f"{len(g.chains)} reach chain{'s' if len(g.chains) != 1 else ''}", "bold #f0abfc"),
-                             (f" · {sum(1 for n in g.nodes.values() if n.kind == 'agent')} agents", "muted"),
+                             (f" · {_n(sum(1 for n in g.nodes.values() if n.kind == 'agent'), 'agent')}", "muted"),
                              ("   3D" if self.sphere and self.mode == "map" else "", "brand"))
         grid = Table.grid(padding=(0, 2))
         grid.add_column(width=self.w + 1, no_wrap=True)

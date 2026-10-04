@@ -26,6 +26,7 @@ from ..model import Inventory
 from ..reach import build, direct, strongest_direct
 from .theme import SEV_GLYPH, THEME
 from .topo import Topo
+from .words import n as _n
 
 CARD_WIDTH = 104
 REPO = "github.com/Chimera-Protocol/csl-core"
@@ -54,7 +55,7 @@ def card(inv: Inventory, version: str, anonymize: bool = False) -> Panel:
         n.label = _clean(n.label)
     findings = {s: sum(1 for f in inv.findings if f.severity == s) for s in ("high", "medium", "low")}
     tools = sum(len(a.tools) for a in inv.agents)
-    head = Text.assemble((f"{len(inv.agents)} agents", "bold #e2e8f0"), (f" · {tools} tools", "#cbd5e1"))
+    head = Text.assemble((f"{_n(len(inv.agents), 'agent')}", "bold #e2e8f0"), (f" · {_n(tools, 'tool')}", "#cbd5e1"))
     for s, n in findings.items():
         if n:
             head.append(f"   {SEV_GLYPH[s]} {n} {s}", style=s)

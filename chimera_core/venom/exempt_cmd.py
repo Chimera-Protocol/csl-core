@@ -11,6 +11,7 @@ from rich.text import Text
 from . import exemptions as ex
 from .commands import EXIT_OK, EXIT_USAGE, console_for, workspace_for
 from .model import Exemption
+from .render.words import n as _n
 
 
 def _agent_known(ws, agent: str) -> bool:
@@ -148,10 +149,10 @@ def _bulk_mode(console, ws, controls, args) -> int:
             console.print(f"  [warn]no agent matches {args.match}[/warn]")
             return EXIT_USAGE
         controls.set_many(hit, args.mode)
-        console.print(f"  [ok]{len(hit)} agents[/ok] → [brand]{args.mode}[/brand]: {', '.join(hit)}")
+        console.print(f"  [ok]{_n(len(hit), 'agent')}[/ok] → [brand]{args.mode}[/brand]: {', '.join(hit)}")
         return EXIT_OK
     losing = [k for k in agents if controls.get(k).mode == "block"] if args.mode == "log" else []
-    question = f"Switch all {len(agents)} agents to {args.mode.upper()}?"
+    question = f"Switch all {_n(len(agents), 'agent')} to {args.mode.upper()}?"
     if losing:
         question += f" {len(losing)} of them stop blocking and only record ({', '.join(losing[:5])}{' ...' if len(losing) > 5 else ''})."
     if not confirm(console, question, bool(getattr(args, "yes", False)), default=args.mode == "log" and not losing):

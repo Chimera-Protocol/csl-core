@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .model import Agent, Inventory
+from .render.words import n as _n
 
 RANK = {"likely": 3, "possible": 2}
 INPUT_TOOLS = {"WebFetch", "web_fetch", "http_get", "fetch", "fetch_url", "browse", "web_search", "WebSearch",
@@ -226,7 +227,7 @@ def build(inv: Inventory) -> ReachGraph:
         if len(rs) == 1:
             g.nodes[nid].label += f" {rs[0]}"
         elif rs:
-            g.nodes[nid].label += f" · {len(rs)} routes"
+            g.nodes[nid].label += f" · {_n(len(rs), 'route')}"
     for a in agents:
         for b in agents:
             r = _reach(a, b)

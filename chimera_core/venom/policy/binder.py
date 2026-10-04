@@ -24,6 +24,7 @@ from ..layers.governance import read_policy
 from ..model import Agent
 from .draft import agent_key
 from .gate import verify_text
+from ..render.words import n as _n
 
 
 @dataclass
@@ -93,11 +94,11 @@ def bind(ws, policy: Path, agents: List[Agent], *, write: bool = True, policy_te
         with contextlib.redirect_stdout(io.StringIO()):
             res = harness.run(spec, mod.map_call, compile_guard(text), mod)
         if res.fail_open:
-            plan.results.append(BindResult(key, False, f"mapping would be fail-open in {len(res.fail_open)} cases",
+            plan.results.append(BindResult(key, False, f"mapping would be fail-open in {_n(len(res.fail_open), 'case')}",
                                            len(res.cases), len(res.fail_open)))
             continue
-        unmapped = f"; {len(spec.unmapped_tools)} tools not in the policy are blocked" if spec.unmapped_tools else ""
-        plan.results.append(BindResult(key, True, f"{len(res.cases)} cases, 0 fail-open{unmapped}", len(res.cases), 0, edited))
+        unmapped = f"; {_n(len(spec.unmapped_tools), 'tool')} not in the policy are blocked" if spec.unmapped_tools else ""
+        plan.results.append(BindResult(key, True, f"{_n(len(res.cases), 'case')}, 0 fail-open{unmapped}", len(res.cases), 0, edited))
         if write and not ws.plan_only:
             if edited:
                 ws.write_text(policy, text)

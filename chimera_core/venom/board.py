@@ -445,8 +445,6 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
     for a in agents:
         kinds = kinds_of(a, L.load(ws, agent_key(a)))
         console.print(Text.assemble(("    ", ""), (agent_key(a), "head"), (f"  {', '.join(WORDS[k] for k in kinds)}", "muted")))
-    from .controls import Controls as _C
-
     mode = getattr(args, "mode", None) or ui.choose(
         "Mode for them: block stops what their limits do not allow; log only records it", ["block", "log"], "block")
     console.print(Text(f"    standard limits, a policy for each checked with Z3, {mode} mode, and the wiring changes "

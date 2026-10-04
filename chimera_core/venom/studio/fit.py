@@ -19,6 +19,7 @@ from ..analysis.coverage import _covers, suggest, tool_variable
 from ..layers.governance import read_policy
 from ..model import Agent
 from ..policy import draft as D
+from ..render.words import n as _n
 
 RISKY = ("DESTRUCTIVE", "SPEND", "EXEC", "IDENTITY", "UNCLASSIFIED", "EXTERNAL", "WRITE")
 
@@ -89,7 +90,7 @@ def fit_for(agents: List[Agent], text: str, ws=None) -> List[Fit]:
                 res = harness.run(spec, mod.map_call, guard, mod)
             f.cases, f.fail_open = len(res.cases), len(res.fail_open)
             if spec.unmapped_tools:
-                f.mapping_note = f"{len(spec.unmapped_tools)} tools blocked (not in the policy)"
+                f.mapping_note = f"{_n(len(spec.unmapped_tools), 'tool')} blocked (not in the policy)"
         out.append(f)
     return out
 

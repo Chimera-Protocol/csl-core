@@ -128,7 +128,9 @@ def cases_for(tool: Tool, tl: L.ToolLimit, lim: L.Limits) -> List[Case]:
     always = tl.decide == "approval"
     cases: List[Case] = []
     kind = tl.kind
-    approve = (lambda what, expected, **kw: Case(t, what, expected, dict(base), **kw))
+    def approve(what: str, expected: str, **kw) -> Case:
+        return Case(t, what, expected, dict(base), **kw)
+
     if kind == "spend":
         if tl.amount_param:
             hi = int(tl.never_above if tl.never_above is not None else L.DEFAULT_NEVER_ABOVE)

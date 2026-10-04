@@ -29,6 +29,7 @@ from ..model import Agent, Inventory, PolicyRef
 from ..render.screen import _section
 from . import draft as D
 from .gate import GateResult, verify_text
+from ..render.words import n as _n
 
 EXIT_GATE = 4
 
@@ -80,7 +81,7 @@ def diff_text(old: str, new: str, old_name: str, new_name: str) -> Optional[Text
 
 def gate_panel(g: GateResult, name: str) -> Panel:
     if g.ok:
-        body = Text.assemble(("verified  ", "ok"), (f"{g.rules} rules · {g.variables} variables · Z3: no contradictions", "text"),
+        body = Text.assemble(("verified  ", "ok"), (f"{_n(g.rules, 'rule')} · {_n(g.variables, 'variable')} · Z3: no contradictions", "text"),
                              ("\nhash ", "muted"), (g.policy_hash or "", "muted"))
         return Panel(body, title=Text(f" gate · {name} ", style="ok"), title_align="left", box=box.ROUNDED, border_style="ok", padding=(0, 1))
     rows = Table.grid(padding=(0, 1))
@@ -286,7 +287,7 @@ def act_new(console, ws, inv: Inventory, args) -> int:
         d = D.draft_for(a, exemptions, exec_mode=getattr(args, "exec_mode", "allowlist"), agent_ids=ids)
         console.print()
         console.print(Panel(highlight_csl(d.text), title=Text(f" draft · {a.display_name} ", style="brand"),
-                            subtitle=Text(f" {len(d.rules)} rules from {len(a.tools)} tools ", style="muted"),
+                            subtitle=Text(f" {_n(len(d.rules), 'rule')} from {_n(len(a.tools), 'tool')} ", style="muted"),
                             title_align="left", box=box.ROUNDED, border_style="brand.dim", padding=(0, 1)))
         if d.skipped:
             console.print(Text("  no rule: " + "; ".join(d.skipped), style="muted"))
@@ -347,7 +348,7 @@ def act_extend(console, ws, inv: Inventory, ref: PolicyRef, args) -> int:
         return EXIT_OK
     tv = tool_variable(ref, agents[0].tools) or "tool"
     new, rules = D.extend_text(base, ref.variables, tv, missing)
-    console.print(f"  adding {len(rules)} rules for {len(missing)} tools: [head]{', '.join(t.name for t in missing)}[/head]")
+    console.print(f"  adding {_n(len(rules), 'rule')} for {_n(len(missing), 'tool')}: [head]{', '.join(t.name for t in missing)}[/head]")
     _save_draft(console, ws, _draft_name(ref), new, args.yes, base=base, base_name=ws.rel(ref.path))
     return EXIT_OK
 
@@ -478,9 +479,9 @@ def act_bind(console, ws, inv: Inventory, args) -> int:
         t.add_column(col, overflow="fold")
     for r in plan.results:
         t.add_row(Text(r.agent, style="head"), Text("✓" if r.ok else "✗", style="ok" if r.ok else "high"),
-                  f"{r.cases} cases · {r.fail_open} fail-open" if r.cases else "-",
+                  f"{_n(r.cases, 'case')} · {r.fail_open} fail-open" if r.cases else "-",
                   Text(("agent_id extended · " if r.edited_policy else "") + r.message, style="muted" if r.ok else "high"))
-    console.print(Text.assemble(("  bind ", "label"), (path.name, "head"), (f"  to {len(chosen)} agents", "muted")))
+    console.print(Text.assemble(("  bind ", "label"), (path.name, "head"), (f"  to {_n(len(chosen), 'agent')}", "muted")))
     console.print(t)
     good = [r for r in plan.results if r.ok]
     if not good:
@@ -488,11 +489,11 @@ def act_bind(console, ws, inv: Inventory, args) -> int:
     if ws.plan_only:
         console.print("  [muted]--plan-only: nothing written[/muted]")
         return EXIT_OK
-    if not confirm(console, f"Bind {len(good)} agents? running ones switch on their next call", args.yes, default=True):
+    if not confirm(console, f"Bind {_n(len(good), 'agent')}? running ones switch on their next call", args.yes, default=True):
         console.print("  [muted]nothing changed[/muted]")
         return EXIT_OK
     binder.bind(ws, path, [a for a in chosen if D.agent_key(a) in {r.agent for r in good}], write=True, policy_text=text)
-    console.print(f"  [ok]bound[/ok] {len(good)} agents to {Bindings(ws).rel(path)}")
+    console.print(f"  [ok]bound[/ok] {_n(len(good), 'agent')} to {Bindings(ws).rel(path)}")
     return EXIT_OK if len(good) == len(plan.results) else EXIT_GATE
 
 

@@ -26,6 +26,7 @@ from ..render.screen import _section
 from . import codegen, harness
 from . import tricks as tricks_mod
 from .spec import MappingSpec, apply_classify, build_spec
+from ..render.words import n as _n
 
 
 def policy_for(ws, inv: Inventory, agent: Agent, explicit: Optional[str], args) -> Optional[PolicyRef]:
@@ -66,7 +67,7 @@ def render_spec(console, spec: MappingSpec) -> None:
     for v in spec.variables:
         dom = f"{v.low}..{v.high}" if v.kind == "range" else ("{" + ", ".join(v.values) + "}" if v.values else v.kind)
         if v.source == "tool":
-            frm = f"{len(spec.tool_table)} tools"
+            frm = f"{_n(len(spec.tool_table), 'tool')}"
         elif v.source == "param":
             parts = []
             for tn, p in v.params.items():
@@ -101,7 +102,7 @@ def render_spec(console, spec: MappingSpec) -> None:
 
 def render_results(console, res: harness.HarnessResult, spec: MappingSpec, target: str, policy_rel: str, limit: int = 40) -> None:
     console.print(Text.assemble(("  MAPPING TEST   ", "label"), (spec.agent_name, "head"), (" → ", "muted"),
-                                (policy_rel, "text"), (f"   {len(res.cases)} cases", "muted")))
+                                (policy_rel, "text"), (f"   {_n(len(res.cases), 'case')}", "muted")))
     console.print(Text(f"                 {target}", style="muted"))
     wide = console.width >= 100
     t = Table(box=None, header_style="label", pad_edge=False, show_edge=False, padding=(0, 1, 0, 0))
@@ -188,7 +189,7 @@ def render_regression(console, res: harness.HarnessResult) -> None:
         return
     bad = [c for c in reg if not c.ok]
     console.print()
-    console.print(Text.assemble(("  REGRESSION     ", "label"), (f"{len(reg) - len(bad)} of {len(reg)} cases keep their decision",
+    console.print(Text.assemble(("  REGRESSION     ", "label"), (f"{len(reg) - len(bad)} of {_n(len(reg), 'case')} {'keeps its' if len(reg) - len(bad) == 1 else 'keep their'} decision",
                                                                  "ok" if not bad else "text")))
     for c in bad[:10]:
         console.print(Text.assemble(("      ✗ ", "high"), (f"{c.tool}  ", "muted"), (c.input, "text"),

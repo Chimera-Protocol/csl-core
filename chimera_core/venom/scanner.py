@@ -166,10 +166,10 @@ class Scanner:
             failed = [s for s, n in live.servers.items() if n < 0]
             if failed:
                 inv.host.layers_unavailable["mcp"] = "no answer from: " + ", ".join(sorted(failed))
-            ev("mcp", "done", f"{ok} servers listed live")
+            ev("mcp", "done", f"{_n(ok, 'server')} listed live")
         inv.host.layers_run.append("history")
         with_runs = sum(1 for a in inv.agents if a.runs.count is not None)
-        ev("history", "done", f"run counts for {with_runs} of {len(inv.agents)} agents")
+        ev("history", "done", f"run counts for {with_runs} of {_n(len(inv.agents), 'agent')}")
 
         # exemptions, coverage, drift, findings
         state = self.workspace.load_state() if self.workspace is not None else {}

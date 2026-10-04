@@ -24,6 +24,7 @@ from ..model import Inventory
 from .theme import SEV_GLYPH, STATE_GLYPH, THEME
 from .topo import Topo
 from .web import AgentMark, Web
+from .words import n as _n
 
 LAYERS = [("code", "reading source code"), ("config", "reading assistant and MCP configs"),
           ("triggers", "reading schedules and services"), ("runtime", "looking at running processes"),
@@ -171,8 +172,8 @@ class Reveal:
             return t
         k = 1.0 if self.skipped else ease((now - start) / 0.5)
         tools = sum(len(a.tools) for a in inv.agents)
-        t.append(f"{int(len(inv.agents) * k)} agents", style="head")
-        t.append(f" · {int(tools * k)} tools", style="text")
+        t.append(f"{_n(int(len(inv.agents) * k), 'agent')}", style="head")
+        t.append(f" · {_n(int(tools * k), 'tool')}", style="text")
         for s in ("high", "medium", "low"):
             c = sum(1 for f in inv.findings if f.severity == s)
             if c:

@@ -27,6 +27,7 @@ from .commands import EXIT_OK, console_for, workspace_for
 from .model import Inventory
 from .policy.draft import agent_key
 from .render.theme import STATE_GLYPH
+from .render.words import n as _n
 
 STREAM_SIZE = 200
 
@@ -430,8 +431,8 @@ class ControlPanel:
         elif key == "M":
             to = "block" if (self.controls.default_mode() or "log") == "log" else "log"
             n = len(self.all_agents())
-            q = (f"Switch ALL {n} agents to BLOCK? policy violations will be blocked everywhere" if to == "block"
-                 else f"Switch ALL {n} agents to LOG? nothing will be blocked anywhere, only recorded")
+            q = (f"Switch ALL {_n(n, 'agent')} to BLOCK? policy violations will be blocked everywhere" if to == "block"
+                 else f"Switch ALL {_n(n, 'agent')} to LOG? nothing will be blocked anywhere, only recorded")
             self.pending = (f"all_{to}", "*", q)
         elif agent and key in ("x", "d") and not self.in_path(agent):
             self.pending = ("guard", agent, f"{agent} is not wired: freezing it would stop nothing. "
@@ -1125,7 +1126,7 @@ class WatchRoom:
                 g = verify_text(after)
                 if g.ok:
                     panel.pending = ("activate_draft", f"{draft}\x00{active}",
-                                     f"{_Path(draft).name} verified ({g.rules} rules). Activate it now?")
+                                     f"{_Path(draft).name} verified ({_n(g.rules, 'rule')}). Activate it now?")
                 else:
                     issue = g.issues[0].message if g.issues else g.stage
                     panel.message = (f"{_Path(draft).name} does not verify ({issue}); kept as a draft, "

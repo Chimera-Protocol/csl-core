@@ -59,6 +59,7 @@ class Plan:
     wrapped: List[str] = field(default_factory=list)  # tools the guard will decide
     missing: List[str] = field(default_factory=list)  # tools it cannot reach automatically
     shared: List[str] = field(default_factory=list)  # tool functions another agent's guard decides
+    requires: str = ""  # what the agent's own environment needs for the change to load
     note: str = ""
 
 
@@ -186,6 +187,25 @@ def _guard_var(source: str, key: str) -> str:
     return "_csl_guard" if "_csl_guard" not in others else "_csl_guard_" + re.sub(r"\W", "_", key)
 
 
+DEPENDENCY_FILES = ("requirements.txt", "pyproject.toml", "setup.py", "setup.cfg", "Pipfile")
+
+
+def _requirement_note(agent: Agent, probe, ws: Workspace) -> str:
+    """The wired code imports chimera_core: the Python environment the agent runs in needs csl-core.
+    Said unless its dependency files list it already (and then where to add it, if it has any)."""
+    base = agent.project or ""
+    listed, files = False, []
+    for name in DEPENDENCY_FILES:
+        text = ws.read(probe.real_path(f"{base}/{name}")) if base else None
+        if text is not None:
+            files.append(name)
+            listed = listed or "csl-core" in text or "csl_core" in text
+    need = "the environment this agent runs in needs csl-core (pip install csl-core); without it the agent stops at import"
+    if files and not listed:
+        need += f"; add csl-core to its {files[0]}"
+    return need if not listed else ""
+
+
 def _header_line(tree: ast.Module) -> int:
     """After the imports at the top (or the docstring): where the guard is created."""
     at = 0
@@ -267,6 +287,8 @@ def _plan_code(agent: Agent, key: str, ws: Workspace, probe) -> Plan:
     elif plan.missing:
         plan.note = (f"{', '.join(plan.missing)}: no function by that name in its code; add guard.check where your "
                      "code runs it (see .csl/venom/wiring.md)")
+    if plan.changes:
+        plan.requires = _requirement_note(agent, probe, ws)
     if shared:
         plan.note = (plan.note + "; " if plan.note else "") + (
             f"{', '.join(shared)}: one function shared with another agent, decided by that agent's policy")

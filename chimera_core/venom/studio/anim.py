@@ -19,6 +19,7 @@ from rich.table import Table
 from rich.text import Text
 
 from .engines import TLARun, Z3Run, card_of
+from ..render.words import n as _n
 
 BRAILLE = 0x2800
 SPIN = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
@@ -110,7 +111,7 @@ def z3_frame(run: Z3Run, t: float, width: int = 60) -> Group:
         sym = f": {n} value{'s' if n != 1 else ''}" if d.startswith("{") else ("∈ [" + d.replace("..", "‥") + "]" if ".." in d else ": " + d)
         chips.append(f" {name} ", style="code")
         chips.append(f"{sym}  ", style="muted")
-    parts.append(Text.assemble(("ENCODE  ", "label"), (f"{len(items)} variables → Z3 symbols", "muted")))
+    parts.append(Text.assemble(("ENCODE  ", "label"), (f"{_n(len(items), 'variable')} → Z3 symbols", "muted")))
     if len(items) > 6 and k >= 1:
         chips.append(f"+{len(items) - 6} more", style="muted")
     parts.append(chips if chips.plain else Text(" "))
@@ -131,9 +132,9 @@ def z3_frame(run: Z3Run, t: float, width: int = 60) -> Group:
             reach.append("·", style="muted")
         reach.append(" ")
     if kr < 1:
-        reach.append(f"  {done}/{len(rules)} rules probed", style="muted")
+        reach.append(f"  {done}/{_n(len(rules), 'rule')} probed", style="muted")
     else:
-        reach.append(f"  {len(rules) - len(set(run.unreachable))}/{len(rules)} rules can trigger",
+        reach.append(f"  {len(rules) - len(set(run.unreachable))}/{_n(len(rules), 'rule')} can trigger",
                      style="muted" if not run.unreachable else "warn")
     parts += [reach, Text("")]
 
@@ -175,15 +176,15 @@ def z3_frame(run: Z3Run, t: float, width: int = 60) -> Group:
             legend.append(f"{_short(r, 22)}   ", style="high" if hot else "muted")
         parts.append(grid)
         parts.append(legend)
-        parts.append(Text(f"        {min(filled, len(order))}/{len(order)} pairs checked for conflicting demands"
-                          + (f"   (first {limit} rules shown)" if n > limit else ""), style="muted"))
+        parts.append(Text(f"        {min(filled, len(order))}/{_n(len(order), 'pair')} checked for conflicting demands"
+                          + (f"   (first {_n(limit, 'rule')} shown)" if n > limit else ""), style="muted"))
         parts.append(Text(""))
 
     # 4. verdict
     if t >= t_verdict:
         kv = seg(t, t_verdict, t_verdict + 0.6)
         if run.ok:
-            line = f"✓ PROVEN CONSISTENT   {n} rules · {len(run.pairs)} pairs · {run.elapsed_ms} ms"
+            line = f"✓ PROVEN CONSISTENT   {_n(n, 'rule')} · {_n(len(run.pairs), 'pair')} · {run.elapsed_ms} ms"
             parts.append(shimmer(line, kv, "bold #4ade80"))
             if run.unreachable:
                 parts.append(Text(f"  but {', '.join(sorted(set(run.unreachable)))} can never trigger: "
@@ -327,7 +328,7 @@ def tla_frame(run: TLARun, t: float, width: int = 60) -> Group:
     t_inv0 = 1.9
     compact = bool(_examples(run)) and t >= t_inv0 + 0.18 * len(run.constraints) + 0.4
     if compact:
-        parts.append(Text.assemble(("SPEC    ", "label"), (f"{len(run.variables)} variables · state space {run.state_space} · ", "muted"),
+        parts.append(Text.assemble(("SPEC    ", "label"), (f"{_n(len(run.variables), 'variable')} · state space {run.state_space} · ", "muted"),
                                    (f"{run.total_states:,} states explored", "bold #5eead4"), (f" · {run.elapsed_ms} ms", "muted")))
         parts.append(Text(""))
     # 1. spec: the variables and the size of the state space
@@ -342,7 +343,7 @@ def tla_frame(run: TLARun, t: float, width: int = 60) -> Group:
         spec.add_row(Text(_short(str(vi.get("name")), 10), style="text"), Text(bar, style="brand.dim"),
                      str(vi.get("card")).replace("|", ""))
     if not compact:
-        parts += [Text.assemble(("SPEC    ", "label"), (f"{len(run.variables)} variables · state space {run.state_space}", "muted")), spec, Text("")]
+        parts += [Text.assemble(("SPEC    ", "label"), (f"{_n(len(run.variables), 'variable')} · state space {run.state_space}", "muted")), spec, Text("")]
 
     # 2. exploration: the tree grows, the counter climbs to the real number of states
     ke = seg(t, 0.5, 1.9)

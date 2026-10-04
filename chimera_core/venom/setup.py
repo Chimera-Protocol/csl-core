@@ -47,6 +47,7 @@ from .model import Agent, Inventory, PolicyRef
 from .policy import draft as D
 from .policy.gate import verify_text
 from .render.screen import scan_screen
+from .render.words import n as _n
 
 STEPS = ["scope", "discover", "inventory", "findings", "exemptions", "policies", "verify", "map", "wire", "activate"]
 TITLES = {
@@ -365,7 +366,7 @@ class Flow:
             ("r", "recommended: keep the policies your agents already use, templates for the rest"),
             ("c", "choose per agent (existing policy, template, write it yourself, or with your assistant)"),
             ("t", "templates for every agent"), label_width=3), (0, 0, 0, 4)))
-        return {"r": "recommended", "c": "choose", "t": "templates"}[self.choose(f"{n} agents need a policy. How?", ["r", "c", "t"], "r")]
+        return {"r": "recommended", "c": "choose", "t": "templates"}[self.choose(f"{_n(n, 'agent')} need{'s' if n == 1 else ''} a policy. How?", ["r", "c", "t"], "r")]
 
     def policies(self) -> bool:
         agents = self.targets()
@@ -509,7 +510,7 @@ class Flow:
     def _menu(self, a: Agent, cands) -> str:
         risky = ", ".join(sorted({t.risk_class for t in a.tools if t.risk_class != "READ"})) or "read only"
         self.console.print()
-        self.console.print(Text.assemble(("  ", ""), (a.display_name, "head"), (f"   {len(a.tools)} tools · {risky}", "muted")))
+        self.console.print(Text.assemble(("  ", ""), (a.display_name, "head"), (f"   {_n(len(a.tools), 'tool')} · {risky}", "muted")))
         rows = []
         for i, (ref, score, why) in enumerate(cands, 1):
             name = ref.policy_id or ref.domain or Path(ref.path).name
@@ -720,7 +721,7 @@ class Flow:
                 record(self.ws, spec, res, self.ws.rel(path))
             mark = ("✓ ", "ok") if not res.fail_open else ("✗ ", "high")
             self.console.print(Text.assemble(("  ", ""), mark, (a.display_name, "head"),
-                                             (f"  {len(res.cases)} cases · {len(res.fail_open)} fail-open", "muted"),
+                                             (f"  {_n(len(res.cases), 'case')} · {len(res.fail_open)} fail-open", "muted"),
                                              (f"  → {self.ws.rel(path)}", "muted")))
             if res.fail_open:
                 render_results(self.console, res, spec, "generated mapping", final_rel)
@@ -832,7 +833,13 @@ class Flow:
         self.console.print()
         out: List[str] = []
         snippets = []
-        self.console.print(Text("  WIRING   one change per agent puts the guard in its call path", style="label"))
+        from . import wiring
+        from .wire_cmd import scan_probe
+
+        probe, _root = scan_probe(self.args, self.ws)
+        self.console.print(Text("  WIRING   after activation, the guard goes into each agent's call path: each change is "
+                                "shown as a diff and made only when you confirm (--wire with --yes)", style="label"))
+        by_hand = []
         for key, a, st in agents:
             if st.get("adopted"):
                 sn = observe_snippet(a, key, short(str(self.ws.root)))
@@ -840,9 +847,21 @@ class Flow:
                 sn = snippet_for(a, key, f"policies/{key}.csl", st["mapping"], short(str(self.ws.root)))
             snippets.append(sn)
             out.append(f"## {a.display_name}\n\n{sn.title}\n\n```{sn.language}\n{sn.code}\n```\n\n" + " ".join(sn.notes) + "\n")
-            self.console.print(Text.assemble(("    ", ""), (a.display_name, "head"), (f"  {sn.title}", "muted")))
-        if len(snippets) == 1:
-            self.console.print(Padding(Syntax(snippets[0].code, snippets[0].language, theme="ansi_dark",
+            plan = wiring.plan_for(a, key, self.ws, probe)
+            if st.get("adopted"):
+                how, style = "its own guard, in its own code (optional: observe() adds decision logs and modes)", "muted"
+            elif plan.kind == "done":
+                how, style = "wired already", "ok"
+            elif plan.kind == "hook":
+                how, style = "automatic: a Claude Code hook decides every tool call", "text"
+            elif plan.kind == "code" and plan.changes:
+                how, style = f"automatic: a decorator on {wiring_count(plan)}", "text"
+            else:
+                how, style = "by hand: " + (plan.note or sn.title), "warn"
+                by_hand.append(sn)
+            self.console.print(Text.assemble(("    ", ""), (a.display_name, "head"), (f"  {how}", style)))
+        if len(by_hand) == 1:
+            self.console.print(Padding(Syntax(by_hand[0].code, by_hand[0].language, theme="ansi_dark",
                                               background_color="default", word_wrap=True), (1, 0, 0, 4)))
         if out and not self.ws.plan_only:
             self.ws.write_text(self.ws.venom / "wiring.md", "# Integration snippets\n\n" + "\n".join(out))
@@ -1175,6 +1194,11 @@ class Flow:
                      Text.assemble(("      ", ""), ("cslcore studio", "brand"),
                                    ("   edit a policy, check it with Z3 and TLA+, go live", "muted")))
         return Panel(body, title=title, title_align="left", box=box.ROUNDED, border_style="ok" if good else "warn", padding=(0, 1))
+
+
+def wiring_count(plan) -> str:
+    n = len(plan.wrapped)
+    return f"{n} tool function{'s' if n != 1 else ''}"
 
 
 def cmd_setup(args) -> int:

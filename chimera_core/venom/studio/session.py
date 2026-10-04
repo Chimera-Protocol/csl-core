@@ -21,6 +21,7 @@ from ..model import Agent, Inventory
 from ..policy import draft as D
 from ..policy.gate import verify_text
 from .engines import TLARun, Z3Run, run_tla, run_z3
+from ..render.words import n as _n
 
 BLANK = """// New CSL policy. F5 checks it with Z3, F8 with TLA+.
 
@@ -243,8 +244,8 @@ class StudioSession:
         self.text = text
         self.saved_digest = digest(text)
         self.external = None
-        controls.Controls(self.ws)._audit(self.name, "go live", f"{self.ws.rel(self.active)} · {len(good)} agents")
+        controls.Controls(self.ws)._audit(self.name, "go live", f"{self.ws.rel(self.active)} · {_n(len(good), 'agent')}")
         bound = [D.agent_key(a) for a in good]
         msg = f"live: {self.ws.rel(self.active)}"
-        msg += f" · {len(bound)} agents switch on their next call" if bound else " · no agent bound yet (ctrl+b)"
+        msg += f" · {_n(len(bound), 'agent')} switch on their next call" if bound else " · no agent bound yet (ctrl+b)"
         return GoLive(True, msg, str(self.active), bound, refused)

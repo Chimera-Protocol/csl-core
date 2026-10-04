@@ -31,6 +31,7 @@ from .. import VENOM_VERSION
 from . import anim as A
 from .editor import CslEditor
 from .session import StudioSession
+from ..render.words import n as _n
 
 CSS = """
 Screen { background: #0b1220; }
@@ -308,7 +309,7 @@ class StudioApp(App):
             if f.uncovered_risky:
                 out.append(f"  no rule         {', '.join(f'{t} ({c})' for t, c in f.uncovered_risky[:4])}\n", style="#fb923c")
             ok = f.fail_open == 0
-            out.append(f"  mapping test    {f.cases} cases · {f.fail_open} fail-open" + (f" · {f.mapping_note}" if f.mapping_note else "") + "\n",
+            out.append(f"  mapping test    {_n(f.cases, 'case')} · {f.fail_open} fail-open" + (f" · {f.mapping_note}" if f.mapping_note else "") + "\n",
                        style="#4ade80" if ok else "#f87171")
         r = s.replay(text)
         out.append("\nREPLAY ", style="bold #94a3b8")
@@ -324,7 +325,7 @@ class StudioApp(App):
             for agent, tool, change, rules in r.examples[:4]:
                 out.append(f"  {agent} {tool}: {change}" + (f" ({', '.join(rules[:2])})" if rules else "") + "\n", style="#94a3b8")
             if r.skipped:
-                out.append(f"  {r.skipped} calls could not be replayed (unmapped input, exemptions, kill switch)\n", style="#64748b")
+                out.append(f"  {_n(r.skipped, 'call')} could not be replayed (unmapped input, exemptions, kill switch)\n", style="#64748b")
         return out
 
     # -- events -------------------------------------------------------------------------
@@ -385,7 +386,7 @@ class StudioApp(App):
         if run.ok and run.unreachable:
             self.status(f"Z3: consistent, but {', '.join(sorted(set(run.unreachable)))} can never trigger", "#fbbf24")
         elif run.ok:
-            self.status(f"Z3: proven consistent · {len(run.rules)} rules · {len(run.pairs)} pairs · {run.elapsed_ms} ms", "#4ade80")
+            self.status(f"Z3: proven consistent · {_n(len(run.rules), 'rule')} · {_n(len(run.pairs), 'pair')} · {run.elapsed_ms} ms", "#4ade80")
         else:
             self.status(f"Z3: {len(run.issues)} problem(s); see the suggestions", "#f87171")
 
@@ -410,7 +411,7 @@ class StudioApp(App):
             self.status("TLA+: ENABLE_FORMAL_VERIFICATION: TRUE makes the compiler refuse rules that block; "
                         "the first suggestion sets it to FALSE (the studio keeps checking TLA+ for you)", "#fbbf24")
         else:
-            msg = f"TLA+: guard verified · {len(run.enforced)} rules enforce"
+            msg = f"TLA+: guard verified · {_n(len(run.enforced), 'rule')} enforce"
             if run.checked:
                 msg += f" · {run.blocked:,} of {run.checked:,} states blocked"
             if run.never_fires:
@@ -421,7 +422,7 @@ class StudioApp(App):
         kinds = {}
         if self.session.inv is not None:
             from ..policy.draft import agent_key
-            kinds = {agent_key(a): f"{a.kind} · {len(a.tools)} tools" for a in self.session.inv.agents}
+            kinds = {agent_key(a): f"{a.kind} · {_n(len(a.tools), 'tool')}" for a in self.session.inv.agents}
 
         def done(result: Optional[List[str]]) -> None:
             if result is None:
@@ -430,7 +431,7 @@ class StudioApp(App):
             self.refresh_top()
             self.refresh_side()
             self.query_one("#tabs", TabbedContent).active = "tab-agents"
-            self.status(f"{len(result)} agents selected; they are bound when the policy goes live (ctrl+l)", "#5eead4")
+            self.status(f"{_n(len(result), 'agent')} selected; they are bound when the policy goes live (ctrl+l)", "#5eead4")
 
         if not self.session.all_agents():
             self.status("no discovered agents in this workspace yet: run cslcore venom first", "#fbbf24")
@@ -495,7 +496,7 @@ class StudioApp(App):
             elif t.refuses_to_load:
                 out.append("the compiler refuses this policy (ENABLE_FORMAL_VERIFICATION: TRUE); see suggestions\n", style="#f87171")
             else:
-                out.append(f"guard verified · {len(t.enforced)} rules enforce" + (f" · {len(t.never_fires)} never fire" if t.never_fires else "")
+                out.append(f"guard verified · {_n(len(t.enforced), 'rule')} enforce" + (f" · {len(t.never_fires)} never fire" if t.never_fires else "")
                            + (f" · blocks {t.blocked:,} of {t.checked:,} states" if t.checked else "") + "\n",
                            style="#fbbf24" if t.never_fires else "#4ade80")
         out.append("file    ", style="bold #94a3b8")
@@ -507,7 +508,7 @@ class StudioApp(App):
         out.append("agents  ", style="bold #94a3b8")
         out.append((", ".join(s.agents) if s.agents else "none selected (ctrl+b)") + "\n", style="#cbd5e1")
         for f in s.fit(text):
-            out.append(f"        {f.agent}: mapping {f.cases} cases, {f.fail_open} fail-open\n", style="#4ade80" if not f.fail_open else "#f87171")
+            out.append(f"        {f.agent}: mapping {_n(f.cases, 'case')}, {f.fail_open} fail-open\n", style="#4ade80" if not f.fail_open else "#f87171")
         old = s.ws.read(s.active) if s.active and s.active.exists() else ""
         diff = list(difflib.unified_diff((old or "").splitlines(), text.splitlines(), "live", "new", lineterm="", n=1))
         if diff:

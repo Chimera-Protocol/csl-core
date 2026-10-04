@@ -200,7 +200,7 @@ def test_bindings_bind_and_follow_live(tmp_path, capsys, monkeypatch):
                      .replace('DOMAIN VenomMembershipBot', 'DOMAIN Loose'))
     rc, out, _ = run_cli(["policy", "bind", str(loose), "--agent", "membership-bot", "--yes",
                           "--root", str(HOST_OPS), "--workspace", str(ws)], capsys)
-    assert rc == 0 and "0 fail-open" in out and "bound 1 agents" in out
+    assert rc == 0 and "0 fail-open" in out and "bound 1 agent to" in out
     r = g.verify("transfer_funds", {"amount": 5000, "to_wallet": "w"}, {"approval": "YES"})
     assert r.allowed, r.violated_rule_ids
 

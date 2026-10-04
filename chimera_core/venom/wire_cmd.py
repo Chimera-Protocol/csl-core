@@ -59,6 +59,8 @@ def show_plan(console, plan: wiring.Plan) -> None:
         console.print(Syntax(ch.diff(), "diff", theme="ansi_dark", background_color="default", word_wrap=True))
     if plan.note:
         console.print(Text("    " + plan.note, style="warn" if plan.kind == "manual" else "muted"))
+    if getattr(plan, "requires", ""):
+        console.print(Text("    " + plan.requires, style="warn"))
 
 
 def cmd_wire(args) -> int:

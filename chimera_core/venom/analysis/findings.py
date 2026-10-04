@@ -13,6 +13,8 @@ from typing import Callable, Dict, List, Optional, Tuple
 from ..model import Agent, Evidence, Finding, Inventory, SEVERITIES
 from .coverage import blocking_drift
 
+INBOUND = {"inbound_http": "HTTP"}  # "inbound HTTP", not "inbound inbound http"
+
 BROAD_CREDENTIALS = {"cloud_root", "org_token", "payment", "database_url"}
 STATE_CHANGING = {"WRITE", "EXTERNAL", "SPEND", "DESTRUCTIVE", "EXEC", "IDENTITY"}
 
@@ -52,7 +54,7 @@ def v04(inv, ctx):
         ext = [t for t in a.triggers if t.type in ("inbound_http", "messaging", "email")]
         risky = [t for t in a.tools if t.risk_class in ("WRITE", "EXTERNAL", "SPEND", "DESTRUCTIVE") and t.coverage == "unguarded"]
         if ext and risky:
-            out.append(_f("V04", "high", f"{a.display_name}: inbound {ext[0].type.replace('_', ' ')} ({ext[0].schedule}) "
+            out.append(_f("V04", "high", f"{a.display_name}: inbound {INBOUND.get(ext[0].type, ext[0].type)} ({ext[0].schedule}) "
                           f"reaches {risky[0].risk_class} tool {risky[0].name} unguarded", a, risky[0].name,
                           rec="put an approval rule or a guard between external input and state-changing tools"))
     return out

@@ -20,6 +20,7 @@ from rich.text import Text
 
 from ..model import SENSITIVE, Agent, Inventory, Tool
 from .theme import LAYER_LABEL, SEV_GLYPH, STATE_GLYPH
+from .words import n as _count
 
 LAYER_ORDER = ["code", "config", "triggers", "runtime", "history", "policies"]
 RISK_RANK = {c: i for i, c in enumerate(["READ", "WRITE", "EXTERNAL", "IDENTITY", "UNCLASSIFIED", "EXEC", "SPEND", "DESTRUCTIVE"])}
@@ -237,7 +238,7 @@ def coverage_line(inv: Inventory, width: int = 100) -> Text:
     t.append_text(coverage_bar(c.ratio, 22 if width >= 100 else (16 if width >= 80 else 8)))
     pct = "n/a" if c.ratio is None else f"{c.ratio * 100:.0f}%"
     t.append(f"  {pct:>4}   ", style="head")
-    t.append(f"{c.guarded} of {c.tools_total - c.exempt} tools guarded", style="text")
+    t.append(f"{c.guarded} of {_count(c.tools_total - c.exempt, 'tool')} guarded", style="text")
     if c.wired_no_rule:
         t.append(f" · {c.wired_no_rule} wired without a rule" if width >= 100 else f" · {c.wired_no_rule} no rule", style="warn")
     return t
@@ -383,13 +384,13 @@ def next_step(inv: Inventory) -> Text:
     unguarded = inv.coverage.unguarded + inv.coverage.wired_no_rule
     if not active and unguarded:
         t.append("cslcore setup", style="brand")
-        t.append(f"  first install: {unguarded} tools need a policy", style="text")
+        t.append(f"  first install: {_count(unguarded, 'tool')} need{'s' if unguarded == 1 else ''} a policy", style="text")
     elif any(d.kind in ("unknown_value", "coercion") for d in inv.drift):
         t.append("cslcore policy fix", style="brand")
         t.append("  apply drift suggestions, shown as a diff first", style="text")
     elif unguarded:
         t.append("cslcore setup", style="brand")
-        t.append(f"  continue: {unguarded} tools still without a rule", style="text")
+        t.append(f"  continue: {_count(unguarded, 'tool')} still without a rule", style="text")
     else:
         t.append("cslcore map --test", style="brand")
         t.append("  check every mapping for fail-open cases", style="text")
