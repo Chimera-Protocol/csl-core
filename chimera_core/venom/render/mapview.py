@@ -8,7 +8,7 @@
     s              turn the map into a slowly rotating sphere, and back
     n              names on the map on / off (on by default)
     r              replay the spread
-    w              the live panel (watch): the map shrinks into its corner
+    w              the live panel (watch): the map shrinks away, the decisions take its place
     q              quit
 
 Read-only: it draws the latest scan of the workspace (or scans when there is none). From the end

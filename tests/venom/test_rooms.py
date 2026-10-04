@@ -63,14 +63,25 @@ def test_the_map_shrinks_into_the_panel_and_grows_back(ws):
 
     w = WatchRoom(_args(ws), _console())
     w.enter("map")
-    assert w.panel.map_on and w.settle0 is not None
-    assert "reach map" in _play(w, 0.1)
-    _play(w, 1.0)
-    assert w.settle0 is None and w.panel.pane_zoom == 1.0
-    w.handle("g")  # the map again: the full map
-    assert w.grow0 is not None
+    assert not w.panel.map_on and w.settle0 is None  # the panel opens on the live decisions, always
+    assert "reach map · live" not in _play(w, 0.1)
+    w.handle("f")  # the full map, straight from the stream
+    assert w.exit_to == "map"
+    w.exit_to = None
+    w.handle("g")  # the map beside the decisions
+    assert w.panel.map_on and "reach map · live" in _play(w, 0.1)
+    w.handle("g")  # and back to the stream
+    assert not w.panel.map_on
+    w.handle("g")
+    w.handle("f")  # from the panel's map, it grows into the full map
+    assert w.grow0 is not None and w.exit_to is None
     _play(w, 1.0)
     assert w.exit_to == "map" and w.panel.pane_zoom == 1.0
+    w.exit_to = None
+    w.enter("map")  # back from the full map: as it was left, its map settling into place
+    assert w.panel.map_on and w.settle0 is not None
+    _play(w, 1.0)
+    assert w.settle0 is None and w.panel.pane_zoom == 1.0
     m.enter("watch")
     assert m.arrive[1] == "watch"
 

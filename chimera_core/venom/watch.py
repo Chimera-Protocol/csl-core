@@ -211,7 +211,7 @@ class ControlPanel:
         self.editor_request: Optional[str] = None  # path the run loop opens in $EDITOR
         self.studio_request: Optional[Tuple[str, str]] = None
         self.map_on = False  # the live view shows the reach map instead of the decision stream
-        self.go_map = False  # g on the panel's map: open the full map (a room, see venom/rooms.py)
+        self.go_map = False  # f: open the full map (a room, see venom/rooms.py)
         self.pane_zoom = 1.0  # the panel's map grows into the full map, and settles when it comes back
         self.topo = None
         self.topo_size: Optional[Tuple[int, int]] = None
@@ -298,7 +298,7 @@ class ControlPanel:
         if self.focus == "rules":
             return [("↑↓", "rule"), ("Enter", "open"), ("Tab", "agents"), ("Esc", "back")]
         out = [("↑↓", "select"), ("Enter", "tools"), ("m", "mode"), ("M", "all"), ("x", "freeze"), ("e", "exempt"),
-               ("/", "search"), ("Tab", "rules"), ("g", "full map" if self.map_on else "map"), ("?", "help")]
+               ("/", "search"), ("Tab", "rules"), ("g", "stream" if self.map_on else "map"), ("f", "full map"), ("?", "help")]
         out.append(("Esc", "clear search") if self.query else ("q", "quit"))
         return out
 
@@ -322,10 +322,10 @@ class ControlPanel:
             self.view = "live" if self.view == "help" else "help"
             return True
         if key in ("g", "G") and self.view == "live":
-            if self.map_on:
-                self.go_map = True  # the map again: the full map
-            else:
-                self.map_on = True
+            self.map_on = not self.map_on
+            return True
+        if key in ("f", "F") and self.view == "live":
+            self.go_map = True
             return True
         if key in ("esc", "left"):
             if self.view != "live":
@@ -639,7 +639,7 @@ def help_pane() -> Table:
                  ("e", "exempt the agent (or, in its tools, one tool); a reason is required"),
                  ("space", "in tools: disable or enable one tool"),
                  ("e / o", "in a rule: exempt one agent from it / open the policy in your editor"),
-                 ("g", "the reach map with live decisions; g again for the full map (w comes back)"),
+                 ("g / f", "the reach map beside the decisions (g again: the stream) / the full map (w comes back)"),
                  ("q", "quit"), ("", ""), ("", "Changes reach running agents on their next tool call, without a restart."),
                  ("", "Every change is recorded in .csl/venom/audit.jsonl; policy edits keep the old version.")):
         t.add_row(k, v)
@@ -895,8 +895,9 @@ class WatchRoom:
         self.external = None
 
     def enter(self, came_from: str) -> None:
-        if came_from == "map":  # the map shrank into this corner: it is the panel's map now
-            self.panel.map_on, self.panel.view = True, "live"
+        """The panel always opens on what it is for: the live decisions. Back from the full map,
+        it is as it was left; its own map, if it was open, settles into place."""
+        if self.panel.map_on:
             self.settle0 = time.monotonic()
         self.next_frame = 0.0
 
@@ -909,7 +910,10 @@ class WatchRoom:
         ok = self.panel.handle(key)
         if self.panel.go_map:
             self.panel.go_map = False
-            self.grow0 = time.monotonic()
+            if self.panel.map_on:
+                self.grow0 = time.monotonic()  # the panel's map grows into the full map
+            else:
+                self.exit_to = "map"
         if self.panel.studio_request or self.panel.editor_request:
             self.external = self._outside
         self.next_frame = self.next_poll = 0.0

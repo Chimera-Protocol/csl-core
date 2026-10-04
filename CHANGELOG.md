@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - One flow. After `cslcore venom`, at a terminal, one key leads on: `m` the reach map (it grows
   out of one point), `s` the guided setup, `q` the shell. Scripts, pipes, `--json`, `--check` and
   CI are never asked; `CSL_NO_PROMPT=1` turns it off.
-- The map and the live panel lead into each other on one screen: `w` on the map shrinks it into
-  the panel's corner, `g` twice in the panel grows the panel's map back to full screen.
+- The map and the live panel lead into each other on one screen: `w` on the map opens the panel
+  (always on its live decisions), `f` in the panel opens the full map; with the panel's own map
+  open (`g`), it grows into the full map and settles back on the way in.
 - Setup offers the reach map after the inventory and findings steps, and the panel or the map
   when it completes; its home screen has `m` for the map (modes moved to `o`).
 

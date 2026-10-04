@@ -172,7 +172,7 @@ def test_live_map_toggles_and_draws_pulses(ws):
     _guard("membership-bot", mode="log").verify("transfer_funds", {"amount": 700, "to_wallet": "w"})
     p = _panel(ws)
     p.handle("g")
-    assert p.map_on and p.crumbs()[-1] == "Map" and ("g", "full map") in p.hints()
+    assert p.map_on and p.crumbs()[-1] == "Map" and ("g", "stream") in p.hints() and ("f", "full map") in p.hints()
     for rec in p.model.stream:
         rec["_seen"] = time.monotonic()  # as if it had just arrived
     text = _frame(p)

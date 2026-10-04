@@ -204,7 +204,7 @@ The reach map full screen. `--rescan` scans again first; `--once` prints one fra
 | `s` | the 3D globe; it turns the selected node to the front |
 | `n` | names on the map on or off |
 | `r` | replay the spread |
-| `w` | the live panel: the map shrinks into its corner (`g` there grows it back) |
+| `w` | the live panel, on its live decisions (`f` there comes back to the full map) |
 | `q` | quit |
 
 ### `cslcore studio [policy]`
@@ -234,7 +234,8 @@ The live management panel. `--refresh SECONDS` sets the table refresh, `--once` 
 | `e` | exempt the agent, with a reason |
 | Enter | the agent's tools: disable or exempt one |
 | Tab | rules ranked by would-block: `e` exempts an agent from a rule, `o` opens it in the studio |
-| `g` | the live reach map (decisions flow over it); `g` again opens the full map, `w` there comes back |
+| `g` | the live reach map beside the decisions (decisions flow over it); `g` again for the stream |
+| `f` | the full reach map; `w` there comes back |
 | `?` / `q` | help / quit |
 
 ### `cslcore map`
