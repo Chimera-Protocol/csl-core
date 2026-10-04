@@ -78,6 +78,12 @@ class CodeFile:
     prompt: PromptInfo = field(default_factory=PromptInfo)
     has_main: bool = False
     tool_calls: Dict[str, List[str]] = field(default_factory=dict)  # tool name -> call names in its body
+    # identifiers that stand for a tool (a decorated function, a Tool() variable, a BaseTool class) -> tool name
+    symbols: Dict[str, str] = field(default_factory=dict)
+    lists: Dict[str, List[str]] = field(default_factory=dict)  # module-level lists of identifiers (tools = [a, b])
+    # explicit agent definitions: (name, identifiers in its tools list, line)
+    agent_defs: List[Tuple[str, List[str], int]] = field(default_factory=list)
+    imports: List[str] = field(default_factory=list)  # imported modules (relative ones start with dots)
 
     @property
     def agent_like(self) -> bool:
@@ -205,6 +211,48 @@ def _body_calls(fn: ast.AST) -> List[str]:
 
 TOOL_DECORATORS = {"tool", "function_tool", "kernel_function", "ai_function"}
 MCP_DECORATOR_OWNERS = {"mcp", "server", "app", "srv", "fastmcp"}
+# constructors that define one agent with its own list of tools (OpenAI Agents, CrewAI, LangGraph,
+# LangChain, LlamaIndex, AutoGen, smolagents, PydanticAI)
+AGENT_CTORS = {"Agent", "create_react_agent", "create_tool_calling_agent", "create_openai_functions_agent",
+               "create_openai_tools_agent", "initialize_agent", "AgentExecutor", "ReActAgent", "FunctionAgent",
+               "FunctionCallingAgent", "OpenAIAgent", "AssistantAgent", "ConversableAgent", "ToolCallingAgent",
+               "CodeAgent", "create_agent"}
+
+
+def _refs(node: Optional[ast.AST]) -> List[str]:
+    """Identifiers in a tools list: names, attributes (their last part) and constructor calls."""
+    if node is None:
+        return []
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+        out: List[str] = []
+        for el in node.elts:
+            if isinstance(el, ast.Starred):
+                out += _refs(el.value)
+            elif isinstance(el, ast.Call):
+                out.append(_last(_name(el.func)))
+            elif isinstance(el, (ast.Name, ast.Attribute)):
+                out.append(_last(_name(el)))
+        return [r for r in out if r]
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        return _refs(node.left) + _refs(node.right)
+    if isinstance(node, (ast.Name, ast.Attribute)):
+        return ["*" + _last(_name(node))]  # a list variable, expanded when the project is put together
+    return []
+
+
+def _agent_def(cf: CodeFile, call: ast.Call, target: Optional[str]) -> None:
+    last = _last(_name(call.func))
+    if last not in AGENT_CTORS:
+        return
+    tools = _kw(call, "tools")
+    if tools is None and last == "initialize_agent" and call.args:
+        tools = call.args[0]
+    refs = _refs(tools)
+    if not refs:
+        return
+    name = _const_str(_kw(call, "name")) or _const_str(_kw(call, "role")) or target
+    if name:
+        cf.agent_defs.append((name, refs, call.lineno))
 
 
 def analyze_source(path: str, source: str) -> CodeFile:
@@ -217,6 +265,7 @@ def analyze_source(path: str, source: str) -> CodeFile:
     cf = CodeFile(path=path)
     frameworks: List[str] = []
     functions: Dict[str, ast.AST] = {}
+    tool_calls_made: Dict[int, str] = {}  # id(Tool(...) call) -> tool name
 
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -227,8 +276,12 @@ def analyze_source(path: str, source: str) -> CodeFile:
         mods: List[str] = []
         if isinstance(node, ast.Import):
             mods = [a.name for a in node.names]
+            cf.imports += mods
         elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
             mods = [node.module]
+            cf.imports.append(node.module)
+        elif isinstance(node, ast.ImportFrom):
+            cf.imports.append("." * node.level + (node.module or ""))
         for m in mods:
             for prefix, label in FRAMEWORK_IMPORTS:
                 if m == prefix or m.startswith(prefix + "."):
@@ -267,6 +320,7 @@ def analyze_source(path: str, source: str) -> CodeFile:
                 if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name in ("_run", "_arun") and run is None:
                     run = item
             if tname:
+                cf.symbols[node.name] = tname
                 _add_tool(cf, Tool(
                     name=tname, source="Tool()", params=_params_from_def(run) if run else [],
                     description=(desc or "")[:200] or None, evidence=[Evidence("code", path, node.lineno, f"class {node.name}")],
@@ -282,6 +336,7 @@ def analyze_source(path: str, source: str) -> CodeFile:
                     explicit = _const_str(dec.args[0]) if isinstance(dec, ast.Call) and dec.args else None
                     explicit = explicit or (_const_str(_kw(dec, "name")) if isinstance(dec, ast.Call) else None)
                     source = "mcp_tool" if owner in MCP_DECORATOR_OWNERS else "decorator"
+                    cf.symbols[node.name] = explicit or node.name
                     _add_tool(cf, Tool(
                         name=explicit or node.name, source=source, params=_params_from_def(node),
                         description=_docstring(node),
@@ -303,6 +358,9 @@ def analyze_source(path: str, source: str) -> CodeFile:
                 if not tname and fn_node is not None:
                     tname = fn_node.name  # type: ignore[attr-defined]
                 if tname:
+                    tool_calls_made[id(node)] = tname
+                    if fn_node is not None:
+                        cf.symbols.setdefault(fn_node.name, tname)  # type: ignore[attr-defined]
                     params = _params_from_def(fn_node) if isinstance(fn_node, (ast.FunctionDef, ast.AsyncFunctionDef)) else []
                     desc = _const_str(_kw(node, "description")) or (_docstring(fn_node) if fn_node else None)
                     _add_tool(cf, Tool(
@@ -362,6 +420,27 @@ def analyze_source(path: str, source: str) -> CodeFile:
                 d = dict(zip([_const_str(k) if k is not None else None for k in node.keys], node.values))
                 if _const_str(d.get("role")) == "system":
                     _note_prompt(cf, d.get("content"))
+
+    # what names stand for: x = Tool(...), tools = [a, b], support = Agent(name=..., tools=[...])
+    defined = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Assign, ast.AnnAssign)) and node.value is not None:
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            names = [t.id for t in targets if isinstance(t, ast.Name)]
+            if isinstance(node.value, ast.Call):
+                for n in names:
+                    if id(node.value) in tool_calls_made:
+                        cf.symbols[n] = tool_calls_made[id(node.value)]
+                _agent_def(cf, node.value, names[0] if names else None)
+                defined.add(id(node.value))
+            elif isinstance(node.value, (ast.List, ast.Tuple)) and names:
+                refs = _refs(node.value)
+                if refs:
+                    for n in names:
+                        cf.lists[n] = refs
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and id(node) not in defined:
+            _agent_def(cf, node, None)
 
     cf.frameworks = frameworks
     observed = [g for g in cf.guard_calls if g[0] == "observe?"]

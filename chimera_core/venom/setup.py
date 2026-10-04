@@ -858,10 +858,12 @@ class Flow:
         by_id = {a.id: a for a in inv.agents}
         probe, root = scan_probe(self.args, self.ws)
         plans = []
+        agent_of = {}
         for aid, st in self.agents_state().items():
             a = by_id.get(aid)
             if a is not None and st.get("key") in bound:
                 plans.append(wiring.plan_for(a, st["key"], self.ws, probe))
+                agent_of[st["key"]] = a
         todo = [p for p in plans if p.changes and p.kind in ("hook", "code")]
         manual = [p for p in plans if p.kind == "manual"]
         if not todo and not manual:
@@ -870,14 +872,13 @@ class Flow:
         self.console.print(Text("  WIRE     the change that puts each guard in its agent's call path", style="label"))
         applied = 0
         if todo and (apply_all or self.ask(f"Make it now in {plural(len(todo), 'agent')}? Each diff is shown first", True)):
+            chosen = []
             for p in todo:
                 show_plan(self.console, p)
                 if apply_all or self.ask(f"Wire {p.agent}?", True):
-                    try:
-                        wiring.apply(p, self.ws)
-                        applied += 1
-                    except (RuntimeError, OSError) as e:
-                        self.console.print(f"  [high]not wired: {e}[/high]")
+                    chosen.append((agent_of[p.key], p))
+            applied = wiring.apply_many(chosen, self.ws, probe, on_error=lambda p, e: self.console.print(
+                f"  [high]{p.agent} not wired: {e}[/high]"))
         for p in manual:
             self.console.print(Text.assemble(("  ", ""), (p.agent, "head"), (f"  {p.note}", "warn")))
         if applied:

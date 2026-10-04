@@ -24,6 +24,7 @@ from __future__ import annotations
 import ast
 import difflib
 import json
+import re
 import shlex
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -57,6 +58,7 @@ class Plan:
     changes: List[Change] = field(default_factory=list)
     wrapped: List[str] = field(default_factory=list)  # tools the guard will decide
     missing: List[str] = field(default_factory=list)  # tools it cannot reach automatically
+    shared: List[str] = field(default_factory=list)  # tool functions another agent's guard decides
     note: str = ""
 
 
@@ -159,8 +161,29 @@ def _tool_name_of(fn) -> List[str]:
     return names
 
 
-def _wired(fn) -> bool:
-    return any("_csl_guard" in ast.unparse(d) for d in fn.decorator_list)
+_GUARD_DEF = re.compile(r'(?m)^(_csl_guard\w*) = venom_guard\(("[^"]*")')
+_GUARD_USE = re.compile(r"^(_csl_guard\w*)\.tool\(")
+
+
+def _wrapper(fn) -> Optional[str]:
+    """The guard variable a tool function is decorated with (`@_csl_guard.tool(...)`), if any."""
+    for d in fn.decorator_list:
+        m = _GUARD_USE.match(ast.unparse(d))
+        if m:
+            return m.group(1)
+    return None
+
+
+def _guard_var(source: str, key: str) -> str:
+    """The guard variable for this agent in a file: its own if the file has one already; the plain
+    `_csl_guard` if no other agent's guard is there; else one named after the agent, so two agents
+    whose tools share a file each keep their own policy."""
+    others = []
+    for var, quoted in _GUARD_DEF.findall(source):
+        if json.loads(quoted) == key:
+            return var
+        others.append(var)
+    return "_csl_guard" if "_csl_guard" not in others else "_csl_guard_" + re.sub(r"\W", "_", key)
 
 
 def _header_line(tree: ast.Module) -> int:
@@ -188,6 +211,7 @@ def _plan_code(agent: Agent, key: str, ws: Workspace, probe) -> Plan:
             files.append(e.path)
     wanted = {t.name for t in agent.tools if t.source != "builtin"}
     found: Dict[str, str] = {}
+    shared: List[str] = []
     for shown in files:
         path = probe.real_path(shown)
         before = ws.read(path)
@@ -199,22 +223,28 @@ def _plan_code(agent: Agent, key: str, ws: Workspace, probe) -> Plan:
             continue
         lines = before.splitlines(keepends=True)
         inserts: List[tuple] = []  # (line index, text)
+        var = _guard_var(before, key)
         for fn in _defs(tree):
             names = [n for n in _tool_name_of(fn) if n in wanted and n not in found]
             if not names:
                 continue
             found[names[0]] = shown
-            if _wired(fn):
+            owner = _wrapper(fn)
+            if owner and owner != var:
+                shared.append(names[0])  # another agent's guard decides it already
+                continue
+            if owner:
                 continue
             row = fn.lineno - 1
             indent = lines[row][: len(lines[row]) - len(lines[row].lstrip())]
-            inserts.append((row, f'{indent}@_csl_guard.tool({json.dumps(names[0])})  {MARK}\n'))
+            inserts.append((row, f'{indent}@{var}.tool({json.dumps(names[0])})  {MARK}\n'))
         if not inserts:
             continue
-        if "_csl_guard = venom_guard(" not in before:
+        if f"{var} = venom_guard(" not in before:
             at = _header_line(tree)
-            header = (f"from chimera_core.venom.observe import venom_guard  {MARK}\n"
-                      f"_csl_guard = venom_guard({json.dumps(key)}, workspace={json.dumps(str(ws.root))})  {MARK}\n")
+            header = "" if "from chimera_core.venom.observe import venom_guard" in before else \
+                f"from chimera_core.venom.observe import venom_guard  {MARK}\n"
+            header += f"{var} = venom_guard({json.dumps(key)}, workspace={json.dumps(str(ws.root))})  {MARK}\n"
             inserts.append((at, ("\n" if at else "") + header))
         for row, text in sorted(inserts, key=lambda r: r[0], reverse=True):
             lines.insert(row, text)
@@ -224,8 +254,9 @@ def _plan_code(agent: Agent, key: str, ws: Workspace, probe) -> Plan:
         except SyntaxError:
             continue  # never leave an agent that does not parse
         plan.changes.append(Change(path, shown, before, after, "the guard decides each tool call before the function runs"))
-    plan.wrapped = sorted(n for n in found)
+    plan.wrapped = sorted(n for n in found if n not in shared)
     plan.missing = sorted(wanted - set(found))
+    plan.shared = sorted(shared)
     if not plan.changes:
         if found:
             plan.kind, plan.note = "done", "its tool functions already go through the guard"
@@ -236,6 +267,9 @@ def _plan_code(agent: Agent, key: str, ws: Workspace, probe) -> Plan:
     elif plan.missing:
         plan.note = (f"{', '.join(plan.missing)}: no function by that name in its code; add guard.check where your "
                      "code runs it (see .csl/venom/wiring.md)")
+    if shared:
+        plan.note = (plan.note + "; " if plan.note else "") + (
+            f"{', '.join(shared)}: one function shared with another agent, decided by that agent's policy")
     return plan
 
 
@@ -259,6 +293,26 @@ def apply(plan: Plan, ws: Workspace) -> List[Dict[str, Any]]:
         wiring[plan.key].update({"kind": plan.kind, "at": stamp, "tools": plan.wrapped})
         wiring[plan.key]["files"] = wiring[plan.key]["files"] + done
         ws.save_state(state)
+    return done
+
+
+def apply_many(items, ws: Workspace, probe, on_error=None) -> int:
+    """Apply several (agent, plan) pairs in turn. A plan whose file an earlier one in the batch
+    changed (two agents' tools in one file) is made again from the file as it is now, so each
+    agent gets its own guard there. Returns how many agents were wired."""
+    touched: set = set()
+    done = 0
+    for agent, plan in items:
+        if touched & {ch.path for ch in plan.changes}:
+            plan = plan_for(agent, plan.key, ws, probe)
+        try:
+            if apply(plan, ws):
+                done += 1
+        except (RuntimeError, OSError) as e:
+            if on_error is not None:
+                on_error(plan, e)
+            continue
+        touched |= {ch.path for ch in plan.changes}
     return done
 
 

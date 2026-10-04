@@ -60,24 +60,134 @@ def _top(project: str, path: str) -> str:
     return rel.split("/", 1)[0] if "/" in rel else ""
 
 
+HELPER_DIRS = {"tools", "tool", "utils", "util", "lib", "libs", "helpers", "helper", "common", "shared", "core",
+               "functions", "skills", "actions", "integrations"}
+
+
+def _rel_dir(project: str, path: str) -> str:
+    rel = path[len(project.rstrip("/")) + 1:]
+    return rel.rsplit("/", 1)[0] if "/" in rel else ""
+
+
+def _home_dir(project: str, path: str) -> str:
+    """The folder an agent file belongs to: its own, unless that is a helper folder (tools/, utils/, ...),
+    whose tools belong to the folder above it."""
+    d = _rel_dir(project, path)
+    while d and d.rsplit("/", 1)[-1].lower() in HELPER_DIRS:
+        d = d.rsplit("/", 1)[0] if "/" in d else ""
+    return d
+
+
+def _imports_folder(cf: CodeFile, folder: str) -> bool:
+    """Whether a file imports a module from `folder` (by its dotted path, or relatively)."""
+    dotted = folder.replace("/", ".")
+    last = folder.rsplit("/", 1)[-1]
+    from .layers.code import FRAMEWORK_IMPORTS
+
+    frameworks = {prefix for prefix, _label in FRAMEWORK_IMPORTS}
+    for m in cf.imports:
+        if not m.startswith(".") and m.split(".", 1)[0] in frameworks:
+            continue  # `from agents import Agent` is the OpenAI Agents SDK, not a folder named agents
+        bare = m.lstrip(".")
+        if bare == dotted or bare.startswith(dotted + ".") or (m.startswith(".") and (bare == last or bare.startswith(last + "."))):
+            return True
+    return False
+
+
+def _definitions(cfs: List[CodeFile]) -> "OrderedDict[str, Tuple[List[str], CodeFile]]":
+    """Explicit agent definitions in a project, each with the tools its list names (resolved across files)."""
+    symbols: Dict[str, str] = {}
+    lists: Dict[str, List[str]] = {}
+    known = set()
+    for f in cfs:
+        symbols.update(f.symbols)
+        lists.update(f.lists)
+        known |= {t.name for t in f.tools}
+
+    def expand(refs: List[str], depth: int = 0) -> List[str]:
+        out: List[str] = []
+        for r in refs:
+            if r.startswith("*"):
+                if depth < 3:
+                    out += expand(lists.get(r[1:], []), depth + 1)
+            else:
+                t = symbols.get(r, r)
+                if t in known and t not in out:
+                    out.append(t)
+        return out
+
+    defs: "OrderedDict[str, Tuple[List[str], CodeFile]]" = OrderedDict()
+    for f in cfs:
+        for name, refs, _line in f.agent_defs:
+            tools = expand(refs)
+            if not tools:
+                continue
+            if name in defs:
+                defs[name] = (defs[name][0] + [t for t in tools if t not in defs[name][0]], defs[name][1])
+            else:
+                defs[name] = (tools, f)
+    return defs
+
+
+def _units(project: str, cfs: List[CodeFile]) -> List[Tuple[str, str, List[CodeFile], Optional[set]]]:
+    """The agents in one project: (id path, display name, files, the tools that are its own or None for all).
+
+    Explicit definitions (Agent(name=..., tools=[...]) and the like) are agents of their own when there
+    is more than one, or one beside tools it does not use. The rest is split by folder: tools in
+    different folders are different agents, unless a folder is a helper (tools/, utils/, ...) or is
+    imported from another agent's folder."""
+    name = PurePosixPath(project).name or project
+    defs = _definitions(cfs)
+    claimed = {t for tools, _f in defs.values() for t in tools}
+    with_tools = [f for f in cfs if f.tools]
+    unclaimed = [f for f in with_tools if any(t.name not in claimed for t in f.tools)]
+    units: List[Tuple[str, str, List[CodeFile], Optional[set]]] = []
+    rest = cfs
+    only: Optional[set] = None
+    if len(defs) >= 2 or (defs and unclaimed):
+        for dname, (tools, home) in defs.items():
+            files = [home] + [f for f in with_tools if f is not home and any(t.name in tools for t in f.tools)]
+            units.append((f"{project}#{dname}", dname, files, set(tools)))
+        rest = unclaimed
+        only = {t.name for f in unclaimed for t in f.tools if t.name not in claimed}
+    # folders that hold tools
+    folders: Dict[str, List[CodeFile]] = OrderedDict()
+    for f in rest:
+        if f.tools:
+            folders.setdefault(_home_dir(project, f.path), []).append(f)
+    merged = True
+    while merged and len(folders) > 1:  # a folder whose modules another agent folder imports belongs to it
+        merged = False
+        for d in list(folders):
+            importer = next((e for e in folders if e != d and any(_imports_folder(f, d) for f in folders[e] if d)), None)
+            if importer is not None:
+                folders[importer] += folders.pop(d)
+                merged = True
+                break
+    if len(folders) <= 1 and not units:
+        return [(project, name, cfs, None)]
+    for d, files in folders.items():
+        # agent files without tools (an entrypoint, routes, a guard) join the folder they are in
+        files = files + [f for f in rest if not f.tools and f.agent_like and _within(_rel_dir(project, f.path), d)
+                         and not any(_within(_rel_dir(project, f.path), e) and len(e) > len(d) for e in folders)]
+        if len(folders) == 1 and not d:
+            files += [f for f in rest if not f.tools and f not in files]
+        path = f"{project}/{d}" if d else project
+        pp = PurePosixPath(path)
+        shown = (f"{pp.parent.name}/{pp.name}" if d else name) if len(folders) > 1 or units else name
+        units.append((path, shown, files, only))
+    return units
+
+
 def build_code_agents(probe, files: List[CodeFile], roots: List[str], cfg: ConfigScan) -> List[Agent]:
     by_project: "OrderedDict[str, List[CodeFile]]" = OrderedDict()
     for cf in sorted(files, key=lambda f: f.path):
         by_project.setdefault(project_of(probe, cf.path, roots), []).append(cf)
-    # A repository with agent code in several top-level folders (examples/, services/, ...)
-    # holds several independent agents: split it by top-level folder.
-    groups: "OrderedDict[str, List[CodeFile]]" = OrderedDict()
+    groups: List[Tuple[str, str, List[CodeFile], Optional[set]]] = []
     for project, cfs in by_project.items():
-        tops = {_top(project, f.path) for f in cfs if f.agent_like}
-        if len(tops) <= 1:
-            groups[project] = cfs
-            continue
-        for f in cfs:
-            top = _top(project, f.path)
-            key = f"{project}/{top}" if top else project
-            groups.setdefault(key, []).append(f)
+        groups += _units(project, cfs)
     agents: List[Agent] = []
-    for project, cfs in groups.items():
+    for unit, shown, cfs, only in groups:
         agentic = [f for f in cfs if f.agent_like]
         if not agentic:
             continue
@@ -86,12 +196,8 @@ def build_code_agents(probe, files: List[CodeFile], roots: List[str], cfg: Confi
             or next((f for f in agentic if f.routes), None)
             or max(agentic, key=lambda f: (len(f.tools), -len(f.path)))
         )
-        pp = PurePosixPath(project)
-        split = project not in by_project
-        a = Agent(
-            id=f"code:{project}", display_name=f"{pp.parent.name}/{pp.name}" if split else (pp.name or project), kind="code",
-            entrypoint=entry.path, project=project,
-        )
+        project = unit.split("#", 1)[0]
+        a = Agent(id=f"code:{unit}", display_name=shown, kind="code", entrypoint=entry.path, project=project)
         for f in cfs:
             for fw in f.frameworks:
                 if fw not in a.framework and fw != "csl-core":
@@ -100,7 +206,7 @@ def build_code_agents(probe, files: List[CodeFile], roots: List[str], cfg: Confi
                 if m not in a.model_ids:
                     a.model_ids.append(m)
             for t in f.tools:
-                if any(t.name == x.name for x in a.tools):
+                if any(t.name == x.name for x in a.tools) or (only is not None and t.name not in only):
                     continue
                 cls, why = classify(t, f.tool_calls.get(t.name))
                 t.risk_class, t.risk_reason = cls, why

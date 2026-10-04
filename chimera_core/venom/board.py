@@ -461,6 +461,7 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
             Controls(ws).set_mode(key, mode)
             ready.append(a)
     plans = [wire_plan(args, ws, a) for a in ready]
+    agent_of = {agent_key(a): a for a in ready}
     todo = [p for p in plans if p.changes and p.kind in ("hook", "code")]
     for p in plans:
         if p.kind == "manual":
@@ -470,12 +471,9 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
         for p in todo:
             show_plan(console, p)
         if ui.ask(f"Wire {plural(len(todo), 'agent')}? (undo any time: cslcore wire --undo)", True):
-            for p in todo:
-                try:
-                    wiring.apply(p, ws)
-                except (RuntimeError, OSError) as e:
-                    console.print(f"  [high]{p.agent} not wired: {e}[/high]")
-            _probe, root = scan_probe(args, ws)
+            probe, root = scan_probe(args, ws)
+            wiring.apply_many([(agent_of[p.key], p) for p in todo], ws, probe, on_error=lambda p, e: console.print(
+                f"  [high]{p.agent} not wired: {e}[/high]"))
             rescan(args, console, ws, root)
     console.print()
     for a in ready:
