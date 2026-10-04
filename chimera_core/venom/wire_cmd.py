@@ -13,6 +13,7 @@ After a change the host is scanned again, so the map and the live panel show wha
 from __future__ import annotations
 
 import os
+import sys
 from typing import List
 
 from rich.syntax import Syntax
@@ -45,6 +46,36 @@ def guarded_keys(ws) -> List[str]:
     from .bindings import Bindings
 
     return sorted(Bindings(ws).all())
+
+
+def env_ready(console, args, ws, agent, plan: wiring.Plan, ask=None) -> bool:
+    """Before a Python agent is wired: can the interpreter it runs with import chimera_core? If not,
+    say how to install it and ask (install now, or wire anyway); without a terminal (`ask` None) the
+    agent is not wired, since a wired agent without csl-core stops at import."""
+    from .probe import agent_python, can_import, install_command, run_install
+
+    if plan.kind != "code" or not plan.changes:
+        return True
+    probe, _root = scan_probe(args, ws)
+    project = probe.real_path(agent.project) if agent.project else None
+    python, how = agent_python(project)
+    if can_import(python):
+        return True
+    cmd = install_command(python, project)
+    console.print(Text.assemble(("  ", ""), (agent.display_name, "head"),
+                                (f"  {python} ({how}) cannot import chimera_core: wired now, the agent would stop "
+                                 "at its first import", "warn")))
+    console.print(Text.assemble(("    install it with: ", "muted"), (" ".join(cmd), "brand")))
+    if ask is None:
+        console.print(Text(f"    not wired; after installing: cslcore wire --agent {plan.key}", style="muted"))
+        return False
+    if ask("Install csl-core there now (runs the command above)?", True):
+        ok, last = run_install(cmd)
+        if ok and can_import(python):
+            console.print(Text("    ✓ csl-core installed there", style="ok"))
+            return True
+        console.print(Text(f"    the install did not finish: {last}", style="high"))
+    return ask(f"Wire {agent.display_name} anyway? it stops at import until csl-core is installed there", False)
 
 
 def show_plan(console, plan: wiring.Plan) -> None:
@@ -112,6 +143,11 @@ def cmd_wire(args) -> int:
         if plan.kind == "manual" or not plan.changes:
             manual.append(plan)
             continue
+        interactive = sys.stdin.isatty() and not getattr(args, "yes", False)
+        if not env_ready(console, args, ws, a, plan, (lambda q, d: confirm(console, q, False, default=d)) if interactive
+                         else None):
+            console.print()
+            continue
         if confirm(console, f"Wire {a.display_name}?", bool(getattr(args, "yes", False)), default=True):
             try:
                 wiring.apply(plan, ws)
@@ -168,6 +204,9 @@ def guard_one(console, args, ws, agent) -> bool:
         return False
     if plan.kind == "hook" or plan.changes:
         show_plan(console, plan)
+        if not env_ready(console, args, ws, agent, plan, lambda q, d: confirm(console, q, False, default=d)):
+            console.print("  [muted]not wired[/muted]")
+            return False
         if not confirm(console, f"Wire {agent.display_name}?", False, default=True):
             console.print("  [muted]not wired[/muted]")
             return False

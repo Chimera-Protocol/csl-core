@@ -438,7 +438,10 @@ def protect(ui, console, args, ws, agent: Agent, *, ask: bool = True) -> bool:
         console.print(Text("  " + plan.note, style="warn"))
     elif plan.changes:
         show_plan(console, plan)
-        if ui.ask(f"Wire {agent.display_name}? (undo any time: cslcore wire --undo)", True):
+        from .wire_cmd import env_ready
+        if not env_ready(console, args, ws, agent, plan, ui.ask):
+            console.print("  [muted]not wired[/muted]")
+        elif ui.ask(f"Wire {agent.display_name}? (undo any time: cslcore wire --undo)", True):
             try:
                 wiring.apply(plan, ws)
             except (RuntimeError, OSError) as e:
@@ -486,7 +489,10 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
             ready.append(a)
     plans = [wire_plan(args, ws, a) for a in ready]
     agent_of = {agent_key(a): a for a in ready}
-    todo = [p for p in plans if p.changes and p.kind in ("hook", "code")]
+    from .wire_cmd import env_ready
+
+    todo = [p for p in plans if p.changes and p.kind in ("hook", "code")
+            and env_ready(console, args, ws, agent_of[p.key], p, ui.ask)]
     for p in plans:
         if p.kind == "manual":
             console.print(Text.assemble(("  ", ""), (p.agent, "head"), (f"  {p.note}", "warn")))

@@ -320,6 +320,12 @@ def _wire(args, console, ws, agent: Agent) -> None:
             console.print(Text("  " + plan.note, style="warn"))
         return
     show_plan(console, plan)
+    from .wire_cmd import env_ready
+
+    interactive = not getattr(args, "yes", False)
+    if not env_ready(console, args, ws, agent, plan, (lambda q, d: confirm(console, q, False, default=d))
+                     if interactive else None):
+        return
     if confirm(console, f"Wire {agent.display_name}?", bool(getattr(args, "yes", False)), default=True):
         try:
             wiring.apply(plan, ws)

@@ -908,9 +908,14 @@ class Flow:
         self.console.print(Text("  WIRE     the change that puts each guard in its agent's call path", style="label"))
         applied = 0
         if todo and (apply_all or self.ask(f"Make it now in {plural(len(todo), 'agent')}? Each diff is shown first", True)):
+            from .wire_cmd import env_ready
+
             chosen = []
             for p in todo:
                 show_plan(self.console, p)
+                if not env_ready(self.console, self.args, self.ws, agent_of[p.key], p,
+                                 self.ask if self.interactive else None):
+                    continue
                 if apply_all or self.ask(f"Wire {p.agent}?", True):
                     chosen.append((agent_of[p.key], p))
             applied = wiring.apply_many(chosen, self.ws, probe, on_error=lambda p, e: self.console.print(

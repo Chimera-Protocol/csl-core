@@ -441,3 +441,57 @@ def probe_for(root: Optional[str]) -> Tuple[HostProbe, List[str]]:
             return fx, fx.meta.get("code_roots", [fx.home()])  # type: ignore[return-value]
         return LocalHostProbe(mode="folder"), [str(Path(root).resolve())]
     return LocalHostProbe(mode="host"), [os.getcwd()]
+
+
+# ---------------------------------------------------------------------------
+# the agent's own Python (before wiring: will `import chimera_core` work there?)
+# ---------------------------------------------------------------------------
+
+VENV_DIRS = (".venv", "venv", "env", ".env")
+
+
+def agent_python(project: Optional[str]) -> Tuple[str, str]:
+    """(interpreter, how it was found) for an agent: a virtual environment in its project folder or
+    above it (up to the repository root), else the Python running cslcore."""
+    import sys
+
+    if project:
+        here = Path(project)
+        for folder in [here, *here.parents]:
+            for name in VENV_DIRS:
+                for exe in ("bin/python", "Scripts/python.exe"):
+                    if (folder / name / exe).exists():
+                        return str(folder / name / exe), f"its project's environment ({folder / name})"
+            if (folder / ".git").exists():
+                break
+    return sys.executable, "the Python running cslcore (no project environment found)"
+
+
+def can_import(python: str, module: str = "chimera_core.venom.observe", timeout: float = 20.0) -> Optional[bool]:
+    """Whether `python` can import `module` (by default what a wired guard line imports, with its
+    dependencies); None when the interpreter cannot be started at all."""
+    try:
+        res = subprocess.run([python, "-c", f"import {module}"], capture_output=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return res.returncode == 0
+
+
+def install_command(python: str, project: Optional[str]) -> List[str]:
+    """How csl-core is installed into that interpreter (uv projects with uv, else pip)."""
+    import shutil
+
+    uv_project = bool(project) and any((Path(project) / f).exists() for f in ("uv.lock",))
+    if uv_project and shutil.which("uv"):
+        return ["uv", "pip", "install", "--python", python, "csl-core"]
+    return [python, "-m", "pip", "install", "csl-core"]
+
+
+def run_install(cmd: List[str], timeout: float = 600.0) -> Tuple[bool, str]:
+    """Run the install command the operator confirmed; (ok, last line of its output)."""
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    lines = (res.stdout + res.stderr).strip().splitlines()
+    return res.returncode == 0, lines[-1] if lines else ""
