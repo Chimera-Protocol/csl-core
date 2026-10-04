@@ -53,6 +53,8 @@ class ToolLimit:
     never_above: Optional[int] = None
     amount_param: Optional[str] = None
     decide: Optional[str] = None  # allow | approval | block: overrides the kind's standard rule
+    # any numeric parameter: param -> [free up to, never above] (a list parameter: its length)
+    numbers: Dict[str, List[int]] = field(default_factory=dict)
 
 
 @dataclass
@@ -72,7 +74,8 @@ class Limits:
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "Limits":
-        tools = {k: ToolLimit(**v) for k, v in (d.get("tools") or {}).items()}
+        tools = {k: ToolLimit(**{kk: vv for kk, vv in v.items() if kk in ToolLimit.__dataclass_fields__})
+                 for k, v in (d.get("tools") or {}).items()}
         return cls(d["agent"], d.get("profile", "standard"), list(d.get("scope") or []), list(d.get("commands") or []),
                    list(d.get("destinations") or []), tools, list(d.get("extra_tools") or []))
 
@@ -145,6 +148,17 @@ def rules_from(tool: Tool, tl: ToolLimit, lim: Limits, variables: Dict[str, str]
         return [Rule(f"{base}_blocked", cond, f"tool MUST NOT BE {_q(t)}", f"{t}: blocked by the operator", t)]
     approval = tl.decide == "approval"
     rules: List[Rule] = []
+    for param, (lo_n, hi_n) in sorted((tl.numbers or {}).items()):
+        if tl.kind == "spend" and param == tl.amount_param:
+            continue  # the money rule below covers it
+        var_name = param if variables.get(param) in (None, f"0..{AMOUNT_DOMAIN}") else f"{base}_{param}"
+        variables[var_name] = f"0..{AMOUNT_DOMAIN}"
+        rules.append(Rule(f"{base}_{ident(param)}_max", cond, f"{var_name} <= {int(hi_n)}",
+                          f"{t}: {param} never above {int(hi_n):,}", t))
+        if lo_n < hi_n:
+            variables["approval"] = '{"YES", "NO"}'
+            rules.append(Rule(f"{base}_{ident(param)}_over_{int(lo_n)}", f"{cond} AND {var_name} > {int(lo_n)}",
+                              'approval MUST BE "YES"', f"{t}: {param} above {int(lo_n):,} needs a human approval", t))
 
     def needs_approval(why: str, when: str = "") -> Rule:
         variables["approval"] = '{"YES", "NO"}'
@@ -286,6 +300,11 @@ def describe(lim: Limits) -> List[Tuple[str, str, str]]:
             what = "needs approval"
         if tl.decide == "approval" and tl.kind != "spend":
             what = "every call needs approval"
+        for param, (lo_n, hi_n) in sorted((tl.numbers or {}).items()):
+            if tl.kind == "spend" and param == tl.amount_param:
+                continue
+            what += (f"; {param} up to {lo_n:,} freely, never above {hi_n:,}" if lo_n < hi_n
+                     else f"; {param} never above {hi_n:,}")
         rows.append((name, tl.kind, what))
     return rows
 
@@ -304,7 +323,7 @@ class LimitError(ValueError):
 
 
 def parse_range(text: str) -> Tuple[int, int]:
-    """'100000..300000' (free up to, never above), '300000' (both the same), '100k..300k', '1m'."""
+    """'100000..300000' (free up to, never above), '300000' or '..300000' (both the same), '100k..300k', '1m'."""
     def num(s: str) -> int:
         s = s.strip().lower().replace("_", "").replace(",", "")
         mult = {"k": 1_000, "m": 1_000_000, "b": 1_000_000_000}.get(s[-1:], 1)
@@ -356,18 +375,39 @@ def apply_flags(lim: Limits, key: str, limit_flags=(), add_flags=(), profile: Op
         done.append(f"added {name} ({risk})")
     for spec in limit_flags or []:
         if "=" not in spec:
-            raise LimitError(f"--limit wants [AGENT.]TOOL=FREE..MAX, got {spec!r}")
+            raise LimitError(f"--limit wants [AGENT.]TOOL[.PARAM]=FREE..MAX, got {spec!r}")
         target, rng = spec.split("=", 1)
-        agent, _, tool = target.rpartition(".")
-        if agent and agent not in me:
+        agent, tool, param = _target(target, lim, me)
+        if agent is False:
             continue
-        lo, hi = parse_range(rng)
+        lo, hi = parse_range(rng[2:] if rng.startswith("..") else rng)  # "..1000": up to 1000, never above
         tl = lim.tools.get(tool)
         if tl is None:
             if agent:
                 raise LimitError(f"{key} has no tool {tool!r}; add it with --add-tool {key}:{tool}:spend:amount")
             continue
-        tl.kind = "spend" if tl.kind == "other" else tl.kind
-        tl.allow_up_to, tl.never_above = lo, hi
-        done.append(f"{tool}: free up to {lo:,}, never above {hi:,}")
+        if param is None or (tl.kind == "spend" and param == tl.amount_param):
+            if tl.kind != "spend" and not tl.amount_param:
+                raise LimitError(f"{tool} has no amount; name the parameter: {tool}.PARAM=FREE..MAX")
+            tl.kind = "spend"
+            tl.allow_up_to, tl.never_above = lo, hi
+            done.append(f"{tool}: free up to {lo:,}, never above {hi:,}")
+        else:
+            tl.numbers = dict(tl.numbers or {})
+            tl.numbers[param] = [lo, hi]
+            done.append(f"{tool}.{param}: free up to {lo:,}, never above {hi:,}")
     return done
+
+
+def _target(target: str, lim: Limits, me) -> Tuple[Any, str, Optional[str]]:
+    """AGENT.TOOL.PARAM, TOOL.PARAM, AGENT.TOOL or TOOL -> (agent or None, tool, param or None);
+    agent False when the flag names another agent."""
+    parts = target.split(".")
+    if len(parts) >= 3:
+        agent, tool, param = ".".join(parts[:-2]), parts[-2], parts[-1]
+        return (agent if agent in me else False), tool, param
+    if len(parts) == 2:
+        if parts[0] in lim.tools:
+            return None, parts[0], parts[1]
+        return (parts[0] if parts[0] in me else False), parts[1], None
+    return None, parts[0], None

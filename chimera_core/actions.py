@@ -38,7 +38,7 @@ import posixpath
 import re
 from typing import Any, Iterable, List, Optional
 
-__all__ = ["command_class", "sql_class", "path_class", "args_command_class", "args_sql_class", "args_path_class",
+__all__ = ["command_class", "sql_class", "path_class", "args_command_class", "args_sql_class", "args_path_class", "count_of",
            "COMMAND_CLASSES", "SQL_CLASSES", "PATH_CLASSES"]
 
 COMMAND_CLASSES = ["OK", "REMOTE_EXEC", "DESTRUCTIVE", "PRIVILEGE", "SECRETS", "EXFIL", "PERSISTENCE", "UNREADABLE"]
@@ -518,3 +518,11 @@ def args_sql_class(args: Any) -> str:
                 if worst is None or rank[c] > rank[worst]:
                     worst = c
     return worst or "UNREADABLE"
+
+
+def count_of(value: Any) -> Any:
+    """The length of a list-like argument (how many recipients, rows, files); anything else unchanged,
+    so a value that is neither a list nor a number still fails to map (and is refused)."""
+    if isinstance(value, (list, tuple, set)):
+        return len(value)
+    return value

@@ -31,6 +31,8 @@ def _neutral(v: VarSpec) -> str:
 
 def _helper(v: VarSpec, expr: str, ptype: str = "", penum=None) -> str:
     if v.kind == "range":
+        if (ptype or "").lower().split("[")[0] in ("list", "array", "tuple", "set", "sequence"):
+            expr = f"count_of({expr})"  # a list parameter: its length is what the limit counts
         return f'to_range({expr}, {v.low}, {v.high}, name="{v.name}")'
     if v.kind == "flag":
         return f'to_flag({expr}, name="{v.name}")'
@@ -53,7 +55,7 @@ def generate(spec: MappingSpec, policy_rel: str) -> str:
         f"Test it with: cslcore map --agent {spec.agent_name} --test",
         '"""',
         "",
-        "from chimera_core.actions import args_command_class, args_path_class, args_sql_class",
+        "from chimera_core.actions import args_command_class, args_path_class, args_sql_class, count_of",
         "from chimera_core.mapping import (MappingError, command_allowed, destination_allowed, in_scope, to_enum,",
         "                                  to_flag, to_range)",
         "",
