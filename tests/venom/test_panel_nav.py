@@ -74,7 +74,7 @@ def test_exempt_agent_from_rule_reloads_live(ws):
     p.rule_index = [r for r, _ in p.rules()].index("transfer_funds_approval_over_100")
     p.handle("enter")
     assert p.view == "rule" and p.crumbs() == ["Rules", "transfer_funds_approval_over_100"]
-    p.handle("x")
+    p.handle("e")
     _type(p, "treasury limits are enforced upstream")
     assert p.pending and "membership-bot" in p.pending[2]
     p.handle("y")
@@ -172,7 +172,7 @@ def test_live_map_toggles_and_draws_pulses(ws):
     _guard("membership-bot", mode="log").verify("transfer_funds", {"amount": 700, "to_wallet": "w"})
     p = _panel(ws)
     p.handle("g")
-    assert p.map_on and p.crumbs()[-1] == "Map" and ("g", "stream") in p.hints()
+    assert p.map_on and p.crumbs()[-1] == "Map" and ("g", "full map") in p.hints()
     for rec in p.model.stream:
         rec["_seen"] = time.monotonic()  # as if it had just arrived
     text = _frame(p)

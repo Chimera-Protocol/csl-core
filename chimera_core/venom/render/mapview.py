@@ -8,9 +8,11 @@
     s              turn the map into a slowly rotating sphere, and back
     n              names on the map on / off (on by default)
     r              replay the spread
+    w              the live panel (watch): the map shrinks into its corner
     q              quit
 
-Read-only: it draws the latest scan of the workspace (or scans when there is none).
+Read-only: it draws the latest scan of the workspace (or scans when there is none). From the end
+of a scan, from setup and from the live panel it opens as one of the rooms (see venom/rooms.py).
 """
 
 from __future__ import annotations
@@ -37,6 +39,9 @@ RISK_COLOR = {"READ": "#94a3b8", "WRITE": "#fbbf24", "EXTERNAL": "#7dd3fc", "IDE
 TOOL_IMPACT = {"EXEC": "impact:exec", "SPEND": "impact:spend", "DESTRUCTIVE": "impact:destroy",
                "EXTERNAL": "impact:publish"}
 ZOOM_S = 0.4
+GROW_S = 0.6  # arriving from a scan: the map grows out of one point
+LEAVE_S = 0.4  # leaving for the live panel: it shrinks into the panel's map corner
+SETTLE_S = 0.3  # arriving from the panel's map: it settles to full size
 DRIFT = 0.125  # radians per second when nobody touches the globe
 
 
@@ -191,6 +196,26 @@ class MapView:
         self.last_frame = self.t0
         self.idle0 = self.t0  # last key: the globe drifts on its own only after a while
         self.back0: Optional[float] = None  # when the map zooms back out after a dive
+        # rooms: the way in, the way out, and where to go once it has played
+        self.arrive: Optional[Tuple[float, str]] = None
+        self.leave: Optional[Tuple[float, str]] = None
+        self.exit_to: Optional[str] = None
+        self.external = None
+
+    # -- rooms ------------------------------------------------------------------------------
+    def enter(self, came_from: str) -> None:
+        """`command`: opened on its own, the spread plays as always. `scan`: the spread was just
+        seen, the map grows out of one point complete. `watch`: back from the panel's map."""
+        now = time.monotonic()
+        self.leave = None
+        if came_from == "command":
+            self.spread0, self.arrive = now, None
+            return
+        self.spread0 = now - 99.0
+        self.arrive = (now, came_from)
+
+    def wait(self) -> float:
+        return 0.04
 
     # -- input ------------------------------------------------------------------------------
     def handle(self, key: str) -> bool:
@@ -198,7 +223,7 @@ class MapView:
         self.idle0 = now
         if key in ("q", "ctrl-c"):
             return False
-        if self.zoom and now - self.zoom[0] < ZOOM_S:
+        if self.leave is not None or (self.zoom and now - self.zoom[0] < ZOOM_S):
             return True
         if self.mode == "dive":
             if key in ("esc", "backspace", "enter"):
@@ -220,6 +245,8 @@ class MapView:
                 self.sel = self.order.index(target)
         elif key == "r":
             self.spread0 = now
+        elif key in ("w", "W"):
+            self.leave = (now, "watch")
         return True
 
     def selected(self) -> Optional[str]:
@@ -258,7 +285,40 @@ class MapView:
             return None
         return Zoom(p.x, p.y, zoom, W, H)
 
+    def _passage(self, now: float):
+        """The camera of a way in or out, or None. Arriving from a scan the map grows out of one
+        point; leaving for the panel it shrinks toward the panel's map, top right; arriving from
+        the panel's map it settles from slightly too close."""
+        W, H = self.topo.W, self.topo.H
+        base = Sphere(self.angle, W, H) if self.sphere else None
+        cam = None
+        if self.leave is not None:
+            k = min(1.0, (now - self.leave[0]) / LEAVE_S)
+            if k >= 1.0:
+                self.exit_to, self.leave = self.leave[1], None
+            e = k * k * (3 - 2 * k)
+            scale = 1 - 0.55 * e
+            cam = Zoom(W / 2 - e * 0.25 * W / scale, H / 2 + e * 0.15 * H / scale, scale, W, H)
+        elif self.arrive is not None:
+            start, came_from = self.arrive
+            span = SETTLE_S if came_from == "watch" else GROW_S
+            k = min(1.0, (now - start) / span)
+            if k >= 1.0:
+                self.arrive = None
+                return None
+            e = 1 - (1 - k) ** 3
+            scale = 1.35 - 0.35 * e if came_from == "watch" else 0.04 + 0.96 * e
+            cam = Zoom(W / 2, H / 2, scale, W, H)
+        if cam is None:
+            return None
+        return Then(base, cam) if base is not None else cam
+
     def canvas(self, now: float) -> Text:
+        passage = self._passage(now)
+        if passage is not None and self.mode == "map":
+            self._turn(now)
+            return self.topo.render(now - self.t0, spread_t=now - self.spread0, view=passage,
+                                    selected=self.selected(), labels=self.labels)
         t = now - self.t0
         st = now - self.spread0
         self._turn(now)
@@ -332,29 +392,32 @@ class MapView:
             chain = Text.assemble(("REACH CHAIN  " if g.top is not None else "STRONGEST EXPOSURE  ", "label"),
                                   ("  →  ".join(g.nodes[n].label for n in hero.nodes), "bold #f0abfc"))
         keys = ("Esc back · q quit" if self.mode == "dive"
-                else "↑↓ or 1-9 select · Enter dive in · s sphere · n names · r replay · q quit")
+                else "↑↓ or 1-9 select · Enter dive in · s sphere · n names · r replay · w watch · q quit")
         body = Group(head, Text(""), grid, Text(""), chain, Text(keys, style="muted"))
         title = Text.assemble((" CSL-Core Venom ", "brand"), ("· reach map ", "muted"))
         return Panel(body, title=title, title_align="left", box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))
 
 
-def run(console, inv: Inventory, seed: str = "map", once: bool = False) -> int:
+class MapRoom(MapView):
+    """The map as a room (see venom/rooms.py)."""
+
+    def __init__(self, inv: Inventory, console, seed: Optional[str] = None) -> None:
+        from .. import VENOM_VERSION
+
+        super().__init__(inv, console.width, console.height, seed=seed or VENOM_VERSION)
+
+    def frame(self, now: float, width: int, height: int = 0) -> Panel:  # type: ignore[override]
+        return super().frame(now, width)
+
+
+def run(console, inv: Inventory, seed: str = "map", once: bool = False, args=None) -> int:
     import sys
 
-    from rich.live import Live
-
-    view = MapView(inv, console.width, console.height, seed=seed)
     if once or not sys.stdin.isatty():
+        view = MapView(inv, console.width, console.height, seed=seed)
         view.spread0 -= 99.0
         console.print(view.frame(time.monotonic(), console.width))
         return 0
-    from .keys import Keys
+    from .. import rooms
 
-    with Keys() as keys, Live(view.frame(time.monotonic(), console.width), console=console, screen=True,
-                               auto_refresh=False) as live:
-        while True:
-            key = keys.read(0.04)
-            if key is not None and not view.handle(key):
-                break
-            live.update(view.frame(time.monotonic(), console.width), refresh=True)
-    return 0
+    return rooms.run(console, args, "map", inv=inv, came_from="command")

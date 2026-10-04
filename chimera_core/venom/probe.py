@@ -421,6 +421,11 @@ def animation_disabled() -> bool:
     return bool(os.environ.get("CSL_NO_ANIM") or os.environ.get("CI"))
 
 
+def prompts_disabled() -> bool:
+    """CI systems and CSL_NO_PROMPT turn off the question at the end of a scan."""
+    return bool(os.environ.get("CSL_NO_PROMPT") or os.environ.get("CI"))
+
+
 def probe_for(root: Optional[str]) -> Tuple[HostProbe, List[str]]:
     """Pick the probe and scan roots for a --root argument (None = this host)."""
     if root:

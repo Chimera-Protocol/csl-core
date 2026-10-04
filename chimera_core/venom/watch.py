@@ -211,8 +211,10 @@ class ControlPanel:
         self.editor_request: Optional[str] = None  # path the run loop opens in $EDITOR
         self.studio_request: Optional[Tuple[str, str]] = None
         self.map_on = False  # the live view shows the reach map instead of the decision stream
+        self.go_map = False  # g on the panel's map: open the full map (a room, see venom/rooms.py)
+        self.pane_zoom = 1.0  # the panel's map grows into the full map, and settles when it comes back
         self.topo = None
-        self.topo_size: Optional[Tuple[int, int]] = None  # (policy path, agent) the run loop opens in the studio
+        self.topo_size: Optional[Tuple[int, int]] = None
 
     # data ------------------------------------------------------------------------------
     def all_agents(self) -> List[str]:
@@ -292,11 +294,11 @@ class ControlPanel:
         if self.view == "tools":
             return [("↑↓", "tool"), ("space", "disable / enable"), ("e", "exempt tool"), ("Esc", "back")]
         if self.view == "rule":
-            return [("↑↓", "agent"), ("x", "exempt agent from rule"), ("o", "open policy"), ("Esc", "back")]
+            return [("↑↓", "agent"), ("e", "exempt agent from rule"), ("o", "open policy"), ("Esc", "back")]
         if self.focus == "rules":
             return [("↑↓", "rule"), ("Enter", "open"), ("Tab", "agents"), ("Esc", "back")]
-        out = [("↑↓", "select"), ("Enter", "tools"), ("m", "mode"), ("M", "all"), ("d", "disable"), ("e", "exempt"),
-               ("/", "search"), ("Tab", "rules"), ("g", "stream" if self.map_on else "map"), ("?", "help")]
+        out = [("↑↓", "select"), ("Enter", "tools"), ("m", "mode"), ("M", "all"), ("x", "freeze"), ("e", "exempt"),
+               ("/", "search"), ("Tab", "rules"), ("g", "full map" if self.map_on else "map"), ("?", "help")]
         out.append(("Esc", "clear search") if self.query else ("q", "quit"))
         return out
 
@@ -320,7 +322,10 @@ class ControlPanel:
             self.view = "live" if self.view == "help" else "help"
             return True
         if key in ("g", "G") and self.view == "live":
-            self.map_on = not self.map_on
+            if self.map_on:
+                self.go_map = True  # the map again: the full map
+            else:
+                self.map_on = True
             return True
         if key in ("esc", "left"):
             if self.view != "live":
@@ -411,11 +416,11 @@ class ControlPanel:
             q = (f"Switch ALL {n} agents to BLOCK? policy violations will be blocked everywhere" if to == "block"
                  else f"Switch ALL {n} agents to LOG? nothing will be blocked anywhere, only recorded")
             self.pending = (f"all_{to}", "*", q)
-        elif agent and key == "d":
+        elif agent and key in ("x", "d"):  # x everywhere; d was the key before 0.6.6
             if self.controls.get(agent).disabled:
                 self._apply("enable", agent)
             else:
-                self.pending = ("disable", agent, f"Disable {agent}? every action will be blocked, in any mode")
+                self.pending = ("disable", agent, f"Freeze {agent}? every action is blocked, in any mode, until x again")
         elif agent and key == "e":
             if self.controls.get(agent).exempt:
                 self.pending = ("unexempt_agent", agent, f"End the exemption of {agent}? its policy applies again")
@@ -467,7 +472,7 @@ class ControlPanel:
             self.rule_agent_index = max(0, self.rule_agent_index - 1)
         elif key in ("down", "j"):
             self.rule_agent_index = min(max(0, len(agents) - 1), self.rule_agent_index + 1)
-        elif key == "x" and agents:
+        elif key == "e" and agents:
             agent = agents[min(self.rule_agent_index, len(agents) - 1)]
             self.ask_text("reason_rule", f"why should {rule} not apply to {agent}?", f"{agent}\x00{rule}")
         elif key == "o" and agents and self.ws is not None:
@@ -493,10 +498,10 @@ class ControlPanel:
             self.message = (f"{target} → {mode.upper()} mode (next call, no restart)", "ok" if mode == "log" else "brand")
         elif action == "disable":
             self.controls.set_disabled(target, True)
-            self.message = (f"{target} DISABLED: every action is blocked", "high")
+            self.message = (f"{target} FROZEN: every action is blocked (x unfreezes)", "high")
         elif action == "enable":
             self.controls.set_disabled(target, False)
-            self.message = (f"{target} enabled", "ok")
+            self.message = (f"{target} unfrozen", "ok")
         elif action in ("disable_tool", "enable_tool"):
             agent, tool = target.split("\x00", 1)
             self.controls.set_tool(agent, tool, action == "disable_tool")
@@ -630,10 +635,11 @@ def help_pane() -> Table:
     for k, v in (("↑ ↓", "move"), ("Enter", "open (an agent's tools, a rule's actions)"), ("Esc", "back one level"),
                  ("Tab", "switch between agents and rules"), ("/", "search agents"),
                  ("m / M", "switch the agent / ALL agents between LOG and BLOCK"),
-                 ("d", "disable the agent (kill switch: blocks every action in any mode)"),
+                 ("x", "freeze the agent (blocks every action in any mode); x again unfreezes it"),
                  ("e", "exempt the agent (or, in its tools, one tool); a reason is required"),
                  ("space", "in tools: disable or enable one tool"),
-                 ("x / o", "in a rule: exempt one agent from it / open the policy in your editor"),
+                 ("e / o", "in a rule: exempt one agent from it / open the policy in your editor"),
+                 ("g", "the reach map with live decisions; g again for the full map (w comes back)"),
                  ("q", "quit"), ("", ""), ("", "Changes reach running agents on their next tool call, without a restart."),
                  ("", "Every change is recorded in .csl/venom/audit.jsonl; policy edits keep the old version.")):
         t.add_row(k, v)
@@ -758,7 +764,11 @@ def map_pane(panel: "ControlPanel", model: WatchModel, inv: Inventory, cols: int
         target = TOOL_IMPACT.get(tool.risk_class) if tool is not None else None
         pulses.append((a.id, target, str(rec.get("decision", "ALLOW")), age))
     sel = by_key.get(panel.current() or "")
-    return panel.topo.render(now, complete=True, selected=sel.id if sel else None, pulses=pulses)
+    view = None
+    if panel.pane_zoom != 1.0:  # growing into the full map, or settling after it
+        from .render.topo import Zoom
+        view = Zoom(panel.topo.W / 2, panel.topo.H / 2, panel.pane_zoom, panel.topo.W, panel.topo.H)
+    return panel.topo.render(now, complete=True, selected=sel.id if sel else None, pulses=pulses, view=view)
 
 
 def render(model: WatchModel, inv: Optional[Inventory], states: Dict[str, str], modes: Dict[str, str],
@@ -853,7 +863,119 @@ def _modes(ws) -> Dict[str, str]:
     return {k: v.get("mode") for k, v in (ws.load_state().get("modes") or {}).items() if isinstance(v, dict)}
 
 
-from .render.keys import Keys  # noqa: E402  (shared with the discovery animation)
+GROW_S = 0.35  # the panel's map grows into the full map
+SETTLE_S = 0.3  # and settles when the map shrinks back into it
+
+
+class WatchRoom:
+    """The live panel as a room (see venom/rooms.py): the same panel, polled and drawn here."""
+
+    def __init__(self, args, console) -> None:
+        from .controls import Controls
+        from .probe import LocalHostProbe
+
+        self.args, self.console = args, console
+        self.ws = workspace_for(args)
+        self.model = WatchModel()
+        self.tail = Tail(self.ws)
+        self.tail.poll(self.model)
+        self.inv = _inventory(self.ws)
+        self.started = datetime.now(timezone.utc)
+        self.panel = ControlPanel(Controls(self.ws), self.model, self.inv, self.ws)
+        self.probe = LocalHostProbe()
+        self.states = _states(self.inv, self.probe)
+        self.last_states = time.monotonic()
+        self.modes = _modes(self.ws)
+        self.refresh = max(0.2, float(getattr(args, "refresh", 1.0) or 1.0))
+        self.next_poll = self.next_frame = 0.0
+        self.last = None
+        self.grow0: Optional[float] = None
+        self.settle0: Optional[float] = None
+        self.exit_to: Optional[str] = None
+        self.external = None
+
+    def enter(self, came_from: str) -> None:
+        if came_from == "map":  # the map shrank into this corner: it is the panel's map now
+            self.panel.map_on, self.panel.view = True, "live"
+            self.settle0 = time.monotonic()
+        self.next_frame = 0.0
+
+    def wait(self) -> float:
+        return 0.03 if self.panel.map_on else 0.05
+
+    def handle(self, key: str) -> bool:
+        if self.grow0 is not None:
+            return True
+        ok = self.panel.handle(key)
+        if self.panel.go_map:
+            self.panel.go_map = False
+            self.grow0 = time.monotonic()
+        if self.panel.studio_request or self.panel.editor_request:
+            self.external = self._outside
+        self.next_frame = self.next_poll = 0.0
+        return ok
+
+    def frame(self, now: float, width: int, height: int):
+        moving = self.grow0 is not None or self.settle0 is not None
+        animated = (self.panel.map_on and self.panel.view == "live") or moving
+        if now >= self.next_poll:
+            self.tail.poll(self.model)
+            self.modes = _modes(self.ws)
+            if now - self.last_states > 15:
+                self.inv = _inventory(self.ws)
+                self.panel.inv = self.inv
+                self.states = _states(self.inv, self.probe)
+                self.last_states = now
+            # the live map is an animation: decisions are read every 0.2 s so they arrive spread out
+            self.next_poll = now + (0.2 if animated else self.refresh)
+        if self.grow0 is not None:
+            k = min(1.0, (now - self.grow0) / GROW_S)
+            self.panel.pane_zoom = 1 + 0.9 * k * k
+            if k >= 1.0:
+                self.grow0, self.panel.pane_zoom, self.exit_to = None, 1.0, "map"
+        elif self.settle0 is not None:
+            k = min(1.0, (now - self.settle0) / SETTLE_S)
+            self.panel.pane_zoom = 0.82 + 0.18 * (1 - (1 - k) ** 3)
+            if k >= 1.0:
+                self.settle0, self.panel.pane_zoom = None, 1.0
+        if self.last is None or now >= self.next_frame or moving:
+            self.last = render(self.model, self.inv, self.states, self.modes, datetime.now(timezone.utc), self.started,
+                               width, height, self.panel)
+            self.next_frame = now + (MAP_FRAME_S if animated else self.refresh)
+        return self.last
+
+    def _outside(self) -> None:
+        """The studio and $EDITOR run outside the screen; the panel shows what came of it."""
+        panel, ws = self.panel, self.ws
+        if panel.studio_request:
+            path, agent = panel.studio_request
+            panel.studio_request = None
+            from .studio.command import launch
+            try:
+                msg = launch(ws, self.inv, path=path, agent=agent)
+            except Exception as e:  # never take the panel down with the editor
+                msg = f"studio closed: {type(e).__name__}: {e}"
+            panel.message = (msg or "studio closed, nothing changed", "ok" if msg.startswith("live") else "muted")
+        if panel.editor_request:
+            draft, active = panel.editor_request.split("\x00", 1)
+            panel.editor_request = None
+            from pathlib import Path as _Path
+            from .policy.gate import verify_text
+            ws.open_in_editor(_Path(draft))
+            after = ws.read(draft) or ""
+            if after == (ws.read(active) or ""):
+                ws.remove(_Path(draft))
+                panel.message = ("no changes", "muted")
+            else:
+                g = verify_text(after)
+                if g.ok:
+                    panel.pending = ("activate_draft", f"{draft}\x00{active}",
+                                     f"{_Path(draft).name} verified ({g.rules} rules). Activate it now?")
+                else:
+                    issue = g.issues[0].message if g.issues else g.stage
+                    panel.message = (f"{_Path(draft).name} does not verify ({issue}); kept as a draft, "
+                                     "the active policy is unchanged", "high")
+        self.next_frame = 0.0
 
 
 def run_watch(args) -> int:
@@ -863,84 +985,19 @@ def run_watch(args) -> int:
 
     console = console_for(args)
     ws = workspace_for(args)
-    model = WatchModel()
-    tail = Tail(ws)
-    tail.poll(model)
-    inv = _inventory(ws)
-    started = datetime.now(timezone.utc)
-    panel = ControlPanel(Controls(ws), model, inv, ws)
     if getattr(args, "once", False) or not console.is_terminal or not sys.stdin.isatty():
-        now = datetime.now(timezone.utc)
-        console.print(render(model, inv, _states(inv), _modes(ws), now, started, console.width, 30, panel), height=30)
+        model = WatchModel()
+        Tail(ws).poll(model)
+        inv = _inventory(ws)
+        started = datetime.now(timezone.utc)
+        panel = ControlPanel(Controls(ws), model, inv, ws)
+        console.print(render(model, inv, _states(inv), _modes(ws), started, started, console.width, 30, panel), height=30)
         return EXIT_OK
-    from rich.live import Live
-    from .probe import LocalHostProbe
+    from . import rooms
 
-    probe = LocalHostProbe()
-    states = _states(inv, probe)
-    last_states = time.monotonic()
-    refresh = max(0.2, float(getattr(args, "refresh", 1.0)))
-    running = True
-    try:
-        while running:
-            with Keys() as keys, Live(console=console, screen=True, auto_refresh=False) as live:
-                next_frame = next_poll = 0.0
-                modes = _modes(ws)
-                while True:
-                    key = keys.read(0.03 if panel.map_on else 0.05)
-                    if key is not None:
-                        if not panel.handle(key):
-                            running = False
-                            break
-                        next_frame = next_poll = 0.0
-                    if panel.editor_request or panel.studio_request:
-                        break
-                    # the live map is an animation: it draws about 15 times a second and reads new
-                    # decisions every 0.2 s so they arrive spread out; the tables keep their pace
-                    animated = panel.map_on and panel.view == "live"
-                    tick = time.monotonic()
-                    if tick >= next_poll:
-                        tail.poll(model)
-                        modes = _modes(ws)
-                        if tick - last_states > 15:
-                            inv = _inventory(ws)
-                            panel.inv = inv
-                            states = _states(inv, probe)
-                            last_states = tick
-                        next_poll = tick + (0.2 if animated else refresh)
-                    if tick >= next_frame:
-                        now = datetime.now(timezone.utc)
-                        live.update(render(model, inv, states, modes, now, started, console.width, console.height, panel), refresh=True)
-                        next_frame = tick + (MAP_FRAME_S if animated else refresh)
-            if panel.studio_request:
-                path, agent = panel.studio_request
-                panel.studio_request = None
-                from .studio.command import launch
-                try:
-                    msg = launch(ws, inv, path=path, agent=agent)
-                except Exception as e:  # never take the panel down with the editor
-                    msg = f"studio closed: {type(e).__name__}: {e}"
-                panel.message = (msg or "studio closed, nothing changed", "ok" if msg.startswith("live") else "muted")
-            if panel.editor_request:
-                draft, active = panel.editor_request.split("\x00", 1)
-                panel.editor_request = None
-                from pathlib import Path as _Path
-                from .policy.gate import verify_text
-                ws.open_in_editor(_Path(draft))
-                after = ws.read(draft) or ""
-                if after == (ws.read(active) or ""):
-                    ws.remove(_Path(draft))
-                    panel.message = ("no changes", "muted")
-                else:
-                    g = verify_text(after)
-                    if g.ok:
-                        panel.pending = ("activate_draft", f"{draft}\x00{active}",
-                                         f"{_Path(draft).name} verified ({g.rules} rules). Activate it now?")
-                    else:
-                        issue = g.issues[0].message if g.issues else g.stage
-                        panel.message = (f"{_Path(draft).name} does not verify ({issue}); kept as a draft, "
-                                         "the active policy is unchanged", "high")
-    except KeyboardInterrupt:
-        pass
-    console.print(f"  [muted]watch stopped · {model.total:,} checks seen[/muted]")
+    made: Dict[str, object] = {}
+    rooms.run(console, args, "watch", made=made)
+    room = made.get("watch")
+    seen = room.model.total if isinstance(room, WatchRoom) else 0
+    console.print(f"  [muted]watch stopped · {seen:,} checks seen[/muted]")
     return EXIT_OK

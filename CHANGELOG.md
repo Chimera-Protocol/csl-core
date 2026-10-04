@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- One flow. After `cslcore venom`, at a terminal, one key leads on: `m` the reach map (it grows
+  out of one point), `s` the guided setup, `q` the shell. Scripts, pipes, `--json`, `--check` and
+  CI are never asked; `CSL_NO_PROMPT=1` turns it off.
+- The map and the live panel lead into each other on one screen: `w` on the map shrinks it into
+  the panel's corner, `g` twice in the panel grows the panel's map back to full screen.
+- Setup offers the reach map after the inventory and findings steps, and the panel or the map
+  when it completes; its home screen has `m` for the map (modes moved to `o`).
+
+### Changed
+- Freezing an agent is `x` everywhere (the kill switch; `d` still works). In a rule's view in
+  the panel, exempting an agent from it moved from `x` to `e`, as everywhere else.
+
 ## [0.6.5]
 
 ### Added

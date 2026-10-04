@@ -172,7 +172,9 @@ The guided, resumable first install. Read-only until you confirm.
 ### `cslcore venom`
 
 Read-only discovery: agents, their tools and risk classes, guard coverage, findings V01 to V16,
-and the strongest reach chain. From the second scan in a workspace on, a SINCE section names every
+and the strongest reach chain. At a terminal it then asks where to go: `m` the reach map, `s` the
+guided setup, `q` back to the shell. Scripts, pipes, `--json`, `--check` and CI are never asked
+(`CSL_NO_PROMPT=1` turns the question off). From the second scan in a workspace on, a SINCE section names every
 path that opened or closed since the last scan (a plugin installed, a credential added, a new
 agent), and the report and JSON carry the full list (`reach.since_last_scan`).
 
@@ -202,6 +204,7 @@ The reach map full screen. `--rescan` scans again first; `--once` prints one fra
 | `s` | the 3D globe; it turns the selected node to the front |
 | `n` | names on the map on or off |
 | `r` | replay the spread |
+| `w` | the live panel: the map shrinks into its corner (`g` there grows it back) |
 | `q` | quit |
 
 ### `cslcore studio [policy]`
@@ -227,11 +230,11 @@ The live management panel. `--refresh SECONDS` sets the table refresh, `--once` 
 |---|---|
 | arrows, `/` | select and search agents |
 | `m` / `M` | log or block for the agent / for every agent |
-| `d` | disable the agent (kill switch) |
+| `x` | freeze the agent: every action is blocked in any mode until `x` again (`d` still works) |
 | `e` | exempt the agent, with a reason |
 | Enter | the agent's tools: disable or exempt one |
-| Tab | rules ranked by would-block: exempt an agent from a rule, or `o` to open it in the studio |
-| `g` | the live reach map (decisions flow over it) |
+| Tab | rules ranked by would-block: `e` exempts an agent from a rule, `o` opens it in the studio |
+| `g` | the live reach map (decisions flow over it); `g` again opens the full map, `w` there comes back |
 | `?` / `q` | help / quit |
 
 ### `cslcore map`

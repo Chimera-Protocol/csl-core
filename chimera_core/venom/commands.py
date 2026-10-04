@@ -134,6 +134,10 @@ def cmd_scan(args) -> int:
         console.print()
     if getattr(args, "share", False) and not as_json:
         _share(console, ws, inv, bool(getattr(args, "anonymize", False)))
+    if not as_json and not args.check:
+        from . import rooms
+        if rooms.interactive(console):
+            return _what_next(args, console, inv)
     if args.check:
         new_reach = bool(getattr(args, "fail_on_new_reach", False))
         failed = check_failed(inv, args.fail_on, since, new_reach)
@@ -145,6 +149,34 @@ def cmd_scan(args) -> int:
                           f"[muted](fail on {what})[/muted]")
         return EXIT_CHECK_FAILED if failed else EXIT_OK
     return EXIT_OK
+
+
+def _what_next(args, console, inv: Inventory) -> int:
+    """After a scan, at a terminal: the map, the guided setup, or back to the shell."""
+    from . import rooms
+
+    pick = rooms.ask_next(console, {"m": "reach map", "s": "set up guards", "q": "quit"})
+    if pick == "m":
+        return rooms.run(console, args, "map", inv=inv, came_from="scan")
+    if pick == "s":
+        from .setup import cmd_setup
+        return cmd_setup(setup_args(args))
+    return EXIT_OK
+
+
+def setup_args(args):
+    """The setup flow's arguments for the folder and workspace this command used."""
+    from ..cli import build_parser
+
+    argv = ["setup"]
+    for flag in ("root", "workspace"):
+        value = getattr(args, flag, None)
+        if value:
+            argv += [f"--{flag}", str(value)]
+    for flag in ("no_color", "no_anim", "plan_only"):
+        if getattr(args, flag, False):
+            argv.append("--" + flag.replace("_", "-"))
+    return build_parser().parse_args(argv)
 
 
 def _share(console, ws, inv: Inventory, anonymize: bool) -> None:
@@ -179,7 +211,7 @@ def cmd_map_view(args) -> int:
 
     console = console_for(args)
     inv = _load_inventory(args, console)
-    return mapview.run(console, inv, seed=VENOM_VERSION, once=bool(getattr(args, "once", False)))
+    return mapview.run(console, inv, seed=VENOM_VERSION, once=bool(getattr(args, "once", False)), args=args)
 
 
 def cmd_report(args) -> int:

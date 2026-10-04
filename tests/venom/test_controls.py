@@ -122,7 +122,7 @@ def test_panel_render_shows_controls(wired):
     assert "OFF" in text and "▸" in text and "m mode" in text
     p.handle("?")
     text = render(W.render(p.model, p.inv, {}, {}, now, now, 120, 30, p), width=120, height=30)
-    assert "kill switch" in text
+    assert "freeze the agent" in text
 
 
 def test_bulk_modes(wired, capsys):

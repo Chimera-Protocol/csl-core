@@ -132,15 +132,28 @@ class Flow:
         self.console.print(Text.assemble(("  ", ""), (f"{i:>2}/10 ", "muted"), (TITLES[step].upper().ljust(14), "brand"), bar))
         self.console.print()
 
-    def pause(self) -> None:
+    def pause(self, reach_map: bool = False) -> None:
         if not self.interactive:
             return
         from rich.prompt import Prompt
-        ans = Prompt.ask(Text.assemble(("  ", ""), ("Enter", "brand"), (" continue · ", "muted"), ("q", "brand"),
-                                       (" stop here (cslcore setup resumes)", "muted")),
-                         default="", show_default=False, console=self.console)
-        if ans.strip().lower() == "q":
-            raise StopFlow()
+        while True:
+            hint = Text.assemble(("  ", ""), ("Enter", "brand"), (" continue · ", "muted"))
+            if reach_map:
+                hint.append_text(Text.assemble(("m", "brand"), (" reach map · ", "muted")))
+            hint.append_text(Text.assemble(("q", "brand"), (" stop here (cslcore setup resumes)", "muted")))
+            ans = Prompt.ask(hint, default="", show_default=False, console=self.console).strip().lower()
+            if ans == "q":
+                raise StopFlow()
+            if ans == "m" and reach_map:
+                self.open_room("map")
+                continue
+            return
+
+    def open_room(self, name: str) -> None:
+        """The reach map or the live panel, from inside setup; quitting it comes back here."""
+        from .rooms import interactive, run
+        if interactive(self.console):
+            run(self.console, self.args, name, inv=self.load_inventory() if name == "map" else None, came_from="setup")
 
     def ask(self, question: str, default: bool) -> bool:
         from .policy.workbench import confirm
@@ -839,7 +852,7 @@ class Flow:
             nxt = "scan again to pick up new agents and tools (s)"
         rows.append(("next", Text(nxt, style="brand")))
         menu = grid(("s", "scan again and review what changed"), ("w", "open the live management panel"),
-                    ("p", "policies"), ("m", "modes and kill switches"), ("q", "quit"), label_width=2)
+                    ("m", "the reach map"), ("p", "policies"), ("o", "modes and freezes"), ("q", "quit"), label_width=2)
         return Panel(Group(grid(*rows, label_width=10), Text(""), menu),
                      title=Text(f" CSL-Core {VENOM_VERSION} · {self.ws.root.name} ", style="brand"), title_align="left",
                      box=box.ROUNDED, border_style="brand.dim", padding=(0, 1))
@@ -847,7 +860,7 @@ class Flow:
     def home(self) -> Optional[int]:
         """Returns an exit code to stop, or None to start a new setup cycle."""
         self.console.print(self.home_panel())
-        pick = self.choose("choice", ["s", "w", "p", "m", "q"], "w")
+        pick = self.choose("choice", ["s", "w", "m", "p", "o", "q"], "w")
         if pick == "s":
             return None
         if pick == "w":
@@ -857,6 +870,9 @@ class Flow:
             from .policy.workbench import act_list
             return act_list(self.console, self.ws, self.load_inventory())
         if pick == "m":
+            self.open_room("map")
+            return EXIT_OK
+        if pick == "o":
             from .controls import Controls
             from .exempt_cmd import _control_table
             _control_table(self.console, Controls(self.ws))
@@ -894,12 +910,17 @@ class Flow:
                     return EXIT_OK
                 if step in PAUSE_AFTER:
                     self.console.print()
-                    self.pause()
+                    self.pause(reach_map=step in ("inventory", "findings"))
         except StopFlow:
             self.console.print("  [muted]stopped; progress is saved. Run cslcore setup to continue.[/muted]")
             return EXIT_INCOMPLETE
         self.console.print()
         self.console.print(self.summary())
+        from .rooms import ask_next, interactive
+        if self.interactive and interactive(self.console):
+            pick = ask_next(self.console, {"w": "watch it live", "m": "reach map", "q": "quit"})
+            if pick in ("w", "m"):
+                self.open_room("watch" if pick == "w" else "map")
         return EXIT_OK
 
     def summary(self) -> Panel:
