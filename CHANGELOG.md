@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.9]
+
+### Security
+- A call that should have stopped could run, on 0.6.0 to 0.6.8. Tool calls that run in parallel
+  (LangGraph's ToolNode runs a turn's calls in threads; async agents interleave them) could be
+  decided with the control a guard had before it read the state: the default mode, log, without a
+  freeze. In a test with two parallel first calls about one in three calls over a firm limit ran.
+  The control is now read and only then marked as seen, under a lock, and is never a permissive
+  default: a state that cannot be read keeps the last control read, and with none read yet the
+  call stops.
+- The state file could be lost or undone between processes: every write used the same temporary
+  file name, an unreadable state read as "nothing set", and a writer that had read the state
+  earlier could undo a freeze or a mode written meanwhile. Writes now use a temporary file of
+  their own and an atomic rename; the controls are written in one locked step; any other save
+  keeps what changed on disk meanwhile; change detection uses time, inode and size.
+- Policies compiled or reloaded from several threads at once could crash the process (Z3 is not
+  thread safe); compiling now takes turns.
+- The lock between writers works on every OS (flock, msvcrt, or a lock file). Guards never take
+  it to read: a tool call never waits on the panel. The state needs a local disk: flock is not
+  reliable on NFS and some container volumes.
+
+### Added
+- The protection board in setup: the riskiest agents first; Enter gives every agent standard
+  limits, a policy, block mode and the wiring change (shown and confirmed); a number runs one
+  agent's loop (limits, policy, wiring, check); s leaves an agent untouched.
+- Limits in your own numbers: `cslcore limits` (amounts, any numeric argument, allow, approval or
+  block per tool, extra tools), the check that decides sample calls with the real policy, and
+  `csl-limits.ini` with `cslcore apply` (`--check` for CI, `--init`).
+- Approvals are real: Claude Code asks (the hook answers "ask"); a wired Python tool returns
+  ApprovalPending and the call waits in `cslcore watch` (key a); approved, the same call runs once
+  within ten minutes.
+- A stopped call does not end the agent: a tool under LangChain's, OpenAI Agents' or CrewAI's
+  decorator returns Blocked, readable text with the reason; plain functions still raise
+  PermissionError.
+- `cslcore watch`: l changes an agent's limits, w wires or unwires it, a lists approvals.
+- Several agents in one repository are found one by one (explicit agent definitions, folders).
+- Before a Python agent is wired, its interpreter must import csl-core; the install command is
+  shown and asked for.
+- `cslcore wire --diff`; a one-line summary before every wiring diff.
+
+### Changed
+- An agent activated for the first time starts in block mode unless a mode was chosen; agents
+  already in log mode keep it.
+- Everything is written under `.csl/` (kept out of git); `policies/` in a workspace root from
+  0.6.8 is still read. The one file to commit is `csl-limits.ini`.
+- The guard line is portable: `venom_guard(KEY, workspace="..", near=__file__)`, CSL_WORKSPACE, or
+  the nearest `.csl` above the file.
+- Setup screens in plain words; `cslcore --help` starts with "Start here: cslcore setup".
+
 ## [0.6.8]
 
 ### Added

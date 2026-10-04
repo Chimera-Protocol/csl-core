@@ -153,7 +153,9 @@ change as a diff and makes it when you confirm (`--wire` with `--yes`), or later
 Before a Python agent is wired, setup checks that the interpreter it runs with (its project's
 virtual environment, when it has one) can import csl-core, and offers the install command if not.
 The guard line finds its workspace relative to the agent's file, through `CSL_WORKSPACE`, or in the
-nearest `.csl` folder above it, so a committed repository works in a clone, in CI and on a server.
+nearest `.csl` folder above it, so the line holds in a clone, in CI and on a server once
+`cslcore apply` has made `.csl/` there from `csl-limits.ini` (the one file to commit).
+Keep the workspace on a local disk: file locks are not reliable on NFS and some container volumes.
 
 A tool that exists only as a schema (the model asks for it, your own code runs it) cannot be wired
 automatically; it gets the exact `guard.check` line instead, and the summary says it is not wired.

@@ -201,7 +201,8 @@ project's virtual environment, else the Python running cslcore) must import csl-
 the install command is shown and you are asked (a scripted run skips that agent). The guard line is
 `venom_guard(KEY, workspace="<relative>", near=__file__)`: the workspace is `CSL_WORKSPACE` when set,
 else the path relative to the agent's file, else the nearest `.csl` above it; with none, every call
-is refused.
+is refused. Keep the workspace on a local disk: file locks are not reliable on NFS and some
+container volumes.
 
 ### `cslcore limits`
 
