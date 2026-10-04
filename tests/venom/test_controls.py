@@ -17,7 +17,7 @@ from .conftest import render, run_cli, wired_setup
 
 @pytest.fixture
 def wired(tmp_path, capsys, monkeypatch):
-    ws = wired_setup(tmp_path, capsys)
+    ws = wired_setup(tmp_path, capsys, "--mode", "log")  # the operator chose to record first
     monkeypatch.chdir(ws)
     return Workspace(ws)
 

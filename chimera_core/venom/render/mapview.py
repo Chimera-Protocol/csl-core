@@ -505,8 +505,8 @@ class MapView:
                 elif ctl.disabled:
                     rows.append(Text("frozen: every call is blocked", style=f"bold {FROZEN}"))
                 else:
-                    rows.append(Text(f"guarded · {ctl.mode} mode" + (": its rules decide every call" if ctl.mode == "block"
-                                                                    else ": recorded, not stopped yet"),
+                    rows.append(Text("block mode: its rules decide every call" if ctl.mode == "block"
+                                     else "wired, log mode: recorded, nothing stopped yet",
                                      style=GUARDED if ctl.mode == "block" else "muted"))
             ins = [e for e in self.g.edges if e.dst == sid]
             outs = [e for e in self.g.edges if e.src == sid]

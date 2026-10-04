@@ -17,7 +17,7 @@ from .conftest import HOST_OPS, render, run_cli, scan_fixture, wired_setup
 
 @pytest.fixture
 def ws(tmp_path, capsys):
-    return wired_setup(tmp_path, capsys)
+    return wired_setup(tmp_path, capsys, "--mode", "log")  # the operator chose to record first
 
 
 def _console(width=130, height=40):

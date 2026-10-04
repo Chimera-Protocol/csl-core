@@ -106,6 +106,9 @@ def apply_limits(console, ws, args, agent, lim: L.Limits, yes: bool) -> bool:
         return False
     L.save(ws, lim)
     ws.write_text(path, text)
+    if not old:
+        from .controls import mode_on_activation
+        mode_on_activation(ws, key, True)
     plan = bind(ws, path, [agent])
     res = plan.results[0] if plan.results else None
     if res is None or not res.ok:

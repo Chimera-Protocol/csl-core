@@ -769,13 +769,27 @@ class Flow:
             default = given
         elif current:
             default = current
-        elif self.interactive:
-            self.console.print(Padding(grid(
-                ("log", "nothing is blocked; every decision is recorded as ALLOW or WOULD BLOCK (recommended first)"),
-                ("block", "policy violations are blocked"), label_width=6), (0, 0, 0, 4)))
-            default = self.choose("Default enforcement mode for all agents", ["log", "block"], "log")
         else:
-            default = "log"
+            # nothing chosen yet: agents already active keep their mode; the ones activated now for the
+            # first time start in the mode picked here (block unless chosen otherwise)
+            if self.interactive:
+                self.console.print(Padding(grid(
+                    ("block", "what the limits do not allow is stopped; the check after activation shows what runs"),
+                    ("log", "nothing is stopped yet; every decision is recorded as ALLOW or WOULD BLOCK"),
+                    label_width=6), (0, 0, 0, 4)))
+                self.new_mode = self.choose("Mode for agents activated now for the first time", ["block", "log"], "block")
+            else:
+                self.new_mode = "block"
+            enforcing = [k for k, a, s in agents if s.get("adopted") and k not in controls.all()]
+            if enforcing and not self.ws.plan_only:
+                controls.set_many(enforcing, "block")
+            self.console.print(Text.assemble(("  mode  ", "label"),
+                                             (self.new_mode.upper(), "brand" if self.new_mode == "block" else "warn"),
+                                             (" for agents activated now for the first time; agents already active keep "
+                                              "their mode", "text")))
+            self.console.print(Text("        change any time: cslcore watch (m, M) or cslcore mode --agent NAME log|block",
+                                    style="muted"))
+            return
         if not self.ws.plan_only and default != current:
             controls.set_default(default)
         other = "block" if default == "log" else "log"
@@ -923,19 +937,28 @@ class Flow:
             if self.activate_flag:
                 go = True
             elif self.interactive or each:
-                go = self.ask(f"Activate {self.ws.rel(dst)}?", False)
+                go = self.ask(f"Activate {self.ws.rel(dst)}?", True)  # verified, its diff shown: as everywhere else
             else:
                 self.console.print(f"  [muted]{st['draft']} left as a draft (--yes never activates; pass --activate)[/muted]")
                 go = False
             if go:
+                from .controls import mode_on_activation
+                first = old is None
                 self.ws.write_text(dst, text)
+                if getattr(self.args, "mode", None):  # chosen for all agents: the workspace default says it
+                    from .controls import Controls
+                    mode = Controls(self.ws).get(st["key"]).mode
+                else:  # a first activation: the mode picked in step 9 (block unless chosen otherwise)
+                    mode = mode_on_activation(self.ws, st["key"], first, getattr(self, "new_mode", None) if first else None)
                 self.ws.remove(src)
                 st.pop("draft", None)
                 st["policy"] = self.ws.rel(dst)
                 if st.get("mapping"):
                     from .bindings import Bindings
                     Bindings(self.ws).bind(st["key"], dst, st["mapping"])
-                self.console.print(Text.assemble(("  ✓ active ", "ok"), (self.ws.rel(dst), "head")))
+                self.console.print(Text.assemble(("  ✓ active ", "ok"), (self.ws.rel(dst), "head"),
+                                                 (f"  {mode} mode" + (" (new: block unless chosen otherwise)"
+                                                                      if first and mode == "block" else ""), "muted")))
         self.save()
         return not any(st.get("draft") for _, st in pending)
 
@@ -1083,30 +1106,46 @@ class Flow:
             check.show(self.console, report, st.get("key", a.display_name))
 
     def summary(self) -> Panel:
-        from .controls import Controls
+        """Each agent as it really is: protected only when its guard is in its call path, in block
+        mode; in log mode its calls are recorded and nothing is stopped."""
+        from . import board as B
 
         rows = Table.grid(padding=(0, 2))
         rows.add_column(style="head", no_wrap=True)
         rows.add_column(no_wrap=True)
         rows.add_column(style="muted", overflow="fold")
-        controls = Controls(self.ws)
-        waiting = 0
+        waiting = protected = recording = 0
         inv = self.load_inventory()
-        status = {a.id: a.guard.status for a in inv.agents}
+        agents = {a.id: a for a in inv.agents}
         for aid, st in sorted(self.agents_state().items(), key=lambda kv: kv[1].get("key", "")):
             key = st.get("key", aid)
-            mode = controls.get(key).mode
-            if st.get("policy"):
-                note = " (adopted)" if st.get("adopted") else ""
-                if status.get(aid) == "wired":
-                    rows.add_row(key, Text("guarded", style="ok"), f"{short(st['policy'])}{note} · {mode} mode · in its call path")
-                elif status.get(aid) == "wired_no_rule":
-                    rows.add_row(key, Text("partly", style="warn"),
-                                 f"{short(st['policy'])}{note} · a guard is in its call path, but no rule there covers "
-                                 f"its tools: cslcore policy extend {key}")
+            a = agents.get(aid)
+            if st.get("policy") and a is not None:
+                r = B.row_for(self.ws, a, self.agents_state(), self.args, inv.policies)
+                where = short(st["policy"]) + (" (adopted)" if st.get("adopted") else "")
+                if r.frozen:
+                    rows.add_row(key, Text("frozen", style="high"), f"{where} · every call is blocked until unfrozen")
+                elif r.policy == "adopted" or (r.own and not r.policy):
+                    protected += 1
+                    rows.add_row(key, Text("its own guard", style="ok"), f"{where} · enforced by its own code")
+                elif r.wired in ("wired", "partly") and r.mode == "block":
+                    protected += r.wired == "wired"
+                    check = {"ok": " · check ✓", "failed": " · check ✗: cslcore limits --agent " + key + " --check"}
+                    rows.add_row(key, Text("protected" if r.wired == "wired" else "partly", style="ok" if r.wired == "wired"
+                                           else "warn"),
+                                 f"{where} · block mode: stops what its limits do not allow{check.get(r.check, '')}"
+                                 + (f" · {r.wiring_note}" if r.wired == "partly" else ""))
+                elif r.wired in ("wired", "partly"):
+                    recording += 1
+                    rows.add_row(key, Text("recording only", style="warn"),
+                                 f"{where} · log mode: its calls are recorded, nothing is stopped · "
+                                 f"to stop: cslcore mode --agent {key} block")
+                elif r.wired == "manual":
+                    rows.add_row(key, Text("wire by hand", style="warn"),
+                                 f"{where} · {r.wiring_note or 'see .csl/venom/wiring.md'}")
                 else:
                     rows.add_row(key, Text("not wired", style="warn"),
-                                 f"{short(st['policy'])}{note} · nothing stops it yet: cslcore wire --agent {key}")
+                                 f"{where} · nothing stops it yet: cslcore wire --agent {key}")
             elif st.get("draft"):
                 rows.add_row(key, Text("draft", style="warn"), f"{st['draft']} · activate: cslcore policy activate {key} (or ctrl+l in cslcore studio)")
             elif st.get("assistant"):
@@ -1114,13 +1153,28 @@ class Flow:
                 rows.add_row(key, Text("waiting", style="warn"), "for your assistant's draft")
             elif st.get("skipped"):
                 rows.add_row(key, Text("skipped", style="muted"), "")
-        title = Text(" setup complete " if not waiting else " setup complete, with agents waiting ", style="ok" if not waiting else "warn")
-        body = Group(rows, Text(""),
-                     Text.assemble(("Next: ", "muted"), ("cslcore watch", "brand"),
-                                   ("   live decisions, mode switches and kill switches", "muted")),
+        total = len(self.agents_state())
+        head = f" setup complete · {protected} of {total} protected" + (f" · {recording} recording only" if recording else "") + " "
+        good = not waiting and protected == total
+        title = Text(head if not waiting else head.rstrip() + ", agents waiting ", style="ok" if good else "warn")
+        undo = Group(
+            Text.assemble(("Undo or loosen, any time (running agents follow on their next call):", "muted")),
+            Text.assemble(("  ", ""), ("cslcore mode --agent NAME log", "brand"),
+                          ("            record only, stop nothing (", "muted"), ("--all log", "brand"), (" for every agent)", "muted")),
+            Text.assemble(("  ", ""), ("cslcore limits --agent NAME --set TOOL=FREE..MAX", "brand"),
+                          ("   raise a limit; ", "muted"), ("--decide TOOL=allow", "brand"), (" lets a tool run", "muted")),
+            Text.assemble(("  ", ""), ("cslcore wire --undo --agent NAME", "brand"),
+                          ("         take the guard out: its files go back as they were", "muted")),
+            Text.assemble(("  ", ""), ("cslcore mode --agent NAME --disable", "brand"),
+                          ("      the other way: stop every call at once", "muted")))
+        body = Group(rows, Text(""), undo, Text(""),
+                     Text.assemble(("Next: ", "muted"), ("cslcore setup", "brand"),
+                                   ("    the protection board (b): limits, wiring and checks per agent", "muted")),
+                     Text.assemble(("      ", ""), ("cslcore watch", "brand"),
+                                   ("    live decisions; l limits, w wiring, m mode, x freeze", "muted")),
                      Text.assemble(("      ", ""), ("cslcore studio", "brand"),
-                                   ("  edit a policy, check it with Z3 and TLA+, go live", "muted")))
-        return Panel(body, title=title, title_align="left", box=box.ROUNDED, border_style="ok" if not waiting else "warn", padding=(0, 1))
+                                   ("   edit a policy, check it with Z3 and TLA+, go live", "muted")))
+        return Panel(body, title=title, title_align="left", box=box.ROUNDED, border_style="ok" if good else "warn", padding=(0, 1))
 
 
 def cmd_setup(args) -> int:

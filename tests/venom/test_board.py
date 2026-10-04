@@ -85,11 +85,20 @@ def test_riskiest_first_and_honest_about_what_is_not_protected(host):
     assert "its code enforces" in str(by["membership-bot"].state)
 
 
+def test_log_mode_is_never_shown_as_protected(host, monkeypatch, capsys):
+    host_dir, ws = host
+    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "", "", ""],
+                 choices=["l", "log"])
+    assert flow.policies()
+    r = _rows(host_dir, ws)["backoffice"]
+    assert r.wired == "wired" and r.mode == "log" and not r.protected and "recording only" in str(r.state)
+
+
 def test_one_agent_then_the_rest_with_one_key(host, monkeypatch, capsys):
     host_dir, ws = host
     # the payments agent: its money limits (Enter keeps them), one change, Enter twice; then a; then Enter
     flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "transfer_funds=1k..5k", "", "",
-                                             "a", ""])
+                                             "a", ""], choices=["l", "block", "block"])
     assert flow.policies()
     rows = _rows(host_dir, ws)
     bo = rows["backoffice"]
@@ -113,7 +122,8 @@ def test_one_agent_then_the_rest_with_one_key(host, monkeypatch, capsys):
 
 def test_board_opens_where_it_was_left(host, monkeypatch, capsys):
     host_dir, ws = host
-    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "", "", ""])
+    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "", "", ""],
+                 choices=["l", "block"])
     assert flow.policies()
     capsys.readouterr()
     flow = _flow(host_dir, ws, monkeypatch, [""])

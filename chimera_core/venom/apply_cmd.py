@@ -25,7 +25,7 @@ The file is the place a team reviews changes to what its agents may do, in a pul
 
 An agent the file does not name keeps the limits it has. Each section starts from the standard
 limits, so the file says everything that is not standard. Without `mode` an agent keeps the mode it
-has; one that has none gets block.
+has; one activated for the first time starts in block.
 """
 
 from __future__ import annotations
@@ -128,7 +128,7 @@ def render(rows: List[Tuple[Agent, str, L.Limits]], root: Path, modes: Optional[
         out.append(f"[{key}]")
         if lim.profile != "standard":
             out.append(f"profile = {lim.profile}")
-        out.append(f"mode = {modes.get(key, 'block')}")
+        out.append(f"mode = {modes.get(key, 'log')}   ; block stops what the limits do not allow; log only records")
         rel = [os.path.relpath(s, root) if s.startswith(str(root)) else s for s in lim.scope]
         out.append(f"scope = {', '.join(rel) or '.'}" if lim.scope != std.scope else f"; scope = {', '.join(rel) or '.'}")
         if lim.commands:
@@ -297,14 +297,11 @@ def _section_of(sections: Dict[str, Dict[str, str]], agent: Agent, key: str) -> 
 
 
 def _mode(console, ws, key: str, wanted: str) -> None:
-    """The mode the file says, else the one the agent has, else block; said as it is."""
-    from .controls import Controls
+    """The mode the file says, else the one the agent has (a first activation started it in block);
+    said as it is."""
+    from .controls import mode_on_activation
 
-    controls = Controls(ws)
-    has = key in controls.all() or controls.default_mode()
-    mode = wanted or (controls.get(key).mode if has else "block")
-    if not ws.plan_only and (not has or controls.get(key).mode != mode):
-        controls.set_mode(key, mode)
+    mode = mode_on_activation(ws, key, False, wanted or None)
     console.print(Text.assemble(("  ", ""), (key, "head"), ("  mode ", "muted"),
                                 ("block: stops what its limits do not allow", "ok") if mode == "block"
                                 else ("log: records what its limits do not allow, stops nothing", "warn")))
@@ -348,7 +345,7 @@ def _init(args, console, ws, path: Path) -> int:
     from .controls import Controls
 
     controls = Controls(ws)
-    modes = {key: controls.get(key).mode for _a, key, _l in rows if key in controls.all() or controls.default_mode()}
+    modes = {key: controls.get(key).mode for _a, key, _l in rows}
     text = render(rows, root, modes)
     if ws.plan_only:
         console.print(text)

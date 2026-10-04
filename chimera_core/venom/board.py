@@ -346,6 +346,9 @@ def make_policy(console, ws, agent: Agent, lim: L.Limits) -> Optional[str]:
             return None
         if old != text:
             ws.write_text(path, text)
+        if not old:
+            from .controls import mode_on_activation
+            mode_on_activation(ws, key, True)
         console.print(Text.assemble(("  ✓ policy ", "ok"), (ws.rel(path), "head"),
                                     (f"  {plural(gate.rules, 'rule')}, Z3: no contradictions", "muted")))
     plan = bind(ws, path, [agent])
@@ -403,13 +406,12 @@ def protect(ui, console, args, ws, agent: Agent, *, ask: bool = True) -> bool:
     if make_policy(console, ws, agent, lim) is None:
         return False
     controls = Controls(ws)
-    current = controls.get(key, controls.default_mode() or "log").mode
+    current = controls.get(key).mode  # its own, else the workspace default, else log
     if ask:
-        mode = ui.choose("Mode: block stops what its limits do not allow; log only records it", ["block", "log"],
-                         "block" if current == "block" or not controls.default_mode() else current)
+        mode = ui.choose("Mode: block stops what its limits do not allow; log only records it", ["block", "log"], current)
     else:
-        mode = getattr(args, "mode", None) or "block"
-    if mode != current or key not in controls.all():
+        mode = getattr(args, "mode", None) or current
+    if mode != current:
         controls.set_mode(key, mode)
     plan = wire_plan(args, ws, agent)
     if plan.kind == "manual":
@@ -443,7 +445,10 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
     for a in agents:
         kinds = kinds_of(a, L.load(ws, agent_key(a)))
         console.print(Text.assemble(("    ", ""), (agent_key(a), "head"), (f"  {', '.join(WORDS[k] for k in kinds)}", "muted")))
-    mode = getattr(args, "mode", None) or "block"
+    from .controls import Controls as _C
+
+    mode = getattr(args, "mode", None) or ui.choose(
+        "Mode for them: block stops what their limits do not allow; log only records it", ["block", "log"], "block")
     console.print(Text(f"    standard limits, a policy for each checked with Z3, {mode} mode, and the wiring changes "
                        "below", style="muted"))
     if not ui.ask("Make the policies now?", True):
@@ -458,7 +463,8 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
         L.save(ws, lim)
         console.print(Text.assemble(("  ", ""), (key, "head")))
         if make_policy(console, ws, a, lim) is not None:
-            Controls(ws).set_mode(key, mode)
+            if Controls(ws).get(key).mode != mode:
+                Controls(ws).set_mode(key, mode)
             ready.append(a)
     plans = [wire_plan(args, ws, a) for a in ready]
     agent_of = {agent_key(a): a for a in ready}

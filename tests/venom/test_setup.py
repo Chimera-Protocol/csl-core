@@ -32,8 +32,29 @@ def test_b15_scripted_end_to_end(tmp_path, capsys):
     wiring = (ws / ".csl/venom/wiring.md").read_text()
     for st in agents.values():
         assert st["key"] in wiring
-    assert state["defaults"]["mode"] == "log" and not state.get("modes")
+    # nothing chosen: no workspace default is written; each agent activated for the first time is in block
+    assert not (state.get("defaults") or {}).get("mode")
+    assert {k: m["mode"] for k, m in state["modes"].items()} == {st["key"]: "block" for st in agents.values()}
     assert state["mapping_tests"] and all(t["fail_open"] == 0 for t in state["mapping_tests"].values())
+
+
+def test_block_default_never_switches_agents_already_in_log(tmp_path, capsys):
+    """Block is where a first activation starts; an agent already running in log mode keeps it when
+    setup runs again or its limits change."""
+    rc, out, ws = _setup(tmp_path, capsys, "--yes", "--activate", "--mode", "log")
+    state = json.loads((ws / ".csl/venom/state.json").read_text())
+    assert state["defaults"]["mode"] == "log" and not state.get("modes")
+    rc, out, _ = run_cli(["setup", "--root", str(HOST_OPS), "--workspace", str(ws), "--yes", "--activate", "--restart"],
+                         capsys)
+    assert rc == 0
+    rc, out, _ = run_cli(["limits", "--agent", "membership-bot", "--set", "transfer_funds=200..900", "--yes",
+                          "--root", str(HOST_OPS), "--workspace", str(ws)], capsys)
+    assert rc == 0 and "✓ active" in out
+    from chimera_core.venom.controls import Controls
+    from chimera_core.venom.workspace import Workspace
+    c = Controls(Workspace(ws))
+    for st in json.loads((ws / ".csl/venom/state.json").read_text())["setup"]["agents"].values():
+        assert c.get(st["key"]).mode == "log", st["key"]
 
 
 def test_b15_mode_choice(tmp_path, capsys):
@@ -90,7 +111,7 @@ def test_b15_plan_only_writes_nothing(tmp_path, capsys):
 
 
 def test_b18_log_mode_records_would_block(tmp_path, capsys, monkeypatch):
-    _, _, ws = _setup(tmp_path, capsys, "--yes", "--activate")
+    _, _, ws = _setup(tmp_path, capsys, "--yes", "--activate", "--mode", "log")
     monkeypatch.chdir(ws)
     from chimera_core.venom.observe import venom_guard
     g = venom_guard("membership-bot", policy="policies/membership-bot.csl", mapping="policies/membership_bot_mapping.py")

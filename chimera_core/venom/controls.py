@@ -22,6 +22,22 @@ from typing import Dict, List, Optional, Set
 from .workspace import Workspace
 
 MODES = ("log", "block")
+NEW_ACTIVATION_MODE = "block"  # an agent whose first policy is activated starts here, unless a mode was chosen
+
+
+def mode_on_activation(ws: Workspace, agent: str, first: bool, chosen: Optional[str] = None) -> str:
+    """The mode an agent runs in once a policy is activated for it. A chosen mode (--mode, a
+    question answered, mode = in csl-limits.ini) is set. Otherwise only a first activation sets one:
+    block, as the agent's own mode. An agent that already had a policy keeps the mode it has, so
+    agents running in log mode are never switched by a later activation."""
+    controls = Controls(ws)
+    has_own = isinstance((ws.load_state().get("modes") or {}).get(agent), dict)
+    mode = chosen if chosen in MODES else (NEW_ACTIVATION_MODE if first and not has_own else None)
+    if mode is None:
+        return controls.get(agent).mode
+    if not ws.plan_only and (not has_own or controls.get(agent).mode != mode):
+        controls.set_mode(agent, mode)
+    return mode
 
 
 def _now() -> str:

@@ -45,8 +45,9 @@ def test_init_apply_and_check_in_ci(repo, capsys):
     ini = (root / "csl-limits.ini").read_text()
     for section in ("[billing]", "[helpdesk]", "[agents-payments]", "[agents-reports]", "[repo-ops]"):
         assert section in ini
-    assert "; charge_card = 100..1k   ; standard" in ini and "mode = block" in ini
+    assert "; charge_card = 100..1k   ; standard" in ini and "\nmode = log " in ini  # the mode each has now
     ini = ini.replace("; charge_card = 100..1k   ; standard", "charge_card = 50..200")
+    ini = ini.replace("[billing]\nmode = log", "[billing]\nmode = block")
     ini = ini.replace("[helpdesk]", "[helpdesk]\ndelete_ticket = approval")
     (root / "csl-limits.ini").write_text(ini)
     rc, out, _ = _apply(ws, capsys, "--check")  # CI: nothing active there, the file itself is checked
