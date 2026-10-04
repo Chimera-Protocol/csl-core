@@ -466,7 +466,10 @@ def cmd_map(args) -> int:
         return EXIT_USAGE
     text = _text(ws, ref, args)
     policy_rel = ws.rel(ref.path)
-    spec = build_spec(agent, ref)
+    from ..policy.draft import agent_key
+    from ..policy.limits import load as load_limits
+
+    spec = build_spec(agent, ref, load_limits(ws, agent_key(agent)) if ws is not None else None)
     problems = apply_classify(spec, getattr(args, "classify", None) or [])
     if problems:
         for p in problems:

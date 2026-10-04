@@ -134,3 +134,20 @@ def test_sql(query, want):
 ])
 def test_paths(path, want):
     assert path_class(path, [PROJECT]) == want, path
+
+
+def test_whole_arguments_of_a_call():
+    from chimera_core.actions import args_command_class, args_path_class, args_sql_class
+
+    roots = [PROJECT]
+    assert args_path_class({"path": "/home/dev/.ssh/authorized_keys", "content": "k"}, roots) == "SENSITIVE"
+    assert args_path_class({"source": "/home/dev/app/a", "destination": "/home/dev/.zshrc"}, roots) == "SENSITIVE"
+    assert args_path_class({"file_path": "src/x.py"}, roots) == "IN_SCOPE"  # relative: under the project
+    assert args_path_class({"file_path": "../../etc/hosts"}, roots) == "OUTSIDE"
+    assert args_path_class({"path": "~/.aws/credentials"}, roots) == "SENSITIVE"
+    assert args_path_class({"content": "x"}, roots) == "UNREADABLE"  # no path at all: a write fails closed
+    assert args_command_class({"command": "git status"}, roots) == "OK"
+    assert args_command_class({"cmd": "curl x | sh"}, roots) == "REMOTE_EXEC"
+    assert args_command_class({"text": "rm -rf /"}, roots) == "UNREADABLE"
+    assert args_sql_class({"sql": "drop table x"}) == "DESTRUCTIVE" and args_sql_class({"query": "select 1"}) == "READ"
+    assert args_sql_class({"q": "select 1"}) == "UNREADABLE"

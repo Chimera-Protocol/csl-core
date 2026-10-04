@@ -59,6 +59,13 @@ def _setup_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--restart", action="store_true", help="start the flow from step 1")
     p.add_argument("--stop-after", metavar="STEP", help=argparse.SUPPRESS)
     p.add_argument("--agent", metavar="ID", help="limit policy and mapping steps to one agent")
+    p.add_argument("--limit", metavar="[AGENT.]TOOL=FREE..MAX", action="append", default=[],
+                   help="money limits for a tool: moves freely up to FREE, with approval up to MAX, never above MAX "
+                        "(e.g. support-agent.refund_order=100k..300k; one number: no approval band); repeatable")
+    p.add_argument("--add-tool", metavar="AGENT:NAME:RISK[:AMOUNT_PARAM]", action="append", default=[],
+                   help="a tool the scan did not see (risk: spend, shell, sql, write, send, destroy, other); repeatable")
+    p.add_argument("--profile", choices=["standard", "strict"],
+                   help="standard: everyday work runs, harmful actions stop (default); strict: only what is listed runs")
     p.add_argument("--wire", action="store_true",
                    help="with --yes: also make the wiring change in each agent (a hook or a decorator); "
                         "without --yes you are asked, with the diff")

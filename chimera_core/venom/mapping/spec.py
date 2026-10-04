@@ -4,7 +4,8 @@ Mapping specification: for every policy variable, where its value comes from.
     constant   agent_id
     tool       the tool name, through a value table (real name -> policy value)
     param      a tool parameter (auto-matched by name, drift suggestions applied)
-    derived    computed by the integration: approval, *_allowlisted, target_in_scope
+    derived    computed by the integration: approval, *_allowlisted, target_in_scope, and what the call
+               would do (command_class, sql_class, path_class: chimera_core.actions)
     context    supplied by the caller (for example user_role)
 """
 
@@ -24,7 +25,11 @@ DERIVED = {
     "command_allowlisted": "command is in COMMAND_ALLOWLIST",
     "destination_allowlisted": "destination is in DESTINATION_ALLOWLIST",
     "target_in_scope": "path is under one of SCOPE_ROOTS",
+    "command_class": "what the command would do (chimera_core.actions.command_class)",
+    "sql_class": "what the query would do (chimera_core.actions.sql_class)",
+    "path_class": "where the call writes or reads (chimera_core.actions.path_class, SCOPE_ROOTS)",
 }
+NEUTRAL = {"command_class": "OK", "sql_class": "READ", "path_class": "IN_SCOPE"}
 COMMAND_PARAMS = re.compile(r"^(command|cmd|script|code|shell_command|query)$", re.I)
 DESTINATION_PARAMS = re.compile(r"^(to|recipient|recipients|email|channel|url|webhook|phone|to_wallet|wallet|address|destination|visibility)$", re.I)
 PATH_PARAMS = re.compile(r"^(path|file|file_path|notebook_path|target_file|filename|target|dest|directory|dir)$", re.I)
@@ -56,6 +61,12 @@ class MappingSpec:
     tool_params: Dict[str, List[ToolParam]] = field(default_factory=dict)
     # derived values checked with bypass tricks: variable -> (scope | command | destination, parameter or None)
     classify: Dict[str, Tuple[str, Optional[str]]] = field(default_factory=dict)
+    # from the agent's limits: the lists the mapping checks against
+    scope_roots: List[str] = field(default_factory=list)
+    commands: List[str] = field(default_factory=list)
+    destinations: List[str] = field(default_factory=list)
+    # derived variable -> the policy tool values its rules speak about
+    derived_tools: Dict[str, List[str]] = field(default_factory=dict)
 
     def var(self, name: str) -> Optional[VarSpec]:
         return next((v for v in self.variables if v.name == name), None)
@@ -74,8 +85,10 @@ def _kind(domain: str) -> Tuple[str, List[str], Optional[int], Optional[int]]:
     return "other", [], None, None
 
 
-def build_spec(agent: Agent, policy: PolicyRef) -> MappingSpec:
-    tools = [t for t in agent.tools if not t.name.endswith("/*")]
+def build_spec(agent: Agent, policy: PolicyRef, limits=None) -> MappingSpec:
+    from ..policy.limits import tools_of
+
+    tools = tools_of(agent, limits)
     tv = tool_variable(policy, tools) or ("tool" if "tool" in policy.variables else None)
     spec = MappingSpec(agent.id, agent.display_name, agent_key(agent), policy.path, tv,
                        tool_params={t.name: list(t.params) for t in tools})
@@ -116,6 +129,17 @@ def build_spec(agent: Agent, policy: PolicyRef) -> MappingSpec:
                     vs.params[t.name] = next(p for p in t.params if p.name == hit)
             vs.source = "param" if vs.params else "context"
         spec.variables.append(vs)
+    spec.scope_roots = list(limits.scope) if limits is not None and limits.scope else ([agent.project] if agent.project else [])
+    spec.commands = list(limits.commands) if limits is not None else []
+    spec.destinations = list(limits.destinations) if limits is not None else []
+    for values in policy.rule_values.values():
+        named = [v.split("=", 1)[1] for v in values if v.startswith(f"{tv}=")] if tv else []
+        for var in NEUTRAL:
+            if var in values or any(v.startswith(var + "=") for v in values):
+                for t in named:
+                    spec.derived_tools.setdefault(var, [])
+                    if t not in spec.derived_tools[var]:
+                        spec.derived_tools[var].append(t)
     return spec
 
 

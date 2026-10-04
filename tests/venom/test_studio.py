@@ -205,6 +205,7 @@ def test_setup_verify_offers_a_studio_review(tmp_path, capsys, monkeypatch):
     flow = setup_mod.Flow(argparse.Namespace(workspace=str(root), root=str(HOST_OPS), yes=False, plain=True, no_color=True,
                                               strategy="templates"))
     flow.interactive = True
+    monkeypatch.setattr(flow, "text_input", lambda q, d="": d)  # the limits: Enter keeps each default
     assert flow.policies()
     answers = iter(["1", ""])
     monkeypatch.setattr(flow, "text_input", lambda q, d="": next(answers))

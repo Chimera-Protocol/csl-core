@@ -36,6 +36,7 @@ from rich.text import Text
 from . import VENOM_VERSION
 from . import exemptions as ex
 from .commands import EXIT_OK, console_for, remember_root, run_scan, save_report, workspace_for
+from .policy import limits as L
 from .model import Agent, Inventory, PolicyRef
 from .policy import draft as D
 from .policy.gate import verify_text
@@ -370,8 +371,6 @@ class Flow:
             self.console.print("  [ok]every agent is covered or exempt[/ok]")
             return True
         strategy = self._strategy(len(agents))
-        exemptions = self.ws.load_exemptions()
-        ids = {a.id: D.agent_key(a) for a in inv.agents}
         for a in agents:
             key = D.agent_key(a)
             st = states.setdefault(a.id, {"key": key})
@@ -410,11 +409,13 @@ class Flow:
             if how == "a":
                 self._assistant(a, st, draft_path)
                 continue
-            d = D.draft_for(a, exemptions, agent_ids=ids)
+            lim = self.limits_for(a, ask=how == "t")  # in the studio or an editor the operator writes them
+            text, _notes = L.policy_text(a, lim)
             if self.ws.plan_only:
                 self._line("·", a, f"--plan-only: would write {self.ws.rel(draft_path)}")
                 continue
-            self.ws.write_text(draft_path, d.text)
+            self.ws.write_text(draft_path, text)
+            d = type("Drafted", (), {"rules": [ln for ln in text.splitlines() if "STATE_CONSTRAINT" in ln]})()
             st["draft"] = self.ws.rel(draft_path)
             if how == "w":
                 self._studio(a, st, draft_path, active_path)
@@ -430,6 +431,71 @@ class Flow:
             self.console.print(f"  [warn]{len(waiting)} agent(s) waiting for an assistant draft[/warn]: "
                                "the flow continues with the others; re-run cslcore setup once the draft is saved")
         return True
+
+    def limits_for(self, a: Agent, ask: bool = True) -> "L.Limits":
+        """The agent's limits: what was set before (or the defaults), the command-line flags, and, at a
+        terminal, the operator's own numbers. Saved in the workspace; the policy is made from them."""
+        from .wire_cmd import scan_probe
+
+        key = D.agent_key(a)
+        probe, _root = scan_probe(self.args, self.ws)
+        base = a.project or (probe.home() if a.kind == "assistant" else None)
+        scope = [probe.real_path(base)] if base else []
+        lim = L.defaults(a, scope, L.load(self.ws, key))
+        try:
+            applied = L.apply_flags(lim, key, getattr(self.args, "limit", None) or [], getattr(self.args, "add_tool", None) or [],
+                                    getattr(self.args, "profile", None), names=(a.display_name, a.id))
+        except L.LimitError as e:
+            self.console.print(f"  [high]{e}[/high]")
+            raise StopFlow()
+        lim = L.defaults(a, scope, lim)  # tools added on the command line get their kind
+        for item in applied:
+            self.console.print(Text.assemble(("    ", ""), (a.display_name, "head"), (f"  {item}", "muted")))
+        if self.interactive and ask:
+            self._ask_limits(a, lim)
+        if not self.ws.plan_only:
+            L.save(self.ws, lim)
+        return lim
+
+    def _ask_limits(self, a: Agent, lim: "L.Limits") -> None:
+        """At a terminal: what each tool may do, the money limits in the operator's own numbers, and
+        tools the scan did not see. Enter keeps what is shown."""
+        self.console.print()
+        self.console.print(Text.assemble(("  ", ""), (a.display_name, "head"), (f"   {lim.profile} profile", "muted")))
+        for name, kind, what in L.describe(lim):
+            self.console.print(Text.assemble(("    ", ""), (name.ljust(24), "text"), (kind.ljust(9), "label"), (what, "muted")))
+        for name, tl in sorted(lim.tools.items()):
+            if tl.kind != "spend" or not tl.amount_param:
+                continue
+            while True:
+                lo = self.text_input(f"{name}: allowed freely up to", f"{tl.allow_up_to:,}")
+                hi = self.text_input(f"{name}: never above", f"{tl.never_above:,}")
+                try:
+                    tl.allow_up_to, tl.never_above = L.parse_range(f"{lo}..{hi}")
+                    break
+                except L.LimitError as e:
+                    self.console.print(f"  [warn]{e}[/warn]")
+        while True:
+            extra = (self.text_input("Another tool this agent can call that is not listed (name, Enter for none)", "")
+                     or "").strip()
+            if not extra:
+                break
+            risk = self.choose(f"What does {extra} do", ["spend", "shell", "sql", "write", "send", "destroy", "other"], "other")
+            item = {"name": extra, "risk": L.RISKS[risk]}
+            if risk == "spend":
+                item["amount_param"] = (self.text_input("Its amount parameter", "amount") or "amount").strip()
+            lim.extra_tools = [e for e in lim.extra_tools if e["name"] != extra] + [item]
+            lim.tools.pop(extra, None)
+            L.defaults(a, lim.scope, lim)
+            if risk == "spend":
+                tl = lim.tools[extra]
+                lo = self.text_input(f"{extra}: allowed freely up to", f"{tl.allow_up_to:,}")
+                hi = self.text_input(f"{extra}: never above", f"{tl.never_above:,}")
+                try:
+                    tl.allow_up_to, tl.never_above = L.parse_range(f"{lo}..{hi}")
+                except L.LimitError as e:
+                    self.console.print(f"  [warn]{e}; the defaults are kept[/warn]")
+            self.console.print(Text.assemble(("    ✓ ", "ok"), (extra, "head"), (f"  {risk}", "muted")))
 
     def _line(self, mark: str, a: Agent, text: str) -> None:
         style = {"✓": "ok", "·": "muted", "✗": "high"}.get(mark, "text")
@@ -619,7 +685,7 @@ class Flow:
             text = self.policy_text(rel) or ""
             final_rel = rel if st.get("adopted") and not st.get("draft") else f"policies/{st['key']}.csl"
             ref = read_policy(rel if Path(rel).is_absolute() else str(self.ws.root / rel), text, "draft")
-            spec = build_spec(a, ref)
+            spec = build_spec(a, ref, L.load(self.ws, D.agent_key(a)))
             if st.get("adopted") and self.interactive:
                 own = self.text_input(f"{a.display_name}: test your own mapper? (path.py:function, 'openclaw', or Enter to generate one)")
                 if own.strip():

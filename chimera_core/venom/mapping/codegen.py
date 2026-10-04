@@ -7,7 +7,11 @@ from typing import List
 
 from .. import VENOM_VERSION
 from ..analysis.coverage import suggest
-from .spec import COMMAND_PARAMS, DESTINATION_PARAMS, PATH_PARAMS, MappingSpec, VarSpec, pick_param
+from .spec import COMMAND_PARAMS, DESTINATION_PARAMS, NEUTRAL, PATH_PARAMS, MappingSpec, VarSpec, pick_param
+
+
+DERIVED_NOTE = {"command_class": "what the command would do", "sql_class": "what the query would do",
+                "path_class": "where the call writes or reads, against SCOPE_ROOTS"}
 
 
 def q(v) -> str:
@@ -49,6 +53,7 @@ def generate(spec: MappingSpec, policy_rel: str) -> str:
         f"Test it with: cslcore map --agent {spec.agent_name} --test",
         '"""',
         "",
+        "from chimera_core.actions import args_command_class, args_path_class, args_sql_class",
         "from chimera_core.mapping import (MappingError, command_allowed, destination_allowed, in_scope, to_enum,",
         "                                  to_flag, to_range)",
         "",
@@ -64,14 +69,14 @@ def generate(spec: MappingSpec, policy_rel: str) -> str:
     if spec.unmapped_tools:
         out.append(f"# not in the policy vocabulary, blocked until added: {', '.join(spec.unmapped_tools)}")
     derived = {v.name for v in spec.variables if v.source == "derived"}
-    if derived & {"command_allowlisted", "destination_allowlisted", "target_in_scope"}:
-        out += ["", "# Allowlists: empty means nothing is allowlisted (fail closed). Edit to your needs."]
+    if derived & {"command_allowlisted", "destination_allowlisted", "target_in_scope", "command_class", "path_class"}:
+        out += ["", f"# From the agent's limits (cslcore limits --agent {spec.agent_key}); an empty allowlist allows nothing."]
     if "command_allowlisted" in derived:
-        out.append("COMMAND_ALLOWLIST = []  # exact commands, e.g. \"git status\"; \"git log *\" also takes plain arguments")
+        out.append(f"COMMAND_ALLOWLIST = {q(spec.commands)}  # exact commands; \"git log *\" also takes plain arguments")
     if "destination_allowlisted" in derived:
-        out.append("DESTINATION_ALLOWLIST = []  # hosts (\"api.example.com\", \"*.example.com\"), addresses, channels")
-    if "target_in_scope" in derived:
-        out.append("SCOPE_ROOTS = []  # absolute folders the agent may write under")
+        out.append(f"DESTINATION_ALLOWLIST = {q(spec.destinations)}  # hosts (\"api.example.com\", \"*.example.com\"), addresses")
+    if derived & {"target_in_scope", "command_class", "path_class"}:
+        out.append(f"SCOPE_ROOTS = {q(spec.scope_roots)}  # the folders the agent may write under")
     out += ["", "", "def map_call(tool_name, args, context=None):",
             '    """Return the policy variables for one tool call; raises MappingError when a value cannot be mapped."""',
             "    args = args or {}", "    context = context or {}",
@@ -96,6 +101,19 @@ def generate(spec: MappingSpec, policy_rel: str) -> str:
                 out.append(f"        ctx[{q(v.name)}] = {_helper(v, f'args.get({q(p.name)})', p.type or '', p.enum)}")
             out.append("    else:")
             out.append(f"        ctx[{q(v.name)}] = {_neutral(v)}  # not supplied by this tool: neutral value")
+        elif v.name in NEUTRAL:
+            wanted = set(spec.derived_tools.get(v.name, []))
+            real = [r for r, pol in spec.tool_table.items() if pol in wanted]
+            call = {"command_class": "args_command_class(args, SCOPE_ROOTS)", "sql_class": "args_sql_class(args)",
+                    "path_class": "args_path_class(args, SCOPE_ROOTS)"}[v.name]
+            out.append(f"    # {v.name}: {DERIVED_NOTE.get(v.name, '')}")
+            if real:
+                out.append(f"    if tool_name in {q(sorted(real))}:")
+                out.append(f"        ctx[{q(v.name)}] = {call}")
+                out.append("    else:")
+                out.append(f"        ctx[{q(v.name)}] = {q(NEUTRAL[v.name])}  # no rule of this tool speaks about it")
+            else:
+                out.append(f"    ctx[{q(v.name)}] = {q(NEUTRAL[v.name])}")
         elif v.name == "approval":
             out.append("    # approval: supplied by the caller; missing means NO")
             out.append('    ctx["approval"] = to_flag(context.get("approval"), name="approval", required=False, default="NO")')

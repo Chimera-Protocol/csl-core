@@ -38,7 +38,8 @@ import posixpath
 import re
 from typing import Any, Iterable, List, Optional
 
-__all__ = ["command_class", "sql_class", "path_class", "COMMAND_CLASSES", "SQL_CLASSES", "PATH_CLASSES"]
+__all__ = ["command_class", "sql_class", "path_class", "args_command_class", "args_sql_class", "args_path_class",
+           "COMMAND_CLASSES", "SQL_CLASSES", "PATH_CLASSES"]
 
 COMMAND_CLASSES = ["OK", "REMOTE_EXEC", "DESTRUCTIVE", "PRIVILEGE", "SECRETS", "EXFIL", "PERSISTENCE", "UNREADABLE"]
 SQL_CLASSES = ["READ", "WRITE", "DESTRUCTIVE", "UNREADABLE"]
@@ -72,6 +73,8 @@ def _sensitive(p: str) -> bool:
 
 def path_class(path: Any, scope_roots: Iterable[str] = ()) -> str:
     """IN_SCOPE, OUTSIDE, SENSITIVE or UNREADABLE (see the module docstring)."""
+    if isinstance(path, str) and path.startswith("~") and not _CONTROL.search(path):
+        return "SENSITIVE" if _sensitive("/HOME" + path[1:]) else "UNREADABLE"
     if not isinstance(path, str) or not path.startswith("/") or _CONTROL.search(path) or "\\" in path:
         return "UNREADABLE"
     if re.search(r"%(2e|2f|5c|00)", path, re.I):
@@ -449,3 +452,69 @@ def sql_class(query: Any) -> str:
         if rank[kind] > rank[worst]:
             worst = kind
     return worst
+
+
+# ---------------------------------------------------------------------------
+# the whole arguments of a call (tools whose parameter names are not known in advance)
+# ---------------------------------------------------------------------------
+
+_PATH_KEY = re.compile(r"(path|file|filename|dir|directory|dest|destination|source|src|target|notebook|folder|location)", re.I)
+_COMMAND_KEY = re.compile(r"^(command|cmd|commands|script|shell_command|shell|code|bash|exec|run)$", re.I)
+_SQL_KEY = re.compile(r"^(query|sql|statement|stmt|queries)$", re.I)
+_PATH_RANK = {"IN_SCOPE": 0, "OUTSIDE": 1, "UNREADABLE": 2, "SENSITIVE": 3}
+
+
+def _strings(value: Any) -> List[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, (list, tuple)):
+        return [v for v in value if isinstance(v, str)]
+    return []
+
+
+def args_path_class(args: Any, scope_roots: Iterable[str] = ()) -> str:
+    """The most serious path_class over every path-like argument of a call. A relative path is taken
+    under the first root. No path argument at all: UNREADABLE (a write then fails closed)."""
+    if not isinstance(args, dict):
+        return "UNREADABLE"
+    roots = [r for r in scope_roots or [] if isinstance(r, str) and r.startswith("/")]
+    worst = None
+    for k, v in args.items():
+        if not isinstance(k, str) or not _PATH_KEY.search(k):
+            continue
+        for p in _strings(v):
+            if roots and p and not p.startswith(("/", "~")):
+                p = posixpath.join(roots[0], p)
+            c = path_class(p, roots)
+            if worst is None or _PATH_RANK[c] > _PATH_RANK[worst]:
+                worst = c
+    return worst or "UNREADABLE"
+
+
+def args_command_class(args: Any, scope_roots: Iterable[str] = ()) -> str:
+    """command_class of the command argument of a call (UNREADABLE when there is none)."""
+    if not isinstance(args, dict):
+        return "UNREADABLE"
+    worst = None
+    for k, v in args.items():
+        if isinstance(k, str) and _COMMAND_KEY.match(k):
+            for cmd in _strings(v) or [v]:
+                c = command_class(cmd, scope_roots)
+                if worst is None or _SEVERITY[c] > _SEVERITY[worst]:
+                    worst = c
+    return worst or "UNREADABLE"
+
+
+def args_sql_class(args: Any) -> str:
+    """sql_class of the query argument of a call (UNREADABLE when there is none)."""
+    if not isinstance(args, dict):
+        return "UNREADABLE"
+    rank = {"READ": 0, "WRITE": 1, "UNREADABLE": 2, "DESTRUCTIVE": 3}
+    worst = None
+    for k, v in args.items():
+        if isinstance(k, str) and _SQL_KEY.match(k):
+            for q in _strings(v) or [v]:
+                c = sql_class(q)
+                if worst is None or rank[c] > rank[worst]:
+                    worst = c
+    return worst or "UNREADABLE"

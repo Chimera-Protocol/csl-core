@@ -84,7 +84,9 @@ def bind(ws, policy: Path, agents: List[Agent], *, write: bool = True, policy_te
                 text, edited = new, True
         rel = bindings.rel(policy)
         ref = read_policy(str(policy), text, "active")
-        spec = build_spec(agent, ref)
+        from .limits import load as load_limits
+
+        spec = build_spec(agent, ref, load_limits(ws, key))
         code = codegen.generate(spec, rel)
         mod = types.ModuleType("_venom_bind_mapping")
         exec(compile(code, "<generated mapping>", "exec"), mod.__dict__)  # the generator's own output
