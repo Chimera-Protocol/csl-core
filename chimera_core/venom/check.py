@@ -306,7 +306,8 @@ def table(report: Report, show_all: bool = False) -> Table:
     return t
 
 
-def show(console, report: Report, name: str = "") -> None:
+def show(console, report: Report, name: str = "", compact: bool = False) -> None:
+    """The check for one agent: a line, and the table (compact: the table only when a call is wrong)."""
     title = name or report.agent
     if not report.cases:
         console.print(Text.assemble(("  check ", "muted"), (title, "head"), (f"   {report.note}", "muted")))
@@ -317,6 +318,8 @@ def show(console, report: Report, name: str = "") -> None:
                                    (f"   {runs} sample calls run, {stops} stop, as its limits say" if not bad
                                     else f"   {bad} of {len(report.cases)} sample calls not as its limits say", "muted" if not bad else "high")))
     console.print(head)
+    if compact and not bad:
+        return
     console.print(Padding(table(report), (0, 0, 0, 4)))
     console.print(Text("    decided by the active policy and mapping in block mode; nothing ran\n"
                        "    a stopped call stays stopped with an approval, unless it says \"without approval\"", style="muted"))

@@ -8,6 +8,12 @@ One step per screen: a short summary, one recommended action, Enter to continue 
 progress is kept). Progress lives in .csl/venom/state.json. Re-running resumes at the first
 incomplete step; after a complete run it starts a new cycle and reports what changed.
 
+At a terminal, step 6 is the protection board (chimera_core.venom.board): the riskiest agents
+first; for one agent its limits, the policy made from them, the wiring change and the check in one
+loop; standard protection for the rest with one key. Steps 7 to 10 then only handle what the
+board did not (drafts from the studio, an editor or an assistant). `--strategy` keeps the step by
+step flow. After a complete run, `cslcore setup` opens on a home screen with the board on `b`.
+
 Scripted runs (`--yes`) accept defaults but never approve exemptions and never activate a
 policy; activation in a scripted run needs the explicit `--activate` flag.
 
@@ -362,75 +368,107 @@ class Flow:
         return {"r": "recommended", "c": "choose", "t": "templates"}[self.choose(f"{n} agents need a policy. How?", ["r", "c", "t"], "r")]
 
     def policies(self) -> bool:
-        from .policy.match import candidates
-
-        inv = self.load_inventory()
         agents = self.targets()
         states = self.agents_state()
         if not agents:
             self.console.print("  [ok]every agent is covered or exempt[/ok]")
             return True
+        if self.uses_board():
+            return self.board(agents)
         strategy = self._strategy(len(agents))
         for a in agents:
-            key = D.agent_key(a)
-            st = states.setdefault(a.id, {"key": key})
-            draft_path = self.ws.drafts / f"{key}.csl"
-            active_path = self.ws.policies / f"{key}.csl"
-            if st.get("adopted") and st.get("policy"):
-                self._line("✓", a, f"keeps {short(st['policy'])} (adopted)")
-                continue
-            if active_path.exists() and not self.ws.read(draft_path):
-                st["policy"] = self.ws.rel(active_path)
-                self._line("✓", a, f"active: {self.ws.rel(active_path)}")
-                continue
-            if draft_path.exists():
-                st["draft"] = self.ws.rel(draft_path)
-                self._line("✓", a, f"draft: {self.ws.rel(draft_path)}")
-                continue
-            cands = candidates(a, inv.policies)
-            wired = [c for c in cands if c[1] >= 1.0]
-            if strategy == "recommended":
-                how = "1" if wired else "t"
-            elif strategy == "templates":
-                how = "t"
-            else:
-                how = self._menu(a, cands)
-            if how in ("1", "2", "3") and int(how) <= len(cands):
-                ref, score, _why = cands[int(how) - 1]
-                if score >= 1.0:
-                    self._adopt(a, st, ref)
-                else:
-                    self._copy_existing(a, st, ref, draft_path)
-                continue
-            if how == "s":
-                st["skipped"] = True
-                self._line("·", a, "skipped")
-                continue
-            if how == "a":
-                self._assistant(a, st, draft_path)
-                continue
-            lim = self.limits_for(a, ask=how == "t")  # in the studio or an editor the operator writes them
-            text, _notes = L.policy_text(a, lim)
-            if self.ws.plan_only:
-                self._line("·", a, f"--plan-only: would write {self.ws.rel(draft_path)}")
-                continue
-            self.ws.write_text(draft_path, text)
-            d = type("Drafted", (), {"rules": [ln for ln in text.splitlines() if "STATE_CONSTRAINT" in ln]})()
-            st["draft"] = self.ws.rel(draft_path)
-            if how == "w":
-                self._studio(a, st, draft_path, active_path)
-            elif how == "e":
-                self.console.print(f"    opening {self.ws.rel(draft_path)} in {self.ws.editor()} (a template to start from)")
-                self.ws.open_in_editor(draft_path)
-                self._line("✓", a, f"written in your editor: {self.ws.rel(draft_path)}")
-            else:
-                self._line("✓", a, f"{plural(len(d.rules), 'rule')} from templates: {self.ws.rel(draft_path)}")
+            self._policy_for(a, strategy)
         self.save()
         waiting = [s for s in states.values() if s.get("assistant") and not s.get("draft")]
         if waiting:
             self.console.print(f"  [warn]{len(waiting)} agent(s) waiting for an assistant draft[/warn]: "
                                "the flow continues with the others; re-run cslcore setup once the draft is saved")
         return True
+
+    def uses_board(self) -> bool:
+        """At a terminal, without --strategy or --agent: the protection board."""
+        return self.interactive and not getattr(self.args, "strategy", None) and not getattr(self.args, "agent", None)
+
+    def board(self, agents: List[Agent]) -> bool:
+        """The protection board: the riskiest agents first, one loop per agent (limits, policy,
+        wiring, check), standard protection for the rest with one key. Opens where it was left."""
+        from . import board as B
+        from .bindings import Bindings
+
+        def other_ways(a: Agent) -> None:
+            self._policy_for(a, "choose")
+            self.save()
+
+        B.run(self, self.console, self.args, self.ws, agents, self.agents_state(), other_ways=other_ways)
+        bindings = Bindings(self.ws).all()
+        for a in agents:  # what the board made, for the steps after it
+            st = self.agents_state().setdefault(a.id, {"key": D.agent_key(a)})
+            b = bindings.get(st["key"])
+            if b is not None and b.mapping and not st.get("draft") and not st.get("adopted"):
+                st.update(policy=b.policy, mapping=b.mapping, protected=True)
+        self.save()
+        return True
+
+    def _policy_for(self, a: Agent, strategy: str) -> None:
+        """One agent's policy, the way the strategy says: an existing one, templates from its limits,
+        the studio, an editor, an assistant, or skipped."""
+        from .policy.match import candidates
+
+        inv = self.load_inventory()
+        states = self.agents_state()
+        key = D.agent_key(a)
+        st = states.setdefault(a.id, {"key": key})
+        draft_path = self.ws.drafts / f"{key}.csl"
+        active_path = self.ws.policies / f"{key}.csl"
+        if st.get("adopted") and st.get("policy"):
+            self._line("✓", a, f"keeps {short(st['policy'])} (adopted)")
+            return
+        if active_path.exists() and not self.ws.read(draft_path):
+            st["policy"] = self.ws.rel(active_path)
+            self._line("✓", a, f"active: {self.ws.rel(active_path)}")
+            return
+        if draft_path.exists():
+            st["draft"] = self.ws.rel(draft_path)
+            self._line("✓", a, f"draft: {self.ws.rel(draft_path)}")
+            return
+        cands = candidates(a, inv.policies)
+        wired = [c for c in cands if c[1] >= 1.0]
+        if strategy == "recommended":
+            how = "1" if wired else "t"
+        elif strategy == "templates":
+            how = "t"
+        else:
+            how = self._menu(a, cands)
+        if how in ("1", "2", "3") and int(how) <= len(cands):
+            ref, score, _why = cands[int(how) - 1]
+            if score >= 1.0:
+                self._adopt(a, st, ref)
+            else:
+                self._copy_existing(a, st, ref, draft_path)
+            return
+        if how == "s":
+            st["skipped"] = True
+            self._line("·", a, "skipped")
+            return
+        if how == "a":
+            self._assistant(a, st, draft_path)
+            return
+        lim = self.limits_for(a, ask=how == "t")  # in the studio or an editor the operator writes them
+        text, _notes = L.policy_text(a, lim)
+        if self.ws.plan_only:
+            self._line("·", a, f"--plan-only: would write {self.ws.rel(draft_path)}")
+            return
+        self.ws.write_text(draft_path, text)
+        d = type("Drafted", (), {"rules": [ln for ln in text.splitlines() if "STATE_CONSTRAINT" in ln]})()
+        st["draft"] = self.ws.rel(draft_path)
+        if how == "w":
+            self._studio(a, st, draft_path, active_path)
+        elif how == "e":
+            self.console.print(f"    opening {self.ws.rel(draft_path)} in {self.ws.editor()} (a template to start from)")
+            self.ws.open_in_editor(draft_path)
+            self._line("✓", a, f"written in your editor: {self.ws.rel(draft_path)}")
+        else:
+            self._line("✓", a, f"{plural(len(d.rules), 'rule')} from templates: {self.ws.rel(draft_path)}")
 
     def limits_for(self, a: Agent, ask: bool = True) -> "L.Limits":
         """The agent's limits: what was set before (or the defaults), the command-line flags, and, at a
@@ -458,44 +496,11 @@ class Flow:
         return lim
 
     def _ask_limits(self, a: Agent, lim: "L.Limits") -> None:
-        """At a terminal: what each tool may do, the money limits in the operator's own numbers, and
-        tools the scan did not see. Enter keeps what is shown."""
+        """At a terminal: what each tool may do, in the operator's own numbers (board.ask_limits)."""
+        from .board import ask_limits
+
         self.console.print()
-        self.console.print(Text.assemble(("  ", ""), (a.display_name, "head"), (f"   {lim.profile} profile", "muted")))
-        for name, kind, what in L.describe(lim):
-            self.console.print(Text.assemble(("    ", ""), (name.ljust(24), "text"), (kind.ljust(9), "label"), (what, "muted")))
-        for name, tl in sorted(lim.tools.items()):
-            if tl.kind != "spend" or not tl.amount_param:
-                continue
-            while True:
-                lo = self.text_input(f"{name}: allowed freely up to", f"{tl.allow_up_to:,}")
-                hi = self.text_input(f"{name}: never above", f"{tl.never_above:,}")
-                try:
-                    tl.allow_up_to, tl.never_above = L.parse_range(f"{lo}..{hi}")
-                    break
-                except L.LimitError as e:
-                    self.console.print(f"  [warn]{e}[/warn]")
-        while True:
-            extra = (self.text_input("Another tool this agent can call that is not listed (name, Enter for none)", "")
-                     or "").strip()
-            if not extra:
-                break
-            risk = self.choose(f"What does {extra} do", ["spend", "shell", "sql", "write", "send", "destroy", "other"], "other")
-            item = {"name": extra, "risk": L.RISKS[risk]}
-            if risk == "spend":
-                item["amount_param"] = (self.text_input("Its amount parameter", "amount") or "amount").strip()
-            lim.extra_tools = [e for e in lim.extra_tools if e["name"] != extra] + [item]
-            lim.tools.pop(extra, None)
-            L.defaults(a, lim.scope, lim)
-            if risk == "spend":
-                tl = lim.tools[extra]
-                lo = self.text_input(f"{extra}: allowed freely up to", f"{tl.allow_up_to:,}")
-                hi = self.text_input(f"{extra}: never above", f"{tl.never_above:,}")
-                try:
-                    tl.allow_up_to, tl.never_above = L.parse_range(f"{lo}..{hi}")
-                except L.LimitError as e:
-                    self.console.print(f"  [warn]{e}; the defaults are kept[/warn]")
-            self.console.print(Text.assemble(("    ✓ ", "ok"), (extra, "head"), (f"  {risk}", "muted")))
+        ask_limits(self, self.console, a, lim)
 
     def _line(self, mark: str, a: Agent, text: str) -> None:
         style = {"✓": "ok", "·": "muted", "✗": "high"}.get(mark, "text")
@@ -680,8 +685,8 @@ class Flow:
         for aid, st in self.agents_state().items():
             rel = st.get("draft") or st.get("policy")
             a = by_id.get(aid)
-            if not rel or a is None or st.get("verified") is False:
-                continue
+            if not rel or a is None or st.get("verified") is False or st.get("protected"):
+                continue  # the board bound its policy and tested its mapping already
             text = self.policy_text(rel) or ""
             final_rel = rel if st.get("adopted") and not st.get("draft") else f"policies/{st['key']}.csl"
             ref = read_policy(rel if Path(rel).is_absolute() else str(self.ws.root / rel), text, "draft")
@@ -803,9 +808,11 @@ class Flow:
         inv = self.load_inventory()
         by_id = {a.id: a for a in inv.agents}
         agents = [(st["key"], by_id[aid], st) for aid, st in self.agents_state().items()
-                  if aid in by_id and (st.get("mapping") or st.get("adopted"))]
+                  if aid in by_id and (st.get("mapping") or st.get("adopted")) and not st.get("protected")]
         if not agents:
-            self.console.print("  [muted]no agent to wire yet[/muted]")
+            done = sum(1 for st in self.agents_state().values() if st.get("protected"))
+            self.console.print(f"  [muted]{'every agent was wired on the protection board' if done else 'no agent to wire yet'}"
+                               "[/muted]")
             return True
         self._choose_modes(agents)
         self.console.print()
@@ -968,7 +975,8 @@ class Flow:
         else:
             nxt = "scan again to pick up new agents and tools (s)"
         rows.append(("next", Text(nxt, style="brand")))
-        menu = grid(("s", "scan again and review what changed"), ("w", "open the live management panel"),
+        menu = grid(("b", "the protection board: limits, policy, wiring and check per agent"),
+                    ("s", "scan again and review what changed"), ("w", "open the live management panel"),
                     ("m", "the reach map"), ("p", "policies"), ("o", "modes and freezes"), ("q", "quit"), label_width=2)
         return Panel(Group(grid(*rows, label_width=10), Text(""), menu),
                      title=Text(f" CSL-Core {VENOM_VERSION} · {self.ws.root.name} ", style="brand"), title_align="left",
@@ -977,9 +985,16 @@ class Flow:
     def home(self) -> Optional[int]:
         """Returns an exit code to stop, or None to start a new setup cycle."""
         self.console.print(self.home_panel())
-        pick = self.choose("choice", ["s", "w", "m", "p", "o", "q"], "w")
+        pick = self.choose("choice", ["b", "s", "w", "m", "p", "o", "q"], "b")
         if pick == "s":
             return None
+        if pick == "b":
+            agents = self.targets()
+            if agents:
+                self.board(agents)
+            else:
+                self.console.print("  [ok]every agent is covered or exempt[/ok]")
+            return EXIT_OK
         if pick == "w":
             from .watch import run_watch
             return run_watch(self.args)
@@ -1056,6 +1071,9 @@ class Flow:
             report = check.run(self.ws, a)
             if not report.cases:
                 continue
+            if not self.ws.plan_only:
+                from .board import store_check
+                store_check(self.ws, st.get("key", D.agent_key(a)), report)
             if not shown:
                 self.console.print()
                 self.console.print(Text("  Check: sample calls decided by each active policy", style="brand"))
