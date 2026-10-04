@@ -87,7 +87,7 @@ def test_riskiest_first_and_honest_about_what_is_not_protected(host):
 
 def test_log_mode_is_never_shown_as_protected(host, monkeypatch, capsys):
     host_dir, ws = host
-    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "", "", ""],
+    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "", "", "c"],
                  choices=["l", "log"])
     assert flow.policies()
     r = _rows(host_dir, ws)["backoffice"]
@@ -124,11 +124,12 @@ def test_one_agent_then_the_rest_with_one_key(host, monkeypatch, capsys):
 
 def test_board_opens_where_it_was_left(host, monkeypatch, capsys):
     host_dir, ws = host
-    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "", "", ""],
+    # one agent, then c: leave the board without standard protection for the rest (Enter would give it)
+    flow = _flow(host_dir, ws, monkeypatch, [_number(host_dir, ws, "backoffice"), "", "", "", "", "c"],
                  choices=["l", "block"])
     assert flow.policies()
     capsys.readouterr()
-    flow = _flow(host_dir, ws, monkeypatch, [""])
+    flow = _flow(host_dir, ws, monkeypatch, ["c"])
     assert flow.policies()
     out = capsys.readouterr().out
     assert "1 of 7 protected" in " ".join(out.split())

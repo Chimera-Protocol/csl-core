@@ -468,12 +468,10 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
     for a in agents:
         kinds = kinds_of(a, L.load(ws, agent_key(a)))
         console.print(Text.assemble(("    ", ""), (agent_key(a), "head"), (f"  {', '.join(WORDS[k] for k in kinds)}", "muted")))
-    mode = getattr(args, "mode", None) or ui.choose(
-        "Mode for them: block stops what their limits do not allow; log only records it", ["block", "log"], "block")
-    console.print(Text(f"    standard limits, a policy for each checked with Z3, {mode} mode, and the wiring changes "
-                       "below", style="muted"))
-    if not ui.ask("Make the policies now?", True):
-        return 0
+    chosen = getattr(args, "mode", None)  # --mode; else a first activation starts in block (controls)
+    console.print(Text(f"    standard limits, a policy for each checked with Z3 (in the workspace only), "
+                       f"{chosen or 'block'} mode, then the wiring changes below, which you confirm. "
+                       "Change any of it later: a number here, cslcore limits, cslcore mode", style="muted"))
     if ws.plan_only:
         console.print("  [muted]--plan-only: nothing is written[/muted]")
         return 0
@@ -484,8 +482,8 @@ def protect_rest(ui, console, args, ws, agents: List[Agent]) -> int:
         L.save(ws, lim)
         console.print(Text.assemble(("  ", ""), (key, "head")))
         if make_policy(console, ws, a, lim) is not None:
-            if Controls(ws).get(key).mode != mode:
-                Controls(ws).set_mode(key, mode)
+            if chosen and Controls(ws).get(key).mode != chosen:
+                Controls(ws).set_mode(key, chosen)
             ready.append(a)
     plans = [wire_plan(args, ws, a) for a in ready]
     agent_of = {agent_key(a): a for a in ready}
@@ -563,17 +561,24 @@ def run(ui, console, args, ws, agents: List[Agent], setup_state: Optional[Dict[s
         console.print(Text.assemble(("  ", ""), (f"{done} of {len(rows)} protected", "ok" if done == len(rows) else "text"),
                                     ("   number: one agent (limits, policy, wiring, check)", "muted")))
         keys = [str(i) for i in range(1, len(rows) + 1)]
-        menu = []
-        if open_rows:
-            menu.append("a")
-            console.print(Text.assemble(("  ", ""), ("a", "brand"),
-                                        (f"  standard protection for the {plural(len(open_rows), 'agent')} without a policy", "muted")))
-        console.print(Text.assemble(("  ", ""), ("Enter", "brand"), ("  continue", "muted")))
-        pick = (ui.text_input("choice", "") or "").strip().lower()
-        if not pick:
+        if open_rows:  # Enter does the recommended thing: standard protection for the rest
+            console.print(Text.assemble(("  ", ""), ("Enter", "brand"),
+                                        (f"  standard protection for the {plural(len(open_rows), 'agent')} without a "
+                                         "policy (you see each wiring change first)", "muted")))
+            console.print(Text.assemble(("  ", ""), ("c", "brand"), ("  continue without it", "muted")))
+        else:
+            console.print(Text.assemble(("  ", ""), ("Enter", "brand"), ("  continue", "muted")))
+        pick = (ui.text_input("choice", "a" if open_rows else "") or "").strip().lower()
+        if not pick or pick == "c":
             return rows
         if pick == "a" and open_rows:
             protect_rest(ui, console, args, ws, [r.agent for r in open_rows])
+            agents, policies = fresh_agents(ws, agents)
+            rows = rows_for(ws, agents, setup_state, args, policies)
+            if not [r for r in rows if not r.policy and not r.own and not r.skipped]:
+                console.print()
+                console.print(table(rows, console.width))  # where it ended; a number later: cslcore setup, b
+                return rows
             continue
         if pick in keys:
             r = rows[int(pick) - 1]
@@ -601,4 +606,4 @@ def run(ui, console, args, ws, agents: List[Agent], setup_state: Optional[Dict[s
                 continue
             protect(ui, console, args, ws, r.agent)
             continue
-        console.print(f"  [warn]{pick!r}: a number, a or Enter[/warn]")
+        console.print(f"  [warn]{pick!r}: a number, a, c or Enter[/warn]")

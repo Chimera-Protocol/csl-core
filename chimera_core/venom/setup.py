@@ -103,6 +103,7 @@ class Flow:
         self.inv: Optional[Inventory] = None
         self.previous: Optional[Dict[str, Any]] = None
         self.interactive = sys.stdin.isatty() and not self.yes
+        self.quiet = False  # the step showed nothing new to read: no "Enter to continue" after it
 
     # -- bookkeeping ----------------------------------------------------------------
     def save(self) -> None:
@@ -401,6 +402,7 @@ class Flow:
             self.save()
 
         B.run(self, self.console, self.args, self.ws, agents, self.agents_state(), other_ways=other_ways)
+        self.quiet = True  # the board was its own screen, left with Enter
         bindings = Bindings(self.ws).all()
         for a in agents:  # what the board made, for the steps after it
             st = self.agents_state().setdefault(a.id, {"key": D.agent_key(a)})
@@ -685,11 +687,13 @@ class Flow:
                                 "and range edges, and every derived check (path in scope, command allowlisted, "
                                 "destination allowed) with bypass tricks. None of them may end in ALLOW.", style="muted"))
         self.console.print()
+        mapped = 0
         for aid, st in self.agents_state().items():
             rel = st.get("draft") or st.get("policy")
             a = by_id.get(aid)
             if not rel or a is None or st.get("verified") is False or st.get("protected"):
                 continue  # the board bound its policy and tested its mapping already
+            mapped += 1
             text = self.policy_text(rel) or ""
             final_rel = rel if st.get("adopted") and not st.get("draft") else f"policies/{st['key']}.csl"
             ref = read_policy(rel if Path(rel).is_absolute() else str(self.ws.root / rel), text, "draft")
@@ -733,6 +737,7 @@ class Flow:
             if not self.ws.plan_only:
                 self.ws.write_text(path, code)
         self.save()
+        self.quiet = not mapped
         return ok
 
     def _mapper_checks(self, a: Agent, spec, st: Dict[str, Any]) -> Dict[str, List[str]]:
@@ -831,6 +836,7 @@ class Flow:
             done = sum(1 for st in self.agents_state().values() if st.get("protected"))
             self.console.print(f"  [muted]{'every agent was wired on the protection board' if done else 'no agent to wire yet'}"
                                "[/muted]")
+            self.quiet = True
             return True
         self._choose_modes(agents)
         self.console.print()
@@ -1091,9 +1097,10 @@ class Flow:
                     self.done(step)
                 if stop_after and step == stop_after:
                     return EXIT_OK
-                if step in PAUSE_AFTER:
+                if step in PAUSE_AFTER and not self.quiet:
                     self.console.print()
                     self.pause(reach_map=step in ("inventory", "findings"))
+                self.quiet = False
         except StopFlow:
             self.console.print("  [muted]stopped; progress is saved. Run cslcore setup to continue.[/muted]")
             return EXIT_INCOMPLETE
