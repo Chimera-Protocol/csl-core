@@ -82,17 +82,17 @@ _BODY_RULES: List[Tuple[re.Pattern, str]] = [
 _NAME_RULES: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"(delete|remove|drop|destroy|purge|wipe|truncate|erase|terminate|revoke|reset|shutdown|kill|rm_|_rm$)", re.I), "DESTRUCTIVE"),
     (re.compile(r"(shell|bash|exec|command|terminal|run_code|python_repl|execute|eval|subprocess|script|sandbox)", re.I), "EXEC"),
-    (re.compile(r"(transfer|payment|pay_|_pay$|^pay|charge|refund|purchase|buy|sell|trade|swap|withdraw|deposit|invoice|payout|wire|spend|provision|order|bid|mint)", re.I), "SPEND"),
+    (re.compile(r"(transfer|payment|pay_|_pay$|^pay|charge|refund|purchase|buy|sell|trade|swap|withdraw|deposit|payout|wire|spend|provision|order|bid|mint|credit(?!_?(check|score|report|status|info|history|limit))|reimburs|rebate|compensat|top_?up|gift_card|voucher)", re.I), "SPEND"),
     (re.compile(r"(credential|password|secret|token|role|permission|grant|iam|access_key|api_key|user_admin|invite|auth)", re.I), "IDENTITY"),
     (re.compile(r"(send|email|mail|post|publish|tweet|slack|message|notify|sms|webhook|upload|share|http_request|fetch_url|browse|comment|reply|dm_)", re.I), "EXTERNAL"),
-    (re.compile(r"(write|create|update|edit|insert|save|set_|put_|modify|append|rename|move|commit|deploy|schedule|book|add_|patch)", re.I), "WRITE"),
+    (re.compile(r"(write|create|update|(^|_)edit|insert|save|set_|put_|modify|append|rename|move|commit|deploy|schedule|book|add_|patch)", re.I), "WRITE"),
     (re.compile(r"(read|get|list|search|query|find|lookup|fetch|view|show|describe|count|check|status|inspect|summar|analy|calculat|convert|parse|validate|explain|verify|simulate|info|weather|time$|echo|generate|scaffold|format|render|draft)", re.I), "READ"),
 ]
 
 _DESC_WORDS: List[Tuple[str, List[str]]] = [
     ("DESTRUCTIVE", ["delete", "deletes", "remove", "removes", "drop", "destroy", "purge", "wipe", "erase", "terminate"]),
     ("EXEC", ["shell", "bash", "execute", "executes", "command", "commands", "terminal", "subprocess"]),
-    ("SPEND", ["payment", "pay", "transfer", "charge", "purchase", "buy", "sell", "trade", "refund", "invoice"]),
+    ("SPEND", ["payment", "pay", "transfer", "charge", "purchase", "buy", "sell", "trade", "refund"]),
     ("IDENTITY", ["credential", "credentials", "password", "permission", "permissions", "role", "roles"]),
     ("EXTERNAL", ["send", "sends", "email", "post", "posts", "publish", "tweet", "message", "notify", "upload", "sms"]),
     ("WRITE", ["write", "writes", "create", "creates", "update", "updates", "insert", "save", "edit", "modify"]),

@@ -238,3 +238,27 @@ def test_wiring_never_touches_files_outside_the_scanned_folder(tmp_path, capsys)
     rc, out, _ = run_cli(["wire", "--yes", "--workspace", str(ws)], capsys)
     assert (original / "agent.py").read_text() == OPS_AGENT
     assert "outside the scanned folder" in " ".join(out.split())
+
+
+@pytest.mark.parametrize("answer", [False, True])
+def test_agents_outside_this_folder_are_listed_and_asked_about(host, monkeypatch, capsys, tmp_path, answer):
+    """Without --root setup sees the whole machine: the board says which agents are outside the
+    current folder, and Enter protects them only when asked (default no)."""
+    host_dir, ws = host
+    flow = _flow(host_dir, ws, monkeypatch, ["", "c"])
+    flow.args.root = None  # as `cslcore setup` with no --root
+    asked = []
+    monkeypatch.setattr(flow, "ask", lambda q, d: asked.append((q, d)) or answer)
+    elsewhere = tmp_path / "somewhere-else"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    import json
+    state = json.loads((ws / ".csl/venom/state.json").read_text())
+    state["scan_root"] = str(host_dir)  # the folder the scan covered (as setup records it)
+    (ws / ".csl/venom/state.json").write_text(json.dumps(state))
+    assert flow.policies()
+    flat = " ".join(capsys.readouterr().out.split())
+    assert "outside this folder (found elsewhere on this machine)" in flat
+    assert asked and asked[0][0].startswith("Also protect the agents outside this folder?") and asked[0][1] is False
+    written = (ws / ".csl/policies/backoffice.csl").exists()
+    assert written is answer

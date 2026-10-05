@@ -90,10 +90,13 @@ class Blocked(str):
     its limits stop the call: the agent loop goes on and the model reads why. Plain functions raise
     PermissionError instead (on_block="raise", as in 0.6.8)."""
 
-    def __new__(cls, tool: str, reason: Optional[str] = None) -> "Blocked":
+    def __new__(cls, tool: str, reason: Optional[str] = None, advice: Optional[str] = None) -> "Blocked":
         # one argument: frameworks rebuild a str subclass from its text (type(x)(text), copy)
-        text = tool if reason is None else (f"CSL-Core: {tool} was not run: {reason}. Ask the operator to change "
-                                            "the limits if this is expected.")
+        if reason is None:
+            text = tool
+        else:
+            text = f"CSL-Core: {tool} was not run: {reason}" + (
+                f"; {advice}" if advice else ". Ask the operator to change the limits if this is expected.")
         obj = super().__new__(cls, text)
         obj.tool, obj.reason = (tool, reason) if reason is not None else ("", "")
         return obj
@@ -330,6 +333,31 @@ class VenomGuard:
             raise err
         return result
 
+    def stop_message(self, tool: str, rule_ids) -> "Blocked":
+        """Why a call stopped, said by its cause: a freeze, a tool turned off or set to never run, or
+        a limit (only then: ask the operator to change the limits)."""
+        ids = list(rule_ids or [])
+        key = self.agent_id
+        if "__agent_disabled__" in ids:
+            return Blocked(tool, "the operator froze this agent", f"unfreeze: cslcore mode --agent {key} --enable")
+        if "__tool_disabled__" in ids:
+            return Blocked(tool, f"the operator turned {tool} off",
+                           f"turn it on: cslcore mode --agent {key} --enable-tool {tool}")
+        if "__mapping__" in ids and tool in self.never_run():
+            return Blocked(tool, f"the operator set {tool} to never run",
+                           f"to change it: cslcore limits --agent {key} --decide {tool}=standard")
+        known = getattr(self.map_call, "__globals__", {}).get("TOOLS")
+        if "__mapping__" in ids and isinstance(known, dict) and tool not in known:
+            return Blocked(tool, "it is not one of the tools this agent was set up with",
+                           "if it is new, scan again and give it limits: cslcore setup")
+        return Blocked(tool, self.reasons(ids))
+
+    def never_run(self) -> List[str]:
+        """Tools the operator set to never run (left out of a policy made from limits)."""
+        text = self.ws.read(self.policy_path) if self.ws is not None and self.policy_path is not None else ""
+        m = re.search(r"(?m)^//\s*Blocked by the operator[^:]*:\s*(.+)$", text or "")
+        return [n.strip() for n in m.group(1).split(",")] if m else []
+
     def reasons(self, rule_ids) -> str:
         """The violated rules in words, for a person or a model to read."""
         text = self.ws.read(self.policy_path) if self.ws is not None and self.policy_path is not None else ""
@@ -382,7 +410,7 @@ class VenomGuard:
                 except PermissionError as e:
                     if on_block != "return":
                         raise
-                    return Blocked(name, self.reasons(getattr(e, "rule_ids", [])))
+                    return self.stop_message(name, getattr(e, "rule_ids", []))
                 return None
 
             if inspect.iscoroutinefunction(fn):

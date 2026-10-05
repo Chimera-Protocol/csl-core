@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   keeps what changed on disk meanwhile; change detection uses time, inode and size.
 - Policies compiled or reloaded from several threads at once could crash the process (Z3 is not
   thread safe); compiling now takes turns.
+- Wiring changes only files inside the folder the last scan covered: a workspace copied from
+  another folder could change the original agent's code.
+- The Claude Code hook line no longer depends on one path: it runs the cslcore found when wiring,
+  else cslcore on PATH, else exits 2 (Claude Code lets a call through on any other failure).
 - The lock between writers works on every OS (flock, msvcrt, or a lock file). Guards never take
   it to read: a tool call never waits on the panel. The state needs a local disk: flock is not
   reliable on NFS and some container volumes.
@@ -48,6 +52,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `cslcore wire --diff`; a one-line summary before every wiring diff.
 
 ### Changed
+- A tool whose arguments are known and hold no file path (deploy(service, version)) is no longer
+  judged by where it writes: its ordinary calls run, recorded. Tools named for credit, rebates,
+  reimbursements or top-ups move money; sending an invoice is sending, not paying.
+- A tool set to need approval has that one rule (its path, command or destination checks are
+  replaced; the operator's own maximums stay), so it really waits for a person.
+- A stop says its cause: a frozen agent and how to unfreeze it, a tool turned off or set to never
+  run and how to change that; "ask the operator to change the limits" only for a limit.
+- Without --root, the board lists the agents outside the current folder and protects them only
+  when asked.
 - An agent activated for the first time starts in block mode unless a mode was chosen; agents
   already in log mode keep it.
 - Everything is written under `.csl/` (kept out of git); `policies/` in a workspace root from

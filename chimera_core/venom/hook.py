@@ -52,6 +52,5 @@ def cmd_hook(args) -> int:
     if not result.allowed and "__approval__" in result.violated_rule_ids:
         return _decide("ask", "needs your approval: " + guard.reasons(result.violated_rule_ids))
     if not result.allowed:  # block mode violation, or an agent / tool disabled by the operator
-        return _deny(f"not run: {guard.reasons(result.violated_rule_ids)} ("
-                     + (", ".join(result.violated_rule_ids) or "policy") + ")")
+        return _deny(str(guard.stop_message(tool, result.violated_rule_ids)).removeprefix("CSL-Core: "))
     return 0

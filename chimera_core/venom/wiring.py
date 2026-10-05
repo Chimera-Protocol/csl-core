@@ -76,6 +76,23 @@ def cslcore_command() -> str:
     return shlex.quote(found) if found else "cslcore"
 
 
+def hook_command(command: str, key: str, workspace: str, project: str) -> str:
+    """The PreToolUse hook line. Claude Code lets a call through when a hook fails with any exit
+    code but 2, so the line never depends on one path only: the cslcore found now, else cslcore on
+    PATH (another machine, another install), else exit 2, which stops the call. A workspace in the
+    project itself is named through $CLAUDE_PROJECT_DIR."""
+    import os
+
+    ws = '"$CLAUDE_PROJECT_DIR"' if os.path.realpath(workspace) == os.path.realpath(project) else shlex.quote(workspace)
+    args = f"hook --agent {shlex.quote(key)} --workspace {ws}"
+    if os.name == "nt":
+        return f"{command} {args}"
+    script = ('if [ -x "$0" ]; then exec "$0" "$@"; '
+              'elif command -v cslcore >/dev/null 2>&1; then exec cslcore "$@"; '
+              'else echo "CSL-Core: cslcore is not installed here; the call is stopped" >&2; exit 2; fi')
+    return f"sh -c '{script}' {command} {args}"
+
+
 # ---------------------------------------------------------------------------
 # planning
 # ---------------------------------------------------------------------------
@@ -169,7 +186,7 @@ def _plan_hook(agent: Agent, key: str, ws: Workspace, probe, command: str) -> Pl
     if not isinstance(entries, list):
         plan.kind, plan.note = "manual", f"hooks.PreToolUse in {shown} is not a list; it was not touched"
         return plan
-    hook = f"{command} hook --agent {shlex.quote(key)} --workspace {shlex.quote(str(ws.root))}"
+    hook = hook_command(command, key, str(ws.root), probe.real_path(base))
     entries.append({"matcher": "*", "hooks": [{"type": "command", "command": hook}]})
     after = json.dumps(data, indent=2) + "\n"
     plan.changes.append(Change(path, shown, before, after, "a PreToolUse hook: every tool call is decided first"))

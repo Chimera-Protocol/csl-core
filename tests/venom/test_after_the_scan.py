@@ -45,7 +45,8 @@ def test_a_plugin_installed_after_the_scan_is_denied(wired, capsys, monkeypatch)
                        ("mcp__newplugin__list_items", {}),  # harmless sounding, still unknown
                        ("NewBuiltin", {"x": 1})):
         out = _hook(monkeypatch, capsys, tool, args)
-        assert out["permissionDecision"] == "deny" and "__mapping__" in out["permissionDecisionReason"], tool
+        assert out["permissionDecision"] == "deny", tool
+        assert "not one of the tools this agent was set up with" in out["permissionDecisionReason"], tool
     assert _hook(monkeypatch, capsys, "Read", {"file_path": "/srv/ops/a"}) is None  # known tools still work
 
 

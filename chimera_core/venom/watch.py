@@ -711,8 +711,14 @@ def agents_pane(model: WatchModel, inv: Optional[Inventory], states: Dict[str, s
 RISK_ORDER = {c: i for i, c in enumerate(["DESTRUCTIVE", "SPEND", "EXEC", "IDENTITY", "UNCLASSIFIED", "EXTERNAL", "WRITE", "READ", "?"])}
 
 
+INTERNAL = ("agent_id", "tool", "approval")  # the policy's own bookkeeping, not the call
+
+
 def _shown(r: dict) -> str:
-    return ", ".join(f"{k}={v}" for k, v in sorted((r.get("shown") or {}).items()) if k not in ("agent_id", "tool"))
+    """The call as the policy saw it, without its own bookkeeping (who, which tool, the approval
+    flag, the *_class and *_allowlisted values derived from the arguments)."""
+    return ", ".join(f"{k}={v}" for k, v in sorted((r.get("shown") or {}).items())
+                     if k not in INTERNAL and not k.endswith(("_class", "_allowlisted", "_in_scope")))
 
 
 def approvals_pane(panel: "ControlPanel") -> Table:

@@ -53,6 +53,7 @@ class ToolLimit:
     never_above: Optional[int] = None
     amount_param: Optional[str] = None
     decide: Optional[str] = None  # allow | approval | block: overrides the kind's standard rule
+    paths: Optional[bool] = None  # a write tool: whether it takes a file path (its rule needs one)
     # any numeric parameter: param -> [free up to, never above] (a list parameter: its length)
     numbers: Dict[str, List[int]] = field(default_factory=dict)
 
@@ -82,6 +83,16 @@ class Limits:
 
 def _has(tool: Tool, rx: re.Pattern) -> Optional[str]:
     return next((p.name for p in tool.params if rx.search(p.name)), None)
+
+
+UNKNOWN_ARGS = ("mcp_server", "builtin")  # tools whose arguments the scan does not know (a catalog)
+
+
+def judged_by_path(tool: Tool) -> bool:
+    """Whether a write tool's rule can look at a file path: it takes one, or its arguments are not
+    known (an MCP server's tool from the catalog: the real call carries them). A tool whose
+    arguments are known and hold no path (deploy(service, version)) is not judged by a path."""
+    return bool(_has(tool, PATH_PARAMS)) or (not tool.params and tool.source in UNKNOWN_ARGS)
 
 
 def kind_of(tool: Tool) -> str:
@@ -123,9 +134,12 @@ def defaults(agent: Agent, scope: List[str], existing: Optional[Limits] = None) 
         lim.scope = list(scope)
     for t in tools_of(agent, lim):
         if t.name in lim.tools:
+            tl = lim.tools[t.name]
+            if tl.kind == "write" and tl.paths is None:  # limits saved before 0.6.9
+                tl.paths = judged_by_path(t)
             continue
         kind = kind_of(t)
-        tl = ToolLimit(kind)
+        tl = ToolLimit(kind, paths=judged_by_path(t) if kind == "write" else None)
         if kind == "spend":
             p = _amount_param(t)
             tl.amount_param = p.name if p is not None else None
@@ -166,6 +180,18 @@ def rules_from(tool: Tool, tl: ToolLimit, lim: Limits, variables: Dict[str, str]
                     cond + (f" AND {when}" if when and " " in when else ""), 'approval MUST BE "YES"', why, t)
 
     kind = tl.kind
+    if approval:
+        # "approval" replaces what the tool's kind would check (paths, commands, queries, destinations)
+        # with one rule: a person approves each call. The operator's own numbers stay: never above.
+        if kind == "spend" and tl.amount_param:
+            var = tl.amount_param
+            var_name = var if variables.get(var) in (None, f"0..{AMOUNT_DOMAIN}") else f"{base}_{var}"
+            variables[var_name] = f"0..{AMOUNT_DOMAIN}"
+            hi = int(tl.never_above if tl.never_above is not None else DEFAULT_NEVER_ABOVE)
+            rules.append(Rule(f"{base}_ceiling", cond, f"{var_name} <= {hi}",
+                              f"{t} moves money: never above {hi:,} in one call", t))
+        rules.append(needs_approval(f"{t}: every call needs a person's approval", "always"))
+        return rules
     if kind == "spend":
         var = tl.amount_param
         if var:
@@ -181,8 +207,6 @@ def rules_from(tool: Tool, tl: ToolLimit, lim: Limits, variables: Dict[str, str]
                                   f"{t} above {lo:,} needs a human approval", t))
         else:
             rules.append(needs_approval(f"{t} moves money and its amount is not visible: every call needs approval"))
-        if approval:
-            rules.append(needs_approval(f"{t}: every call needs approval (set by the operator)", "always"))
     elif kind == "shell":
         if lim.profile == "strict":
             variables["command_allowlisted"] = '{"YES", "NO"}'
@@ -192,8 +216,6 @@ def rules_from(tool: Tool, tl: ToolLimit, lim: Limits, variables: Dict[str, str]
             variables["command_class"] = '{"OK", "REMOTE_EXEC", "DESTRUCTIVE", "PRIVILEGE", "SECRETS", "EXFIL", "PERSISTENCE", "UNREADABLE"}'
             rules.append(Rule(f"{base}_safe_commands", cond, 'command_class MUST BE "OK"',
                               f"{t} runs commands: no remote code, destruction, privilege, secrets, exfiltration or persistence", t))
-        if approval:
-            rules.append(needs_approval(f"{t}: every command needs approval (set by the operator)", "always"))
     elif kind == "sql":
         variables["sql_class"] = '{"READ", "WRITE", "DESTRUCTIVE", "UNREADABLE"}'
         variables["approval"] = '{"YES", "NO"}'
@@ -204,7 +226,9 @@ def rules_from(tool: Tool, tl: ToolLimit, lim: Limits, variables: Dict[str, str]
         rules.append(Rule(f"{base}_sql_write_needs_approval", f'{cond} AND sql_class == "WRITE"', 'approval MUST BE "YES"',
                           f"{t}: writing to the database needs approval", t))
     elif kind in ("write", "read"):
-        if kind == "write" or _has(tool, PATH_PARAMS) or not tool.params:
+        # the path rule needs a path to look at: a tool without one (deploy(service, version)) is not
+        # judged by where it writes; it runs and every call is recorded
+        if judged_by_path(tool) or (kind == "read" and not tool.params):
             variables["path_class"] = '{"IN_SCOPE", "OUTSIDE", "SENSITIVE", "UNREADABLE"}'
             if kind == "write":
                 rules.append(Rule(f"{base}_in_scope", cond, 'path_class MUST BE "IN_SCOPE"',
@@ -212,15 +236,11 @@ def rules_from(tool: Tool, tl: ToolLimit, lim: Limits, variables: Dict[str, str]
             else:
                 rules.append(Rule(f"{base}_no_secrets", cond, 'path_class MUST NOT BE "SENSITIVE"',
                                   f"{t} reads: anything except credentials and keys", t))
-        if approval:
-            rules.append(needs_approval(f"{t}: every call needs approval (set by the operator)", "always"))
     elif kind == "send":
         if lim.profile == "strict" or lim.destinations:
             variables["destination_allowlisted"] = '{"YES", "NO"}'
             rules.append(Rule(f"{base}_destination_allowlist", cond, 'destination_allowlisted MUST BE "YES"',
                               f"{t} sends data out: only the listed destinations", t))
-        if approval:
-            rules.append(needs_approval(f"{t}: every call needs approval (set by the operator)", "always"))
     elif kind in ("publish", "destroy", "identity") or (kind == "other" and (lim.profile == "strict" or approval)):
         why = {"publish": "publishes or sends in bulk", "destroy": "deletes or changes irreversibly",
                "identity": "changes credentials or permissions", "other": "could not be classified"}[kind]
@@ -294,6 +314,8 @@ def describe(lim: Limits) -> List[Tuple[str, str, str]]:
                     else "ordinary commands; stops remote code, destruction, sudo, secrets, exfiltration, persistence")
         elif tl.kind == "sql":
             what = "reads run; writes need approval; DROP / TRUNCATE / unbounded DELETE stopped"
+        elif tl.kind == "write" and not tl.paths:
+            what = "runs, every call recorded (no file path to check)"
         elif tl.kind == "write":
             what = "inside its folder only; never credentials or startup files"
         elif tl.kind == "read":
@@ -304,8 +326,9 @@ def describe(lim: Limits) -> List[Tuple[str, str, str]]:
             what = "needs approval" if lim.profile == "strict" else "runs, every call recorded"
         else:
             what = "needs approval"
-        if tl.decide == "approval" and tl.kind != "spend":
-            what = "every call needs approval"
+        if tl.decide == "approval":
+            what = "every call needs a person's approval" + (
+                f"; never above {tl.never_above:,}" if tl.kind == "spend" and tl.amount_param and tl.never_above else "")
         for param, (lo_n, hi_n) in sorted((tl.numbers or {}).items()):
             if tl.kind == "spend" and param == tl.amount_param:
                 continue

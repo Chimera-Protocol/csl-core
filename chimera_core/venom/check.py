@@ -128,8 +128,20 @@ def cases_for(tool: Tool, tl: L.ToolLimit, lim: L.Limits) -> List[Case]:
     always = tl.decide == "approval"
     cases: List[Case] = []
     kind = tl.kind
+
     def approve(what: str, expected: str, **kw) -> Case:
         return Case(t, what, expected, dict(base), **kw)
+
+    if always:  # one rule: a person approves each call; the operator's own maximums stay
+        cases += [approve("a call", STOPPED), approve("a call", RUNS, approval=True)]
+        if kind == "spend" and tl.amount_param:
+            hi = int(tl.never_above if tl.never_above is not None else L.DEFAULT_NEVER_ABOVE)
+            cases.append(Case(t, f"amount {hi + 1:,}", STOPPED, {**base, tl.amount_param: hi + 1}, approval=True))
+        for p, (lo, hi) in sorted(numbers.items()):
+            cases.append(Case(t, f"{p} {int(hi) + 1:,}", STOPPED, {**base, p: _number(tool, p, int(hi) + 1)}, approval=True))
+        return cases
+    if kind == "write" and not L.judged_by_path(tool):
+        kind = "other"  # no file path to look at: it runs, recorded (policy/limits.rules_from)
 
     if kind == "spend":
         if tl.amount_param:

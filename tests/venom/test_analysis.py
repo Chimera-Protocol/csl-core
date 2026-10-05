@@ -81,7 +81,8 @@ def test_b9_unclassified_is_sensitive():
     ("helper", None, ["subprocess.run"], "EXEC"),
     ("universe_info", None, ["counts.update"], "READ"),
     ("scaffold_policy", "Generate a policy from a description.", [], "READ"),
-    ("send_invoice", None, [], "SPEND"),
+    ("send_invoice", None, [], "EXTERNAL"),  # sending an invoice asks for money, it moves none
+    ("issue_credit", None, [], "SPEND"),  # "credit" is money; the "edit" inside it is not an edit
     ("post_to_page", None, [], "EXTERNAL"),
     ("drop_table", None, [], "DESTRUCTIVE"),
     ("x", "Deletes every record for the user", [], "DESTRUCTIVE"),

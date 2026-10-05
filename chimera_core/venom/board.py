@@ -627,6 +627,26 @@ def fresh_agents(ws, agents: List[Agent]):
     return [now.get(a.id, a) for a in agents], inv.policies
 
 
+def outside_here(args, rows: List[Row]) -> Dict[str, str]:
+    """Without --root setup looks at the whole machine: the agents whose project is not in the
+    current folder, with where they are (key -> path with ~)."""
+    import os
+
+    if args is None or getattr(args, "root", None):
+        return {}
+    here = os.path.realpath(os.getcwd())
+    home = os.path.realpath(os.path.expanduser("~"))
+    out = {}
+    for r in rows:
+        where = r.agent.project or (home if r.agent.kind == "assistant" else None)
+        if not where:
+            continue
+        real = os.path.realpath(where)
+        if real != here and not real.startswith(here + os.sep):
+            out[r.key] = "~" + real[len(home):] if real == home or real.startswith(home + os.sep) else real
+    return out
+
+
 def skip(setup_state: Optional[Dict[str, Any]], r: Row, on: bool) -> None:
     """"Skip / leave it untouched": kept with the setup's own state (the workspace), never in the
     agent's files; standard protection (a) passes it by."""
@@ -651,30 +671,47 @@ def run(ui, console, args, ws, agents: List[Agent], setup_state: Optional[Dict[s
         console.print(Text("  PROTECTION   the riskiest agents first", style="label"))
         console.print(table(rows, console.width))
         open_rows = [r for r in rows if r.policy in ("", "older") and not r.own and not r.skipped]
+        away = outside_here(args, rows)  # without --root: agents found elsewhere on this machine
+        outside_open = [r for r in open_rows if r.key in away]
+        open_rows = [r for r in open_rows if r.key not in away]
         done = sum(1 for r in rows if r.protected)
         console.print(Text.assemble(("  ", ""), (f"{done} of {len(rows)} protected", "ok" if done == len(rows) else "text")))
         keys = [str(i) for i in range(1, len(rows) + 1)]
         numbers = "1" if len(rows) == 1 else f"1-{len(rows)}"
+        if away:
+            console.print(Text("  outside this folder (found elsewhere on this machine): "
+                               + ", ".join(f"{k} ({v})" for k, v in away.items()), style="warn"))
         console.print()
-        if open_rows:  # Enter does the recommended thing: standard protection for the rest
+        if open_rows or outside_open:  # Enter does the recommended thing: standard protection for the rest
+            what = ("the ones in this folder" if away and open_rows else "it" if len(open_rows) == 1 else "them")
             console.print(Text.assemble(("    ", ""), ("Enter", "brand"),
-                                        (f"  protect {'it' if len(open_rows) == 1 else 'them'} with standard limits "
-                                         "(you see each change to your code first)", "text")))
+                                        (f"  protect {what} with standard limits "
+                                         "(you see each change to your code first)"
+                                         + ("; you are asked about the others" if outside_open else ""), "text")))
         console.print(Text.assemble(("    ", ""), (numbers.ljust(5), "brand"),
                                     ("  set an agent's limits yourself: what each tool may do, amounts, row counts", "text")))
         console.print(Text.assemble(("    ", ""), ("c".ljust(5), "brand"),
                                     ("  continue without protecting" if open_rows else "  done", "text")))
         if not open_rows:
             console.print(Text.assemble(("    ", ""), ("Enter", "brand"), ("  done", "text")))
-        pick = (ui.text_input("Your choice (Enter: " + ("protect" if open_rows else "done") + ")",
-                              "a" if open_rows else "") or "").strip().lower()
+        anything = open_rows or outside_open
+        pick = (ui.text_input("Your choice (Enter: " + ("protect" if anything else "done") + ")",
+                              "a" if anything else "") or "").strip().lower()
         if not pick or pick == "c":
             return rows
-        if pick == "a" and open_rows:
-            protect_rest(ui, console, args, ws, [r.agent for r in open_rows])
+        if pick == "a" and anything:
+            chosen = [r.agent for r in open_rows]
+            if outside_open and ui.ask("Also protect the agents outside this folder? "
+                                       + ", ".join(f"{r.key} ({away[r.key]})" for r in outside_open), False):
+                chosen += [r.agent for r in outside_open]
+            if not chosen:
+                console.print("  [muted]nothing changed[/muted]")
+                continue
+            protect_rest(ui, console, args, ws, chosen)
             agents, policies = fresh_agents(ws, agents)
             rows = rows_for(ws, agents, setup_state, args, policies)
-            if not [r for r in rows if r.policy in ("", "older") and not r.own and not r.skipped]:
+            if not [r for r in rows if r.policy in ("", "older") and not r.own and not r.skipped
+                    and r.key not in outside_here(args, rows)]:
                 console.print()
                 console.print(table(rows, console.width))  # where it ended; a number later: cslcore setup, b
                 return rows
